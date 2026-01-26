@@ -1,0 +1,200 @@
+import { defineType } from 'sanity';
+
+export default defineType({
+  name: 'rentalUnit',
+  title: 'Rental Units',
+  type: 'document',
+  fields: [
+    {
+      name: 'name',
+      title: 'Unit Name',
+      type: 'string',
+      description: 'e.g., "Pine Valley Cabin", "Mill View Suite"',
+      validation: (Rule) => Rule.required(),
+    },
+    {
+      name: 'slug',
+      title: 'URL Slug',
+      type: 'slug',
+      options: {
+        source: 'name',
+        maxLength: 96,
+      },
+      validation: (Rule) => Rule.required(),
+    },
+    {
+      name: 'shortDescription',
+      title: 'Short Description',
+      type: 'text',
+      description: 'Brief description for cards and previews (max 160 chars)',
+      rows: 3,
+      validation: (Rule) => Rule.max(160),
+    },
+    {
+      name: 'description',
+      title: 'Full Description',
+      type: 'array',
+      of: [{ type: 'block' }],
+      description: 'Full, detailed description with formatting',
+    },
+    {
+      name: 'basePrice',
+      title: 'Base Price (per night)',
+      type: 'number',
+      description: 'Standard nightly rate',
+      validation: (Rule) => Rule.required().positive(),
+    },
+    {
+      name: 'seasonalPricing',
+      title: 'Seasonal Pricing',
+      type: 'array',
+      of: [{ type: 'seasonalPricing' }],
+      description: 'Optional seasonal rates that override base price',
+    },
+    {
+      name: 'cleaningFee',
+      title: 'Cleaning Fee',
+      type: 'number',
+      description: 'One-time cleaning fee',
+      validation: (Rule) => Rule.min(0),
+    },
+    {
+      name: 'minStay',
+      title: 'Minimum Stay (nights)',
+      type: 'number',
+      description: 'Minimum number of nights required',
+      validation: (Rule) => Rule.positive().integer(),
+      initialValue: 2,
+    },
+    {
+      name: 'maxGuests',
+      title: 'Maximum Guests',
+      type: 'number',
+      validation: (Rule) => Rule.required().positive().integer(),
+    },
+    {
+      name: 'bedrooms',
+      title: 'Number of Bedrooms',
+      type: 'number',
+      validation: (Rule) => Rule.required().min(0).integer(),
+    },
+    {
+      name: 'bathrooms',
+      title: 'Number of Bathrooms',
+      type: 'number',
+      description: 'Use decimals for half baths (e.g., 1.5)',
+      validation: (Rule) => Rule.required().positive(),
+    },
+    {
+      name: 'beds',
+      title: 'Bed Configuration',
+      type: 'array',
+      of: [{ type: 'bedConfiguration' }],
+    },
+    {
+      name: 'amenities',
+      title: 'Amenities',
+      type: 'array',
+      of: [
+        {
+          type: 'reference',
+          to: [{ type: 'amenity' }],
+        },
+      ],
+    },
+    {
+      name: 'images',
+      title: 'Images',
+      type: 'array',
+      of: [{ type: 'imageWithCaption' }],
+      validation: (Rule) => Rule.required().min(1),
+    },
+    {
+      name: 'virtualTourUrl',
+      title: 'Virtual Tour URL',
+      type: 'url',
+      description: 'Link to 360° virtual tour or video walkthrough',
+    },
+    {
+      name: 'videoUrl',
+      title: 'Video URL',
+      type: 'url',
+      description: 'YouTube or Vimeo video URL',
+    },
+    {
+      name: 'airbnbUrl',
+      title: 'Airbnb Listing URL',
+      type: 'url',
+    },
+    {
+      name: 'vrboUrl',
+      title: 'VRBO Listing URL',
+      type: 'url',
+    },
+    {
+      name: 'bookingUrl',
+      title: 'Direct Booking URL',
+      type: 'url',
+      description: 'If using a third-party booking platform',
+    },
+    {
+      name: 'airbnbIcalUrl',
+      title: 'Airbnb iCal URL',
+      type: 'url',
+      description: 'iCal export URL from Airbnb for calendar sync (prevent double bookings)',
+    },
+    {
+      name: 'hipcampIcalUrl',
+      title: 'Hipcamp iCal URL',
+      type: 'url',
+      description: 'iCal export URL from Hipcamp for calendar sync',
+    },
+    {
+      name: 'vrboIcalUrl',
+      title: 'VRBO iCal URL',
+      type: 'url',
+      description: 'iCal export URL from VRBO for calendar sync',
+    },
+    {
+      name: 'available',
+      title: 'Available for Booking',
+      type: 'boolean',
+      description: 'Uncheck to hide this unit from the website',
+      initialValue: true,
+    },
+    {
+      name: 'featured',
+      title: 'Featured Unit',
+      type: 'boolean',
+      description: 'Show prominently on homepage',
+      initialValue: false,
+    },
+    {
+      name: 'sortOrder',
+      title: 'Sort Order',
+      type: 'number',
+      description: 'Lower numbers appear first',
+      initialValue: 0,
+    },
+    {
+      name: 'seo',
+      title: 'SEO Settings',
+      type: 'seo',
+    },
+  ],
+  preview: {
+    select: {
+      title: 'name',
+      media: 'images.0.image',
+      available: 'available',
+      price: 'basePrice',
+    },
+    prepare({ title, media, available, price }) {
+      return {
+        title,
+        subtitle: `$${price}/night ${!available ? '(Hidden)' : ''}`,
+        media,
+      };
+    },
+  },
+});

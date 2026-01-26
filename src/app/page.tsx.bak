@@ -1,0 +1,174 @@
+import Link from 'next/link';
+
+export default function Home() {
+  return (
+    <div className="relative">
+      {/* Hero Section */}
+      <section className="relative h-[600px] bg-gradient-to-br from-stone-800 to-stone-600 text-white">
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="relative container mx-auto px-4 h-full flex items-center">
+          <div className="max-w-2xl">
+            <h1 className="text-5xl md:text-6xl font-bold mb-4">
+              Pine Valley
+            </h1>
+            <p className="text-2xl md:text-3xl mb-6 font-light">
+              Lodging, Camping, & Events
+            </p>
+            <p className="text-xl mb-8 text-stone-100">
+              43 acres in Missouri's Mark Twain National Forest
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href="/lodging"
+                className="inline-block bg-white text-stone-800 px-8 py-4 rounded-lg font-semibold hover:bg-stone-100 transition-colors text-center"
+              >
+                View Accommodations
+              </Link>
+              <Link
+                href="/the-area"
+                className="inline-block border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-colors text-center"
+              >
+                Explore the Area
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Property Features */}
+      <section className="py-16 bg-stone-50">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-stone-700 mb-2">
+                43 Acres
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Private Land</h3>
+              <p className="text-gray-600">
+                In Mark Twain National Forest with hiking trails and fishing ponds
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-stone-700 mb-2">
+                Unique
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Accommodations</h3>
+              <p className="text-gray-600">
+                Airstreams, cottages, and event space for groups
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-stone-700 mb-2">
+                Historic
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Dillard Mill</h3>
+              <p className="text-gray-600">
+                Walking distance to Missouri's best-preserved gristmill
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Units Preview */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
+            Our Accommodations
+          </h2>
+          <p className="text-xl text-gray-600 mb-12 text-center max-w-2xl mx-auto">
+            From vintage Airstreams to cozy cottages, find your perfect retreat
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {/* These will be populated from Sanity CMS */}
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="h-48 bg-stone-200" />
+              <div className="p-6">
+                <h3 className="text-xl font-semibold mb-2">Cozy Cottage</h3>
+                <p className="text-gray-600 mb-4">
+                  Full kitchen, washer/dryer, perfect for couples or small families
+                </p>
+                <Link
+                  href="/cozycottage"
+                  className="text-stone-700 font-semibold hover:text-stone-900"
+                >
+                  Learn More →
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="h-48 bg-stone-200" />
+              <div className="p-6">
+                <h3 className="text-xl font-semibold mb-2">The Original Airstream</h3>
+                <p className="text-gray-600 mb-4">
+                  Vintage glamping with outdoor tub, private deck, unique experience
+                </p>
+                <Link
+                  href="/airstream"
+                  className="text-stone-700 font-semibold hover:text-stone-900"
+                >
+                  Learn More →
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="h-48 bg-stone-200" />
+              <div className="p-6">
+                <h3 className="text-xl font-semibold mb-2">The Sebastian</h3>
+                <p className="text-gray-600 mb-4">
+                  Outdoor clawfoot tubs, sleeps 4, rustic charm meets comfort
+                </p>
+                <Link
+                  href="/sebastian"
+                  className="text-stone-700 font-semibold hover:text-stone-900"
+                >
+                  Learn More →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/lodging"
+              className="inline-block bg-stone-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-stone-700 transition-colors"
+            >
+              View All Accommodations
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="py-16 bg-stone-800 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Experience the Ozarks
+          </h2>
+          <p className="text-xl text-stone-200 mb-8 max-w-3xl mx-auto">
+            Pine Valley sits on 43 private acres in Mark Twain National Forest.
+            Enjoy hiking trails, fishing ponds, Huzzah Creek swimming, and the
+            historic Dillard Mill just steps away.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/the-area"
+              className="inline-block border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+            >
+              Explore Local Attractions
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-block bg-white text-stone-800 px-8 py-3 rounded-lg font-semibold hover:bg-stone-100 transition-colors"
+            >
+              Contact Us
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

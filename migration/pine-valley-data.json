@@ -1,0 +1,143 @@
+{
+  "siteName": "Pine Valley",
+  "tagline": "Lodging, Camping, & Events",
+  "location": {
+    "address": "126 Dillard Mill Road",
+    "city": "Davisville",
+    "state": "MO",
+    "zip": "65456"
+  },
+  "contact": {
+    "phone": "(314) 843-4321",
+    "email": "pinevalley@dillardmill.com",
+    "instagram": "@pinevalleydm",
+    "facebook": "Pine Valley"
+  },
+  "property": {
+    "acres": 43,
+    "description": "43 acres in Missouri's Mark Twain National Forest, near historic Dillard Mill",
+    "features": [
+      "Indoor plumbing and electric lodging",
+      "Outdoor bathhouse facilities",
+      "Two ponds for recreation",
+      "Private hiking trails (1.5-2 miles)",
+      "Campfire areas",
+      "WiFi connectivity",
+      "RV hookups",
+      "Event hosting capabilities"
+    ]
+  },
+  "rentalUnits": [
+    {
+      "name": "Cozy Cottage",
+      "slug": "cozy-cottage",
+      "capacity": 4,
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "beds": [
+        {"type": "Full", "count": 1},
+        {"type": "Sofa", "count": 1}
+      ],
+      "description": "Loft-style bedroom with full bed and premium futon sleeper. Perfect for couples or small families.",
+      "amenities": [
+        "Washer & Dryer",
+        "Full Kitchen",
+        "Shower Bathroom",
+        "Propane Fireplace",
+        "Air Conditioning",
+        "Baseboard Heaters",
+        "42\" TV with DVDs",
+        "Private Patio",
+        "Pet Friendly"
+      ],
+      "airbnbUrl": "https://www.airbnb.com/rooms/29332611",
+      "hipcampUrl": "https://www.hipcamp.com/en-US/land/missouri-pine-valley-at-dillard-mill-5x5heyxd/sites/374668",
+      "featured": true,
+      "petFee": 50
+    },
+    {
+      "name": "The Original Airstream",
+      "slug": "original-airstream",
+      "capacity": 2,
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "beds": [
+        {"type": "Queen", "count": 1}
+      ],
+      "description": "Vintage Airstream with outdoor tub and shower. A unique glamping experience with modern comforts.",
+      "amenities": [
+        "Private Outdoor Tub",
+        "Outdoor Shower",
+        "Indoor Toilet and Sink",
+        "Kitchenette",
+        "Microwave",
+        "Small Fridge",
+        "Toaster Oven",
+        "Electric Skillet",
+        "Coffee Maker",
+        "Electric Heater",
+        "Air Conditioning",
+        "TV with DVDs",
+        "Private Deck",
+        "Pet Friendly"
+      ],
+      "airbnbUrl": "https://www.airbnb.com/rooms/27518141",
+      "hipcampUrl": "https://www.hipcamp.com/en-US/land/missouri-pine-valley-at-dillard-mill-5x5heyxd/sites/373911",
+      "featured": true,
+      "petFee": 50
+    },
+    {
+      "name": "The Sebastian",
+      "slug": "the-sebastian",
+      "capacity": 4,
+      "bedrooms": 1,
+      "bathrooms": 2,
+      "beds": [
+        {"type": "Queen", "count": 1},
+        {"type": "Twin", "count": 2}
+      ],
+      "description": "Spacious unit with outdoor clawfoot tubs. Great for families or groups seeking a rustic retreat.",
+      "amenities": [
+        "Two Outdoor Clawfoot Tubs",
+        "Outdoor Showers",
+        "Kitchenette",
+        "Microwave",
+        "Fridge",
+        "Toaster Oven",
+        "Coffee Maker",
+        "Air Conditioning",
+        "Electric Heater",
+        "Private Deck",
+        "Campfire Area",
+        "TV with DVDs",
+        "Self Check-in",
+        "Pet Friendly"
+      ],
+      "airbnbUrl": "https://www.airbnb.com/rooms/29634317",
+      "hipcampUrl": "https://www.hipcamp.com/en-US/land/missouri-pine-valley-at-dillard-mill-5x5heyxd/sites/419983",
+      "featured": true,
+      "petFee": 50
+    },
+    {
+      "name": "Book the Farm",
+      "slug": "book-the-farm",
+      "capacity": 20,
+      "bedrooms": "Multiple",
+      "bathrooms": "Multiple",
+      "description": "Entire farm rental perfect for groups and events. Sleeps 20+ in beds with capacity for 50+ including camping.",
+      "amenities": [
+        "Multi-purpose Café (seats 30)",
+        "Air Conditioning",
+        "3 RV Pads",
+        "Concrete RV Pad with Full Service",
+        "Private Decks",
+        "Bonfire Pits",
+        "Walking Distance to Dillard Mill",
+        "WiFi",
+        "Event Space"
+      ],
+      "airbnbUrl": "https://www.airbnb.com/rooms/44360355",
+      "featured": false
+    }
+  ]
+}
