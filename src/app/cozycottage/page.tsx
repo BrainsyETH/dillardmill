@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getUnitBySlug } from '@/lib/sanity/queries';
 import { UnitDetail } from '@/components/units/UnitDetail';
+import { generateVacationRentalSchema, generateJsonLdScript } from '@/lib/schema';
 
 export const metadata = {
   title: 'Cozy Cottage | Pine Valley',
@@ -15,8 +16,17 @@ export default async function CozyCottagePage() {
     notFound();
   }
 
+  const rentalSchema = generateVacationRentalSchema(unit);
+
   return (
-    <div className="min-h-screen">
+    <>
+      {/* Schema.org JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={generateJsonLdScript(rentalSchema)}
+      />
+
+      <div className="min-h-screen">
       {/* Breadcrumb */}
       <div className="bg-[#F4F1EB] border-b border-[#CBB8A3]">
         <div className="container mx-auto px-4 py-4">
@@ -46,6 +56,7 @@ export default async function CozyCottagePage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

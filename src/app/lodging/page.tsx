@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getAllUnits } from '@/lib/sanity/queries';
 import { UnitCard } from '@/components/units/UnitCard';
+import { generateLodgingBusinessSchema, generateJsonLdScript } from '@/lib/schema';
 
 export const metadata = {
   title: 'Lodging | Pine Valley',
@@ -9,13 +10,21 @@ export const metadata = {
 
 export default async function UnitsPage() {
   const units = await getAllUnits();
+  const lodgingSchema = generateLodgingBusinessSchema(units);
 
   // Separate featured and regular units
   const featuredUnits = units.filter(unit => unit.featured);
   const regularUnits = units.filter(unit => !unit.featured);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <>
+      {/* Schema.org JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={generateJsonLdScript(lodgingSchema)}
+      />
+
+      <div className="container mx-auto px-4 py-12">
       <div className="max-w-4xl mx-auto text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-[#3A2A1E] mb-4">
           Our Lodging
@@ -98,6 +107,7 @@ export default async function UnitsPage() {
           </a>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
