@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Crimson_Pro, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { generateSEOMetadata, generateLocalBusinessStructuredData } from "@/lib/seo";
 import Script from "next/script";
 
-const inter = Inter({
+// Elegant serif for headings - evokes heritage & craftsmanship
+const crimsonPro = Crimson_Pro({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-serif",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+// Clean, readable sans-serif for body text
+const sourceSans = Source_Sans_3({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = generateSEOMetadata();
@@ -21,7 +32,7 @@ export default function RootLayout({
   const structuredData = generateLocalBusinessStructuredData();
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${crimsonPro.variable} ${sourceSans.variable}`}>
       <head>
         <Script
           id="structured-data"
@@ -29,7 +40,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased bg-brand-parchment text-brand-charcoal">
         <div className="flex flex-col min-h-screen">
           <Header />
           <main className="flex-grow">{children}</main>

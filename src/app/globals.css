@@ -1,59 +1,63 @@
 @import "tailwindcss";
 
 /* 
- * Pine Valley at Dillard Mill - Brand Colors
- * Rustic, historic mill / riverside / heritage aesthetic
- * Evokes wood, stone, water, and aged paper
+ * Pine Valley at Dillard Mill - Fresh Nature Theme
+ * Lighter, airier design with natural forest & water tones
+ * Less heavy brown, more fresh greens and soft neutrals
  */
 
 :root {
-  /* Primary Brand Colors */
-  --color-espresso: #3A2A1E;     /* Deep brown - headings, accents, structural UI */
-  --color-parchment: #F4F1EB;    /* Warm off-white - primary background */
-  --color-charcoal: #2B2B2B;     /* Muted charcoal - body text */
+  /* Primary Colors - Softer, More Natural */
+  --color-forest: #2D5A47;        /* Deep forest green - primary brand */
+  --color-sage: #7A9E8E;          /* Soft sage - secondary */
+  --color-cream: #FAFAF8;         /* Clean off-white - backgrounds */
+  --color-charcoal: #374151;      /* Soft charcoal - body text */
   
-  /* Secondary / Accent Colors */
-  --color-olive: #6B7A5A;        /* Moss green - nature, outdoors */
-  --color-river: #6F8291;        /* Blue-gray - water, calm tone */
-  --color-sand: #CBB8A3;         /* Warm tan - aged paper, borders */
-  --color-rust: #9C5A3C;         /* Rust/copper - CTA highlights */
+  /* Accent Colors */
+  --color-copper: #B87333;        /* Warm copper - CTAs, accents */
+  --color-copper-dark: #8B5A2B;   /* Darker copper for hovers */
+  --color-sky: #6B9AC4;           /* Soft blue - water, calm */
+  --color-stone: #9CA3AF;         /* Neutral stone gray */
+  --color-sand: #E5E1D8;          /* Light warm neutral - borders */
+  --color-bark: #4A3728;          /* Dark brown - used sparingly */
   
-  /* Semantic Color Mapping */
-  --color-primary: var(--color-espresso);
-  --color-secondary: var(--color-rust);
-  --color-accent: var(--color-olive);
-  --color-background: var(--color-parchment);
+  /* Semantic Mapping */
+  --color-primary: var(--color-forest);
+  --color-secondary: var(--color-copper);
+  --color-accent: var(--color-sage);
+  --color-background: var(--color-cream);
   --color-text: var(--color-charcoal);
-  --color-text-light: var(--color-river);
+  --color-text-muted: var(--color-stone);
   
   /* Background & Foreground */
-  --background: var(--color-parchment);
+  --background: var(--color-cream);
   --foreground: var(--color-charcoal);
 }
 
 @theme inline {
   /* Tailwind v4 Theme Extension */
-  --color-brand-espresso: var(--color-espresso);
-  --color-brand-parchment: var(--color-parchment);
+  --color-brand-forest: var(--color-forest);
+  --color-brand-sage: var(--color-sage);
+  --color-brand-cream: var(--color-cream);
   --color-brand-charcoal: var(--color-charcoal);
-  --color-brand-olive: var(--color-olive);
-  --color-brand-river: var(--color-river);
+  --color-brand-copper: var(--color-copper);
+  --color-brand-copper-dark: var(--color-copper-dark);
+  --color-brand-sky: var(--color-sky);
+  --color-brand-stone: var(--color-stone);
   --color-brand-sand: var(--color-sand);
-  --color-brand-rust: var(--color-rust);
+  --color-brand-bark: var(--color-bark);
   
-  /* Semantic aliases for easier use */
-  --color-primary: var(--color-espresso);
-  --color-secondary: var(--color-rust);
-  --color-accent: var(--color-olive);
-  --color-background: var(--color-parchment);
+  /* Semantic aliases */
+  --color-primary: var(--color-forest);
+  --color-secondary: var(--color-copper);
+  --color-accent: var(--color-sage);
+  --color-background: var(--color-cream);
   --color-foreground: var(--color-charcoal);
   
   /* Typography */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman", serif;
 }
-
-/* No dark mode - Pine Valley is warm & inviting only */
 
 body {
   background: var(--background);
@@ -63,39 +67,247 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom utility classes for brand colors */
-.bg-brand {
-  background-color: var(--color-parchment);
+/* ========================================
+   TYPOGRAPHY SYSTEM
+   ======================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  color: var(--color-forest);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.text-brand {
-  color: var(--color-espresso);
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+/* ========================================
+   BUTTON STYLES
+   ======================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .btn-primary {
-  background-color: var(--color-rust);
-  color: var(--color-parchment);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.25rem;
-  font-weight: 600;
-  transition: all 0.2s;
+  background: linear-gradient(135deg, var(--color-copper) 0%, var(--color-copper-dark) 100%);
+  color: white;
+  box-shadow: 0 4px 14px -3px rgba(184, 115, 51, 0.4);
 }
 
 .btn-primary:hover {
-  background-color: #7D4830; /* Darker rust */
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--color-copper-dark) 0%, #6B4423 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -3px rgba(184, 115, 51, 0.5);
 }
 
 .btn-secondary {
-  background-color: var(--color-olive);
-  color: var(--color-parchment);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.25rem;
-  font-weight: 600;
-  transition: all 0.2s;
+  background-color: var(--color-forest);
+  color: white;
+  box-shadow: 0 4px 14px -3px rgba(45, 90, 71, 0.3);
 }
 
 .btn-secondary:hover {
-  background-color: #556148; /* Darker olive */
-  transform: translateY(-1px);
+  background-color: #234536;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -3px rgba(45, 90, 71, 0.4);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 2px solid var(--color-forest);
+  color: var(--color-forest);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-forest);
+  color: white;
+}
+
+.btn-outline-light {
+  background-color: transparent;
+  border: 2px solid white;
+  color: white;
+}
+
+.btn-outline-light:hover {
+  background-color: white;
+  color: var(--color-forest);
+}
+
+/* ========================================
+   CARD STYLES
+   ======================================== */
+
+.card {
+  background-color: white;
+  border-radius: 1rem;
+  border: 1px solid var(--color-sand);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: 0 20px 40px -12px rgba(45, 90, 71, 0.15);
+  transform: translateY(-4px);
+}
+
+.card-featured {
+  background: linear-gradient(135deg, white 0%, var(--color-sand) 100%);
+  border: 2px solid var(--color-sand);
+  border-radius: 1.5rem;
+}
+
+/* ========================================
+   DECORATIVE ELEMENTS
+   ======================================== */
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--color-sand) 50%, transparent 100%);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.section-header::before,
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-sand), transparent);
+}
+
+/* ========================================
+   HERO GRADIENTS
+   ======================================== */
+
+.gradient-hero {
+  background: linear-gradient(
+    135deg,
+    var(--color-forest) 0%,
+    #3D6B57 50%,
+    #4A7A67 100%
+  );
+}
+
+.gradient-hero-light {
+  background: linear-gradient(
+    135deg,
+    var(--color-sage) 0%,
+    #8FB3A3 100%
+  );
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* ========================================
+   FORM ELEMENTS
+   ======================================== */
+
+input, textarea, select {
+  font-family: var(--font-sans);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-forest);
+  box-shadow: 0 0 0 3px rgba(45, 90, 71, 0.1);
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-sage);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-forest);
+}
+
+/* ========================================
+   SELECTION STYLING
+   ======================================== */
+
+::selection {
+  background-color: var(--color-forest);
+  color: white;
 }

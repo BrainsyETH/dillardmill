@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 interface NavigationProps {
   mobile?: boolean;
@@ -29,20 +30,26 @@ export default function Navigation({ mobile = false, onNavigate }: NavigationPro
 
   if (mobile) {
     return (
-      <nav className="flex flex-col space-y-2">
-        {navItems.map((item) => (
-          <Link
+      <nav className="flex flex-col space-y-1">
+        {navItems.map((item, index) => (
+          <motion.div
             key={item.href}
-            href={item.href}
-            onClick={handleClick}
-            className={`px-4 py-2 rounded-md text-base font-medium transition-colors ${
-              pathname === item.href
-                ? 'bg-[#9C5A3C]/10 text-[#9C5A3C]'
-                : 'text-[#2B2B2B] hover:bg-[#CBB8A3]/20 hover:text-[#3A2A1E]'
-            }`}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
           >
-            {item.label}
-          </Link>
+            <Link
+              href={item.href}
+              onClick={handleClick}
+              className={`block px-4 py-3 rounded-lg text-base font-medium transition-all ${
+                pathname === item.href
+                  ? 'bg-brand-forest/10 text-brand-forest'
+                  : 'text-brand-charcoal hover:bg-brand-sand/50 hover:text-brand-forest'
+              }`}
+            >
+              {item.label}
+            </Link>
+          </motion.div>
         ))}
       </nav>
     );
@@ -50,19 +57,29 @@ export default function Navigation({ mobile = false, onNavigate }: NavigationPro
 
   return (
     <nav className="flex items-center space-x-1">
-      {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-            pathname === item.href
-              ? 'text-[#9C5A3C] bg-[#9C5A3C]/10'
-              : 'text-[#2B2B2B] hover:text-[#3A2A1E] hover:bg-[#CBB8A3]/20'
-          }`}
-        >
-          {item.label}
-        </Link>
-      ))}
+      {navItems.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? 'text-brand-forest'
+                : 'text-brand-charcoal hover:text-brand-forest'
+            }`}
+          >
+            {item.label}
+            {isActive && (
+              <motion.div
+                layoutId="activeNav"
+                className="absolute inset-0 bg-brand-forest/10 rounded-lg -z-10"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

@@ -90,11 +90,11 @@ export function generateLocalBusinessStructuredData() {
     image: `${siteConfig.url}/og-image.jpg`,
     '@id': siteConfig.url,
     url: siteConfig.url,
-    telephone: '+1-573-XXX-XXXX', // TODO: Add real phone number
+    telephone: '+1-314-843-4321',
     priceRange: '$$',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Near Dillard Mill State Historic Site',
+      streetAddress: '126 Dillard Mill Road',
       addressLocality: 'Davisville',
       addressRegion: 'MO',
       postalCode: '65456',
@@ -120,9 +120,9 @@ export function generateLocalBusinessStructuredData() {
       closes: '23:59',
     },
     sameAs: [
-      // TODO: Add social media URLs
-      // 'https://www.facebook.com/pinevalleylodge',
-      // 'https://www.instagram.com/pinevalleylodge',
+      'https://www.instagram.com/pinevalleydm',
+      'https://www.facebook.com/pinevalley',
+      'https://www.airbnb.com/users/show/309588444',
     ],
     amenityFeature: [
       {
@@ -153,7 +153,7 @@ export function generateCampgroundStructuredData() {
     description: siteConfig.description,
     image: `${siteConfig.url}/og-image.jpg`,
     url: siteConfig.url,
-    telephone: '+1-573-XXX-XXXX',
+    telephone: '+1-314-843-4321',
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Davisville',
