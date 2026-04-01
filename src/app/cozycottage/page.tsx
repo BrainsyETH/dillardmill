@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function CozyCottagePage() {
-  const unit = await getUnitBySlug('cozy-cottage');
+  const unit = await getUnitBySlug('cozycottage');
 
   if (!unit || !unit.available) {
     notFound();

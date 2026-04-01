@@ -107,7 +107,6 @@ export default defineType({
       title: 'Images',
       type: 'array',
       of: [{ type: 'imageWithCaption' }],
-      validation: (Rule) => Rule.required().min(1),
     },
     {
       name: 'virtualTourUrl',

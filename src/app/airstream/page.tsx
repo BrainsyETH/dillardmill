@@ -5,12 +5,12 @@ import { UnitDetail } from '@/components/units/UnitDetail';
 import { generateVacationRentalSchema, generateJsonLdScript } from '@/lib/schema';
 
 export const metadata = {
-  title: 'The Original Airstream | Pine Valley',
-  description: 'Stay in our vintage Airstream at Pine Valley near Dillard Mill State Historic Site.',
+  title: 'The Argosy Airstream | Pine Valley',
+  description: 'Stay in the Argosy Airstream at Pine Valley near Dillard Mill State Historic Site. Sleeps 4, air conditioned, private deck.',
 };
 
 export default async function AirstreamPage() {
-  const unit = await getUnitBySlug('original-airstream');
+  const unit = await getUnitBySlug('airstream');
 
   if (!unit || !unit.available) {
     notFound();

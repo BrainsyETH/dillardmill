@@ -12,7 +12,17 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Add URL redirects from Squarespace here during migration
+      // Squarespace → Next.js URL redirects
+      {
+        source: '/local-attractions',
+        destination: '/the-area',
+        permanent: true,
+      },
+      {
+        source: '/blog/:slug*',
+        destination: '/thoughts/:slug*',
+        permanent: true,
+      },
     ];
   },
 };

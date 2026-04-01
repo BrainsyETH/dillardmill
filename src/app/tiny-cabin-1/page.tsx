@@ -5,12 +5,12 @@ import { UnitDetail } from '@/components/units/UnitDetail';
 import { generateVacationRentalSchema, generateJsonLdScript } from '@/lib/schema';
 
 export const metadata = {
-  title: 'The Sherman Airstream | Pine Valley',
-  description: 'Stay in the Sherman Airstream at Pine Valley near Dillard Mill. Glamping in the Missouri Ozarks. Sleeps 4, air conditioned.',
+  title: 'Tiny Cabin #1 | Pine Valley',
+  description: 'Stay in Tiny Cabin #1 at Pine Valley near Dillard Mill. Queen bed, AC, perfect for couples. Missouri Ozarks getaway.',
 };
 
-export default async function ShermanPage() {
-  const unit = await getUnitBySlug('sebastian');
+export default async function TinyCabin1Page() {
+  const unit = await getUnitBySlug('tiny-cabin-1');
 
   if (!unit || !unit.available) {
     notFound();
@@ -20,14 +20,12 @@ export default async function ShermanPage() {
 
   return (
     <>
-      {/* Schema.org JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={generateJsonLdScript(rentalSchema)}
       />
 
       <div className="min-h-screen">
-      {/* Breadcrumb */}
       <div className="bg-[#F4F1EB] border-b border-[#CBB8A3]">
         <div className="container mx-auto px-4 py-4">
           <nav className="text-sm text-[#6F8291]">
@@ -42,7 +40,6 @@ export default async function ShermanPage() {
 
       <UnitDetail unit={unit} />
 
-      {/* Related Units */}
       <div className="bg-[#F4F1EB] py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
