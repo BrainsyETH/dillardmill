@@ -14,6 +14,7 @@ const navItems = [
   { label: 'Lodging', href: '/lodging' },
   { label: 'Photos', href: '/photos' },
   { label: 'The Area', href: '/the-area' },
+  { label: 'Property Map', href: '/map' },
   { label: 'Reviews', href: '/reviews' },
   { label: 'Thoughts', href: '/thoughts' },
   { label: 'Contact', href: '/contact' },
