@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Map, { NavigationControl } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapUnits, PROPERTY_CENTER, DEFAULT_ZOOM } from '@/lib/map/map-units';
+import { mapUnits as defaultMarkers, PROPERTY_CENTER, DEFAULT_ZOOM } from '@/lib/map/map-units';
 import type { MapUnit } from '@/lib/map/map-units';
 import UnitMarker from './UnitMarker';
 import UnitPopup from './UnitPopup';
@@ -15,7 +15,24 @@ interface PropertyMapProps {
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) {
+  const [markers, setMarkers] = useState<MapUnit[]>(defaultMarkers);
   const [selectedUnit, setSelectedUnit] = useState<MapUnit | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/admin/map-markers')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data.markers) && data.markers.length > 0) {
+          setMarkers(data.markers);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const visibleMarkers = markers.filter((m) => m.showOnLocation !== false);
 
   const handleMarkerClick = useCallback((unit: MapUnit) => {
     setSelectedUnit(unit);
@@ -30,8 +47,8 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
   }
 
   const heightClass = variant === 'fullscreen'
-    ? 'h-[calc(100vh-80px)]'
-    : 'h-[500px] rounded-2xl';
+    ? 'h-[calc(100dvh-160px)] min-h-[400px]'
+    : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   return (
     <div className={`${heightClass} w-full overflow-hidden relative`}>
@@ -48,7 +65,7 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
       >
         <NavigationControl position="top-right" />
 
-        {mapUnits.map((unit) => (
+        {visibleMarkers.map((unit) => (
           <UnitMarker
             key={unit.id}
             unit={unit}
@@ -81,8 +98,8 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
 
 function MapFallback({ variant }: { variant: string }) {
   const heightClass = variant === 'fullscreen'
-    ? 'h-[calc(100vh-80px)]'
-    : 'h-[500px] rounded-2xl';
+    ? 'h-[calc(100dvh-160px)] min-h-[400px]'
+    : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   return (
     <div className={`${heightClass} w-full bg-gradient-to-br from-brand-sand/50 to-brand-sage/10 flex items-center justify-center border border-brand-sand`}>
