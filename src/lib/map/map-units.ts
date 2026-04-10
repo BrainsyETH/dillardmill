@@ -24,7 +24,7 @@ export const DEFAULT_ZOOM = 16;
 // Drone photo overlay — placed on the map at these geographic bounds
 // Adjust corner coordinates to align the photo with the terrain
 export const DRONE_OVERLAY = {
-  url: '/images/property-drone.jpg',
+  url: '/property-drone.PNG',
   coordinates: [
     [-91.2095, 37.7265], // top-left (NW)
     [-91.2027, 37.7265], // top-right (NE)
