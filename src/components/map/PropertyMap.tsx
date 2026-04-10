@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Map, { NavigationControl } from 'react-map-gl/mapbox';
+import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { mapUnits as defaultMarkers, PROPERTY_CENTER, DEFAULT_ZOOM } from '@/lib/map/map-units';
 import type { MapUnit } from '@/lib/map/map-units';
 import UnitMarker from './UnitMarker';
-import UnitPopup from './UnitPopup';
+import MarkerPopup from './MarkerPopup';
 
 interface PropertyMapProps {
   variant?: 'embedded' | 'fullscreen';
@@ -17,6 +18,8 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) {
   const [markers, setMarkers] = useState<MapUnit[]>(defaultMarkers);
   const [selectedUnit, setSelectedUnit] = useState<MapUnit | null>(null);
+  const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
+  const mapRef = useRef<MapRef>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,13 +37,31 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
 
   const visibleMarkers = markers.filter((m) => m.showOnLocation !== false);
 
+  const updateScreenPos = useCallback((unit: MapUnit) => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const point = map.project([unit.coordinates.lng, unit.coordinates.lat]);
+    setPopupScreenPos({ x: point.x, y: point.y });
+  }, []);
+
   const handleMarkerClick = useCallback((unit: MapUnit) => {
     setSelectedUnit(unit);
-  }, []);
+    updateScreenPos(unit);
+  }, [updateScreenPos]);
 
   const handlePopupClose = useCallback(() => {
     setSelectedUnit(null);
   }, []);
+
+  // Keep popup aligned with the marker as the map moves (desktop)
+  useEffect(() => {
+    if (!selectedUnit) return;
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const handler = () => updateScreenPos(selectedUnit);
+    map.on('move', handler);
+    return () => { map.off('move', handler); };
+  }, [selectedUnit, updateScreenPos]);
 
   if (!MAPBOX_TOKEN) {
     return <MapFallback variant={variant} />;
@@ -53,6 +74,7 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
   return (
     <div className={`${heightClass} w-full overflow-hidden relative`}>
       <Map
+        ref={mapRef}
         initialViewState={{
           longitude: PROPERTY_CENTER.lng,
           latitude: PROPERTY_CENTER.lat,
@@ -73,11 +95,15 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
             onClick={handleMarkerClick}
           />
         ))}
-
-        {selectedUnit && (
-          <UnitPopup unit={selectedUnit} onClose={handlePopupClose} />
-        )}
       </Map>
+
+      {selectedUnit && (
+        <MarkerPopup
+          marker={selectedUnit}
+          onClose={handlePopupClose}
+          screenPosition={popupScreenPos ?? undefined}
+        />
+      )}
 
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 text-xs">
