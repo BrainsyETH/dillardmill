@@ -1,19 +1,29 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import Map, { Marker, NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import Map, { Marker, NavigationControl } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapUnits as defaultUnits, PROPERTY_CENTER, DEFAULT_ZOOM, DRONE_OVERLAY } from '@/lib/map/map-units';
-import type { MapUnit, MarkerType, UnitType } from '@/lib/map/map-units';
+import { mapUnits as defaultUnits, PROPERTY_CENTER, DEFAULT_ZOOM, DRONE_PHOTO_URL } from '@/lib/map/map-units';
+import type { MapUnit, UnitType } from '@/lib/map/map-units';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const STORAGE_KEY = 'pine-valley-map-markers';
+
+type TabId = 'layout' | 'location';
+type AddingMode = 'unit' | 'landmark' | null;
 
 function loadMarkers(): MapUnit[] {
   if (typeof window === 'undefined') return defaultUnits;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migrate old records that may be missing layoutPosition
+      return parsed.map((m: MapUnit) => ({
+        ...m,
+        layoutPosition: m.layoutPosition ?? { x: 50, y: 50 },
+      }));
+    }
   } catch {}
   return defaultUnits;
 }
@@ -24,9 +34,8 @@ function saveMarkers(markers: MapUnit[]) {
   } catch {}
 }
 
-type AddingMode = 'unit' | 'landmark' | null;
-
 export default function AdminMapEditor() {
+  const [activeTab, setActiveTab] = useState<TabId>('layout');
   const [markers, setMarkers] = useState<MapUnit[]>(() => loadMarkers());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addingMode, setAddingMode] = useState<AddingMode>(null);
@@ -37,7 +46,6 @@ export default function AdminMapEditor() {
   const rentalUnits = markers.filter((m) => m.type === 'unit');
   const landmarks = markers.filter((m) => m.type === 'landmark');
 
-  // Auto-save to localStorage on changes
   useEffect(() => {
     saveMarkers(markers);
     setHasChanges(JSON.stringify(markers) !== JSON.stringify(defaultUnits));
@@ -49,24 +57,20 @@ export default function AdminMapEditor() {
     );
   }, []);
 
-  const handleDragEnd = useCallback((id: string, lng: number, lat: number) => {
-    updateMarker(id, { coordinates: { lng, lat } });
-  }, [updateMarker]);
-
-  const handleMapClick = useCallback((e: { lngLat: { lng: number; lat: number } }) => {
-    if (!addingMode) {
-      setSelectedId(null);
-      return;
-    }
-
-    const newId = `${addingMode}-${Date.now()}`;
+  const addMarker = useCallback((
+    type: 'unit' | 'landmark',
+    coordinates: { lng: number; lat: number },
+    layoutPosition: { x: number; y: number },
+  ) => {
+    const newId = `${type}-${Date.now()}`;
     const newMarker: MapUnit = {
       id: newId,
-      name: addingMode === 'unit' ? 'New Unit' : 'New Landmark',
-      type: addingMode,
+      name: type === 'unit' ? 'New Unit' : 'New Landmark',
+      type,
       description: '',
-      coordinates: { lng: e.lngLat.lng, lat: e.lngLat.lat },
-      ...(addingMode === 'unit' ? {
+      coordinates,
+      layoutPosition,
+      ...(type === 'unit' ? {
         unitType: 'cabin' as UnitType,
         capacity: 2,
         beds: '',
@@ -74,11 +78,10 @@ export default function AdminMapEditor() {
         plumbing: 'full' as const,
       } : {}),
     };
-
     setMarkers((prev) => [...prev, newMarker]);
     setSelectedId(newId);
     setAddingMode(null);
-  }, [addingMode]);
+  }, []);
 
   const handleDelete = useCallback((id: string) => {
     setMarkers((prev) => prev.filter((m) => m.id !== id));
@@ -99,19 +102,6 @@ export default function AdminMapEditor() {
       setTimeout(() => setCopiedExport(false), 2000);
     } catch {}
   }, [markers]);
-
-  if (!MAPBOX_TOKEN) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-100px)] bg-gray-50">
-        <div className="text-center p-8">
-          <p className="text-gray-600 mb-2 font-medium">Mapbox token not configured</p>
-          <p className="text-gray-400 text-sm">
-            Add <code className="bg-gray-100 px-1.5 py-0.5 rounded">NEXT_PUBLIC_MAPBOX_TOKEN</code> to your .env.local file
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-[calc(100vh-100px)]">
@@ -156,7 +146,7 @@ export default function AdminMapEditor() {
                     : 'text-[#B87333] hover:bg-[#B87333]/10'
                 }`}
               >
-                {addingMode === 'unit' ? 'Click map to place...' : '+ Add Unit'}
+                {addingMode === 'unit' ? 'Click to place...' : '+ Add Unit'}
               </button>
             </div>
 
@@ -166,6 +156,7 @@ export default function AdminMapEditor() {
                   key={unit.id}
                   unit={unit}
                   isSelected={selectedId === unit.id}
+                  activeTab={activeTab}
                   onSelect={() => setSelectedId(unit.id)}
                   onDelete={() => handleDelete(unit.id)}
                 />
@@ -185,7 +176,7 @@ export default function AdminMapEditor() {
                     : 'text-[#2D5A47] hover:bg-[#2D5A47]/10'
                 }`}
               >
-                {addingMode === 'landmark' ? 'Click map to place...' : '+ Add Landmark'}
+                {addingMode === 'landmark' ? 'Click to place...' : '+ Add Landmark'}
               </button>
             </div>
 
@@ -195,6 +186,7 @@ export default function AdminMapEditor() {
                   key={unit.id}
                   unit={unit}
                   isSelected={selectedId === unit.id}
+                  activeTab={activeTab}
                   onSelect={() => setSelectedId(unit.id)}
                   onDelete={() => handleDelete(unit.id)}
                 />
@@ -215,12 +207,29 @@ export default function AdminMapEditor() {
         </div>
       </aside>
 
-      {/* Map */}
-      <div className="flex-1 relative">
+      {/* Main area */}
+      <div className="flex-1 relative flex flex-col">
+        {/* Tabs */}
+        <div className="flex bg-white border-b border-gray-200 px-4 flex-shrink-0">
+          <TabButton
+            label="Property Layout"
+            sublabel="Drone photo"
+            isActive={activeTab === 'layout'}
+            onClick={() => setActiveTab('layout')}
+          />
+          <TabButton
+            label="Location"
+            sublabel="Satellite map"
+            isActive={activeTab === 'location'}
+            onClick={() => setActiveTab('location')}
+          />
+        </div>
+
+        {/* Adding mode banner */}
         {addingMode && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-white/95 backdrop-blur-sm rounded-full shadow-lg px-4 py-2 text-sm font-medium text-gray-700 flex items-center gap-2">
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-white/95 backdrop-blur-sm rounded-full shadow-lg px-4 py-2 text-sm font-medium text-gray-700 flex items-center gap-2">
             <span className={`w-3 h-3 rounded-full ${addingMode === 'unit' ? 'bg-[#B87333]' : 'bg-[#2D5A47]'}`} />
-            Click on the map to place a new {addingMode === 'unit' ? 'rental unit' : 'landmark'}
+            Click on the {activeTab === 'layout' ? 'drone photo' : 'map'} to place a new {addingMode === 'unit' ? 'rental unit' : 'landmark'}
             <button
               onClick={() => setAddingMode(null)}
               className="ml-2 text-gray-400 hover:text-gray-600"
@@ -232,58 +241,47 @@ export default function AdminMapEditor() {
           </div>
         )}
 
-        <Map
-          initialViewState={{
-            longitude: PROPERTY_CENTER.lng,
-            latitude: PROPERTY_CENTER.lat,
-            zoom: DEFAULT_ZOOM,
-          }}
-          style={{ width: '100%', height: '100%' }}
-          mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
-          mapboxAccessToken={MAPBOX_TOKEN}
-          onClick={handleMapClick}
-          cursor={addingMode ? 'crosshair' : 'grab'}
-        >
-          <NavigationControl position="top-right" />
-
-          {/* Drone photo overlay */}
-          <Source
-            id="drone-overlay"
-            type="image"
-            url={DRONE_OVERLAY.url}
-            coordinates={DRONE_OVERLAY.coordinates}
-          >
-            <Layer
-              id="drone-overlay-layer"
-              type="raster"
-              paint={{ 'raster-opacity': 1 }}
-            />
-          </Source>
-
-          {markers.map((unit) => (
-            <DraggableMarker
-              key={unit.id}
-              unit={unit}
-              isSelected={selectedId === unit.id}
-              onSelect={() => {
-                setSelectedId(unit.id);
-                setAddingMode(null);
+        {/* Active tab content */}
+        <div className="flex-1 relative">
+          {activeTab === 'layout' ? (
+            <LayoutTab
+              markers={markers}
+              selectedId={selectedId}
+              addingMode={addingMode}
+              onSelect={(id) => { setSelectedId(id); setAddingMode(null); }}
+              onDragEnd={(id, x, y) => updateMarker(id, { layoutPosition: { x, y } })}
+              onAdd={(x, y) => {
+                if (!addingMode) return;
+                addMarker(addingMode, { lng: PROPERTY_CENTER.lng, lat: PROPERTY_CENTER.lat }, { x, y });
               }}
-              onDragEnd={(lng, lat) => handleDragEnd(unit.id, lng, lat)}
+              onBackgroundClick={() => setSelectedId(null)}
             />
-          ))}
-        </Map>
+          ) : (
+            <LocationTab
+              markers={markers}
+              selectedId={selectedId}
+              addingMode={addingMode}
+              onSelect={(id) => { setSelectedId(id); setAddingMode(null); }}
+              onDragEnd={(id, lng, lat) => updateMarker(id, { coordinates: { lng, lat } })}
+              onAdd={(lng, lat) => {
+                if (!addingMode) return;
+                addMarker(addingMode, { lng, lat }, { x: 50, y: 50 });
+              }}
+              onBackgroundClick={() => setSelectedId(null)}
+            />
+          )}
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 text-xs">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-[#B87333]" />
-              <span className="text-gray-700">Rental Units</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-[#2D5A47]" />
-              <span className="text-gray-700">Landmarks</span>
+          {/* Legend */}
+          <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 text-xs z-10">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#B87333]" />
+                <span className="text-gray-700">Rental Units</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#2D5A47]" />
+                <span className="text-gray-700">Landmarks</span>
+              </div>
             </div>
           </div>
         </div>
@@ -292,20 +290,324 @@ export default function AdminMapEditor() {
   );
 }
 
-// --- Sub-components ---
+// ===== Tabs =====
+
+function TabButton({ label, sublabel, isActive, onClick }: {
+  label: string; sublabel: string; isActive: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-5 py-3 text-left border-b-2 transition-colors ${
+        isActive
+          ? 'border-[#B87333] text-gray-900'
+          : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      <div className="text-sm font-semibold">{label}</div>
+      <div className="text-[10px] text-gray-400 uppercase tracking-wider">{sublabel}</div>
+    </button>
+  );
+}
+
+// ===== Layout Tab (drone photo view) =====
+
+function LayoutTab({
+  markers,
+  selectedId,
+  addingMode,
+  onSelect,
+  onDragEnd,
+  onAdd,
+  onBackgroundClick,
+}: {
+  markers: MapUnit[];
+  selectedId: string | null;
+  addingMode: AddingMode;
+  onSelect: (id: string) => void;
+  onDragEnd: (id: string, x: number, y: number) => void;
+  onAdd: (x: number, y: number) => void;
+  onBackgroundClick: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const getRelativePosition = (clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    return {
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent, id: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDraggingId(id);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!draggingId) return;
+    const pos = getRelativePosition(e.clientX, e.clientY);
+    if (pos) onDragEnd(draggingId, pos.x, pos.y);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (draggingId) {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      setDraggingId(null);
+    }
+  };
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (draggingId) return;
+    if (addingMode) {
+      const pos = getRelativePosition(e.clientX, e.clientY);
+      if (pos) onAdd(pos.x, pos.y);
+    } else {
+      onBackgroundClick();
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 bg-gradient-to-br from-brand-forest/40 to-brand-forest/70 overflow-hidden select-none"
+      style={{ cursor: addingMode ? 'crosshair' : 'default' }}
+      onClick={handleContainerClick}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {/* Drone photo */}
+      <img
+        src={DRONE_PHOTO_URL}
+        alt="Property aerial view"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        draggable={false}
+      />
+
+      {/* Markers */}
+      {markers.map((unit) => (
+        <LayoutDraggableMarker
+          key={unit.id}
+          unit={unit}
+          isSelected={selectedId === unit.id}
+          isDragging={draggingId === unit.id}
+          onPointerDown={(e) => handlePointerDown(e, unit.id)}
+          onClick={(e) => { e.stopPropagation(); onSelect(unit.id); }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function LayoutDraggableMarker({
+  unit,
+  isSelected,
+  isDragging,
+  onPointerDown,
+  onClick,
+}: {
+  unit: MapUnit;
+  isSelected: boolean;
+  isDragging: boolean;
+  onPointerDown: (e: React.PointerEvent) => void;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const isLandmark = unit.type === 'landmark';
+  const bg = isLandmark ? '#2D5A47' : '#B87333';
+  const ringBg = isLandmark ? 'rgba(45,90,71,0.3)' : 'rgba(184,115,51,0.3)';
+
+  return (
+    <div
+      className="absolute flex flex-col items-center touch-none"
+      style={{
+        left: `${unit.layoutPosition.x}%`,
+        top: `${unit.layoutPosition.y}%`,
+        transform: 'translate(-50%, -100%)',
+        cursor: isDragging ? 'grabbing' : 'grab',
+      }}
+      onPointerDown={onPointerDown}
+      onClick={onClick}
+    >
+      <div
+        style={{
+          backgroundColor: bg,
+          boxShadow: isSelected ? `0 0 0 4px ${ringBg}` : '0 2px 8px rgba(0,0,0,0.3)',
+          transform: isSelected || isDragging ? 'scale(1.15)' : 'scale(1)',
+          transition: isDragging ? 'none' : 'transform 0.15s, box-shadow 0.15s',
+        }}
+        className="rounded-full p-2 pointer-events-none"
+      >
+        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {isLandmark ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
+          )}
+        </svg>
+      </div>
+      <div
+        style={{ borderTopColor: bg }}
+        className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] border-transparent -mt-[1px] pointer-events-none"
+      />
+      <span className="mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-gray-800 shadow-sm whitespace-nowrap max-w-[100px] truncate pointer-events-none">
+        {unit.name}
+      </span>
+    </div>
+  );
+}
+
+// ===== Location Tab (Mapbox satellite) =====
+
+function LocationTab({
+  markers,
+  selectedId,
+  addingMode,
+  onSelect,
+  onDragEnd,
+  onAdd,
+  onBackgroundClick,
+}: {
+  markers: MapUnit[];
+  selectedId: string | null;
+  addingMode: AddingMode;
+  onSelect: (id: string) => void;
+  onDragEnd: (id: string, lng: number, lat: number) => void;
+  onAdd: (lng: number, lat: number) => void;
+  onBackgroundClick: () => void;
+}) {
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8">
+          <p className="text-gray-600 mb-2 font-medium">Mapbox token not configured</p>
+          <p className="text-gray-400 text-sm">
+            Add <code className="bg-gray-100 px-1.5 py-0.5 rounded">NEXT_PUBLIC_MAPBOX_TOKEN</code> to your .env.local file
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0">
+      <Map
+        initialViewState={{
+          longitude: PROPERTY_CENTER.lng,
+          latitude: PROPERTY_CENTER.lat,
+          zoom: DEFAULT_ZOOM,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
+        mapboxAccessToken={MAPBOX_TOKEN}
+        onClick={(e) => {
+          if (addingMode) {
+            onAdd(e.lngLat.lng, e.lngLat.lat);
+          } else {
+            onBackgroundClick();
+          }
+        }}
+        cursor={addingMode ? 'crosshair' : 'grab'}
+      >
+        <NavigationControl position="top-right" />
+
+        {markers.map((unit) => (
+          <LocationDraggableMarker
+            key={unit.id}
+            unit={unit}
+            isSelected={selectedId === unit.id}
+            onSelect={() => onSelect(unit.id)}
+            onDragEnd={(lng, lat) => onDragEnd(unit.id, lng, lat)}
+          />
+        ))}
+      </Map>
+    </div>
+  );
+}
+
+function LocationDraggableMarker({
+  unit,
+  isSelected,
+  onSelect,
+  onDragEnd,
+}: {
+  unit: MapUnit;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDragEnd: (lng: number, lat: number) => void;
+}) {
+  const isLandmark = unit.type === 'landmark';
+  const bg = isLandmark ? '#2D5A47' : '#B87333';
+  const ringBg = isLandmark ? 'rgba(45,90,71,0.3)' : 'rgba(184,115,51,0.3)';
+
+  return (
+    <Marker
+      longitude={unit.coordinates.lng}
+      latitude={unit.coordinates.lat}
+      anchor="bottom"
+      draggable
+      onDragEnd={(e) => onDragEnd(e.lngLat.lng, e.lngLat.lat)}
+      onClick={(e) => {
+        e.originalEvent.stopPropagation();
+        onSelect();
+      }}
+    >
+      <div className="flex flex-col items-center cursor-grab active:cursor-grabbing">
+        <div
+          style={{
+            backgroundColor: bg,
+            boxShadow: isSelected ? `0 0 0 4px ${ringBg}` : '0 2px 8px rgba(0,0,0,0.3)',
+            transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+            transition: 'transform 0.15s, box-shadow 0.15s',
+          }}
+          className="rounded-full p-2"
+        >
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isLandmark ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
+            )}
+          </svg>
+        </div>
+        <div
+          style={{ borderTopColor: bg }}
+          className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] border-transparent -mt-[1px]"
+        />
+        <span className="mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-gray-800 shadow-sm whitespace-nowrap max-w-[100px] truncate">
+          {unit.name}
+        </span>
+      </div>
+    </Marker>
+  );
+}
+
+// ===== Sidebar sub-components =====
 
 function MarkerListItem({
   unit,
   isSelected,
+  activeTab,
   onSelect,
   onDelete,
 }: {
   unit: MapUnit;
   isSelected: boolean;
+  activeTab: TabId;
   onSelect: () => void;
   onDelete: () => void;
 }) {
   const isLandmark = unit.type === 'landmark';
+
+  const coordDisplay = activeTab === 'layout'
+    ? `${unit.layoutPosition.x.toFixed(1)}%, ${unit.layoutPosition.y.toFixed(1)}%`
+    : `${unit.coordinates.lat.toFixed(5)}, ${unit.coordinates.lng.toFixed(5)}`;
+
   return (
     <div
       className={`group flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-colors ${
@@ -318,9 +620,7 @@ function MarkerListItem({
       <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isLandmark ? 'bg-[#2D5A47]' : 'bg-[#B87333]'}`} />
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-gray-900 truncate">{unit.name}</div>
-        <div className="text-[10px] text-gray-400 font-mono">
-          {unit.coordinates.lat.toFixed(5)}, {unit.coordinates.lng.toFixed(5)}
-        </div>
+        <div className="text-[10px] text-gray-400 font-mono">{coordDisplay}</div>
       </div>
       {unit.capacity && (
         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded flex-shrink-0">
@@ -451,10 +751,17 @@ function MarkerEditForm({
         </>
       )}
 
-      <Field label="Coordinates">
+      <Field label="Layout Position">
+        <div className="text-xs font-mono text-gray-500 bg-gray-100 rounded-md px-2.5 py-1.5">
+          {marker.layoutPosition.x.toFixed(2)}%, {marker.layoutPosition.y.toFixed(2)}%
+          <span className="text-gray-400 ml-2">(drag on Layout tab)</span>
+        </div>
+      </Field>
+
+      <Field label="Geographic Coordinates">
         <div className="text-xs font-mono text-gray-500 bg-gray-100 rounded-md px-2.5 py-1.5">
           {marker.coordinates.lat.toFixed(6)}, {marker.coordinates.lng.toFixed(6)}
-          <span className="text-gray-400 ml-2">(drag marker to change)</span>
+          <span className="text-gray-400 ml-2">(drag on Location tab)</span>
         </div>
       </Field>
     </div>
@@ -467,62 +774,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-xs font-medium text-gray-500 mb-1 block">{label}</span>
       {children}
     </label>
-  );
-}
-
-function DraggableMarker({
-  unit,
-  isSelected,
-  onSelect,
-  onDragEnd,
-}: {
-  unit: MapUnit;
-  isSelected: boolean;
-  onSelect: () => void;
-  onDragEnd: (lng: number, lat: number) => void;
-}) {
-  const isLandmark = unit.type === 'landmark';
-  const bg = isLandmark ? '#2D5A47' : '#B87333';
-  const ringBg = isLandmark ? 'rgba(45,90,71,0.3)' : 'rgba(184,115,51,0.3)';
-
-  return (
-    <Marker
-      longitude={unit.coordinates.lng}
-      latitude={unit.coordinates.lat}
-      anchor="bottom"
-      draggable
-      onDragEnd={(e) => onDragEnd(e.lngLat.lng, e.lngLat.lat)}
-      onClick={(e) => {
-        e.originalEvent.stopPropagation();
-        onSelect();
-      }}
-    >
-      <div className="flex flex-col items-center cursor-grab active:cursor-grabbing">
-        <div
-          style={{
-            backgroundColor: bg,
-            boxShadow: isSelected ? `0 0 0 4px ${ringBg}` : '0 2px 8px rgba(0,0,0,0.3)',
-            transform: isSelected ? 'scale(1.15)' : 'scale(1)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
-          }}
-          className="rounded-full p-2"
-        >
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isLandmark ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
-            )}
-          </svg>
-        </div>
-        <div
-          style={{ borderTopColor: bg }}
-          className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] border-transparent -mt-[1px]"
-        />
-        <span className="mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-gray-800 shadow-sm whitespace-nowrap max-w-[100px] truncate">
-          {unit.name}
-        </span>
-      </div>
-    </Marker>
   );
 }
