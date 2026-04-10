@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Map, { NavigationControl } from 'react-map-gl/mapbox';
+import Map, { NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapUnits, PROPERTY_CENTER, DEFAULT_ZOOM } from '@/lib/map/map-units';
+import { mapUnits, PROPERTY_CENTER, DEFAULT_ZOOM, DRONE_OVERLAY } from '@/lib/map/map-units';
 import type { MapUnit } from '@/lib/map/map-units';
 import UnitMarker from './UnitMarker';
 import UnitPopup from './UnitPopup';
@@ -47,6 +47,20 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
         onClick={() => setSelectedUnit(null)}
       >
         <NavigationControl position="top-right" />
+
+        {/* Drone photo overlay */}
+        <Source
+          id="drone-overlay"
+          type="image"
+          url={DRONE_OVERLAY.url}
+          coordinates={DRONE_OVERLAY.coordinates}
+        >
+          <Layer
+            id="drone-overlay-layer"
+            type="raster"
+            paint={{ 'raster-opacity': 1 }}
+          />
+        </Source>
 
         {mapUnits.map((unit) => (
           <UnitMarker
