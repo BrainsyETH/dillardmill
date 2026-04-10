@@ -21,6 +21,18 @@ export interface MapUnit {
 export const PROPERTY_CENTER = { lng: -91.2061, lat: 37.7241 };
 export const DEFAULT_ZOOM = 16;
 
+// Drone photo overlay — placed on the map at these geographic bounds
+// Adjust corner coordinates to align the photo with the terrain
+export const DRONE_OVERLAY = {
+  url: '/images/property-drone.jpg',
+  coordinates: [
+    [-91.2095, 37.7265], // top-left (NW)
+    [-91.2027, 37.7265], // top-right (NE)
+    [-91.2027, 37.7217], // bottom-right (SE)
+    [-91.2095, 37.7217], // bottom-left (SW)
+  ] as [[number, number], [number, number], [number, number], [number, number]],
+};
+
 export const mapUnits: MapUnit[] = [
   // === Rental Units ===
   {

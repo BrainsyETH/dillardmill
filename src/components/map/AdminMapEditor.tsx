@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import Map, { Marker, NavigationControl } from 'react-map-gl/mapbox';
+import Map, { Marker, NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapUnits as defaultUnits, PROPERTY_CENTER, DEFAULT_ZOOM } from '@/lib/map/map-units';
+import { mapUnits as defaultUnits, PROPERTY_CENTER, DEFAULT_ZOOM, DRONE_OVERLAY } from '@/lib/map/map-units';
 import type { MapUnit, MarkerType, UnitType } from '@/lib/map/map-units';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -245,6 +245,20 @@ export default function AdminMapEditor() {
           cursor={addingMode ? 'crosshair' : 'grab'}
         >
           <NavigationControl position="top-right" />
+
+          {/* Drone photo overlay */}
+          <Source
+            id="drone-overlay"
+            type="image"
+            url={DRONE_OVERLAY.url}
+            coordinates={DRONE_OVERLAY.coordinates}
+          >
+            <Layer
+              id="drone-overlay-layer"
+              type="raster"
+              paint={{ 'raster-opacity': 1 }}
+            />
+          </Source>
 
           {markers.map((unit) => (
             <DraggableMarker
