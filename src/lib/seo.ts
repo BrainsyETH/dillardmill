@@ -102,8 +102,8 @@ export function generateLocalBusinessStructuredData() {
     },
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: 37.154, // TODO: Add exact coordinates
-      longitude: -91.391,
+      latitude: 37.7241,
+      longitude: -91.2061,
     },
     openingHoursSpecification: {
       '@type': 'OpeningHoursSpecification',

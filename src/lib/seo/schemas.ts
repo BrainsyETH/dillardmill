@@ -163,15 +163,15 @@ export function generateBreadcrumbSchema(items: Array<{ name: string; url: strin
  */
 export const PINE_VALLEY_BASE = {
   address: {
-    streetAddress: "", // TODO: Add actual address
+    streetAddress: "126 Dillard Mill Road",
     addressLocality: "Davisville",
     addressRegion: "MO",
-    postalCode: "", // TODO: Add postal code
+    postalCode: "65456",
     addressCountry: "US"
   },
   geo: {
-    latitude: 0, // TODO: Add actual coordinates
-    longitude: 0
+    latitude: 37.7241,
+    longitude: -91.2061
   }
 };
 
