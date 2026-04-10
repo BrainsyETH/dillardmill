@@ -18,7 +18,7 @@ export interface MapUnit {
 }
 
 // Property center: 126 Dillard Mill Road, Davisville, MO 65456
-export const PROPERTY_CENTER = { lng: -91.4747, lat: 37.6047 };
+export const PROPERTY_CENTER = { lng: -91.2061, lat: 37.7241 };
 export const DEFAULT_ZOOM = 16;
 
 export const mapUnits: MapUnit[] = [
@@ -35,7 +35,7 @@ export const mapUnits: MapUnit[] = [
     plumbing: 'full',
     detailUrl: '/cozycottage',
     bookingUrl: 'https://www.airbnb.com/rooms/29332611',
-    coordinates: { lng: -91.4755, lat: 37.6055 },
+    coordinates: { lng: -91.2068, lat: 37.7248 },
   },
   {
     id: 'the-airstream',
@@ -49,7 +49,7 @@ export const mapUnits: MapUnit[] = [
     plumbing: 'full',
     detailUrl: '/airstream',
     bookingUrl: 'https://www.airbnb.com/rooms/27518141',
-    coordinates: { lng: -91.4740, lat: 37.6052 },
+    coordinates: { lng: -91.2055, lat: 37.7245 },
   },
   {
     id: 'the-sebastian',
@@ -63,7 +63,7 @@ export const mapUnits: MapUnit[] = [
     plumbing: 'full',
     detailUrl: '/sebastian',
     bookingUrl: 'https://www.airbnb.com/rooms/29634317',
-    coordinates: { lng: -91.4738, lat: 37.6045 },
+    coordinates: { lng: -91.2053, lat: 37.7238 },
   },
   {
     id: 'multi-purpose-cafe',
@@ -77,7 +77,7 @@ export const mapUnits: MapUnit[] = [
     plumbing: 'full',
     detailUrl: '/dillardmill',
     bookingUrl: 'https://www.airbnb.com/rooms/44360355',
-    coordinates: { lng: -91.4750, lat: 37.6042 },
+    coordinates: { lng: -91.2064, lat: 37.7235 },
   },
   {
     id: 'tiny-cabin-1',
@@ -89,7 +89,7 @@ export const mapUnits: MapUnit[] = [
     beds: '1 Queen Bed',
     amenities: ['A/C', 'Courtyard Access', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
-    coordinates: { lng: -91.4743, lat: 37.6038 },
+    coordinates: { lng: -91.2057, lat: 37.7232 },
   },
   {
     id: 'tiny-cabin-2',
@@ -101,7 +101,7 @@ export const mapUnits: MapUnit[] = [
     beds: '1 Queen Bed',
     amenities: ['A/C', 'Courtyard Access', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
-    coordinates: { lng: -91.4741, lat: 37.6036 },
+    coordinates: { lng: -91.2055, lat: 37.7230 },
   },
   {
     id: 'the-argosy',
@@ -113,7 +113,7 @@ export const mapUnits: MapUnit[] = [
     beds: '1 Queen + 2 Twins',
     amenities: ['A/C', 'Airstream', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
-    coordinates: { lng: -91.4736, lat: 37.6040 },
+    coordinates: { lng: -91.2050, lat: 37.7234 },
   },
   {
     id: 'the-sherman',
@@ -125,7 +125,7 @@ export const mapUnits: MapUnit[] = [
     beds: '1 Queen + 2 Twins',
     amenities: ['A/C', 'Airstream', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
-    coordinates: { lng: -91.4734, lat: 37.6038 },
+    coordinates: { lng: -91.2048, lat: 37.7232 },
   },
 
   // === Landmarks ===
@@ -134,27 +134,27 @@ export const mapUnits: MapUnit[] = [
     name: 'Hippy Showers',
     type: 'landmark',
     description: 'Shared outdoor shower area for guests.',
-    coordinates: { lng: -91.4745, lat: 37.6040 },
+    coordinates: { lng: -91.2059, lat: 37.7234 },
   },
   {
     id: 'barn',
     name: 'Barn',
     type: 'landmark',
     description: 'Shared bathhouse facility with showers and restrooms.',
-    coordinates: { lng: -91.4739, lat: 37.6037 },
+    coordinates: { lng: -91.2054, lat: 37.7231 },
   },
   {
     id: 'huzzah-creek-access',
     name: 'Huzzah Creek Access',
     type: 'landmark',
     description: 'Trail access point to Huzzah Creek for swimming, fishing, and floating.',
-    coordinates: { lng: -91.4760, lat: 37.6060 },
+    coordinates: { lng: -91.2075, lat: 37.7255 },
   },
   {
     id: 'dillard-mill',
     name: 'Dillard Mill',
     type: 'landmark',
     description: 'Historic 1908 gristmill on Huzzah Creek. Walking distance from the property.',
-    coordinates: { lng: -91.4770, lat: 37.6065 },
+    coordinates: { lng: -91.2082, lat: 37.7260 },
   },
 ];
