@@ -17,6 +17,7 @@ export default function PropertyLayoutView({
   const [selected, setSelected] = useState<MapUnit | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<number>(3 / 2);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,25 +75,42 @@ export default function PropertyLayoutView({
               wrapperClass="!w-full !h-full"
               contentClass="!w-full !h-full"
             >
-              <div className="relative w-full h-full">
-                {/* Drone photo - object-contain so full image is visible */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={DRONE_PHOTO_URL}
-                  alt="Aerial view of Pine Valley at Dillard Mill property"
-                  className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-                  draggable={false}
-                />
-
-                {/* Markers overlay — positioned as percentages of the container */}
-                {visibleMarkers.map((unit) => (
-                  <LayoutMarker
-                    key={unit.id}
-                    unit={unit}
-                    isSelected={selected?.id === unit.id}
-                    onClick={(e) => handleMarkerClick(unit, e)}
+              {/* Flex wrapper to center the aspect-ratio container */}
+              <div className="w-full h-full flex items-center justify-center p-2">
+                {/* Aspect-ratio container matching the drone photo */}
+                <div
+                  className="relative"
+                  style={{
+                    aspectRatio: `${aspectRatio}`,
+                    width: `min(100%, calc((100% - 0px) * ${aspectRatio}))`,
+                    height: `min(100%, calc((100% - 0px) / ${aspectRatio}))`,
+                  }}
+                >
+                  {/* Drone photo — fills the aspect-ratio container exactly */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={DRONE_PHOTO_URL}
+                    alt="Aerial view of Pine Valley at Dillard Mill property"
+                    className="absolute inset-0 w-full h-full block select-none pointer-events-none"
+                    draggable={false}
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      if (img.naturalWidth && img.naturalHeight) {
+                        setAspectRatio(img.naturalWidth / img.naturalHeight);
+                      }
+                    }}
                   />
-                ))}
+
+                  {/* Markers — percentages are relative to the image */}
+                  {visibleMarkers.map((unit) => (
+                    <LayoutMarker
+                      key={unit.id}
+                      unit={unit}
+                      isSelected={selected?.id === unit.id}
+                      onClick={(e) => handleMarkerClick(unit, e)}
+                    />
+                  ))}
+                </div>
               </div>
             </TransformComponent>
 

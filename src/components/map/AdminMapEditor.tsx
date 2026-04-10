@@ -376,11 +376,12 @@ function LayoutTab({
   onAdd: (x: number, y: number) => void;
   onBackgroundClick: () => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<number>(3 / 2);
 
   const getRelativePosition = (clientX: number, clientY: number) => {
-    const rect = containerRef.current?.getBoundingClientRect();
+    const rect = imageRef.current?.getBoundingClientRect();
     if (!rect) return null;
     const x = ((clientX - rect.left) / rect.width) * 100;
     const y = ((clientY - rect.top) / rect.height) * 100;
@@ -410,8 +411,9 @@ function LayoutTab({
     }
   };
 
-  const handleContainerClick = (e: React.MouseEvent) => {
+  const handleImageClick = (e: React.MouseEvent) => {
     if (draggingId) return;
+    e.stopPropagation();
     if (addingMode) {
       const pos = getRelativePosition(e.clientX, e.clientY);
       if (pos) onAdd(pos.x, pos.y);
@@ -422,33 +424,53 @@ function LayoutTab({
 
   return (
     <div
-      ref={containerRef}
-      className="absolute inset-0 bg-gradient-to-br from-brand-forest/40 to-brand-forest/70 overflow-hidden select-none"
+      className="absolute inset-0 bg-gradient-to-br from-brand-forest/40 to-brand-forest/70 overflow-hidden select-none flex items-center justify-center p-2"
       style={{ cursor: addingMode ? 'crosshair' : 'default' }}
-      onClick={handleContainerClick}
+      onClick={onBackgroundClick}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      {/* Drone photo */}
-      <img
-        src={DRONE_PHOTO_URL}
-        alt="Property aerial view"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        draggable={false}
-      />
-
-      {/* Markers */}
-      {markers.map((unit) => (
-        <LayoutDraggableMarker
-          key={unit.id}
-          unit={unit}
-          isSelected={selectedId === unit.id}
-          isDragging={draggingId === unit.id}
-          isHidden={unit.showOnLayout === false}
-          onPointerDown={(e) => handlePointerDown(e, unit.id)}
-          onClick={(e) => { e.stopPropagation(); onSelect(unit.id); }}
+      {/* Aspect-ratio container that exactly matches the drone photo */}
+      <div
+        ref={imageRef}
+        className="relative bg-black/20"
+        style={{
+          aspectRatio: `${aspectRatio}`,
+          maxWidth: '100%',
+          maxHeight: '100%',
+          width: `min(100%, calc((100% - 0px) * ${aspectRatio}))`,
+          height: `min(100%, calc((100% - 0px) / ${aspectRatio}))`,
+        }}
+        onClick={handleImageClick}
+      >
+        {/* Drone photo — fills the aspect-ratio container exactly */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={DRONE_PHOTO_URL}
+          alt="Property aerial view"
+          className="absolute inset-0 w-full h-full block pointer-events-none"
+          draggable={false}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth && img.naturalHeight) {
+              setAspectRatio(img.naturalWidth / img.naturalHeight);
+            }
+          }}
         />
-      ))}
+
+        {/* Markers — positioned relative to the image container */}
+        {markers.map((unit) => (
+          <LayoutDraggableMarker
+            key={unit.id}
+            unit={unit}
+            isSelected={selectedId === unit.id}
+            isDragging={draggingId === unit.id}
+            isHidden={unit.showOnLayout === false}
+            onPointerDown={(e) => handlePointerDown(e, unit.id)}
+            onClick={(e) => { e.stopPropagation(); onSelect(unit.id); }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
