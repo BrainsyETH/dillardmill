@@ -163,6 +163,30 @@ export default function AdminDashboard() {
               Database Tools →
             </div>
           </Link>
+
+          {/* Property Map */}
+          <Link
+            href="/admin/map"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-[#B87333]/10 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-[#B87333]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Property Map</h3>
+                <p className="text-sm text-gray-600">Units & Landmarks</p>
+              </div>
+            </div>
+            <p className="text-gray-700 mb-4">
+              View and manage unit locations on the interactive satellite map.
+            </p>
+            <div className="text-[#B87333] font-semibold">
+              Open Map Editor →
+            </div>
+          </Link>
         </div>
 
         {/* Quick Actions */}
