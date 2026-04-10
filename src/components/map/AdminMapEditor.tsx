@@ -7,49 +7,48 @@ import { mapUnits as defaultUnits, PROPERTY_CENTER, DEFAULT_ZOOM, DRONE_PHOTO_UR
 import type { MapUnit, UnitType } from '@/lib/map/map-units';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-const STORAGE_KEY = 'pine-valley-map-markers';
 
 type TabId = 'layout' | 'location';
 type AddingMode = 'unit' | 'landmark' | null;
-
-function loadMarkers(): MapUnit[] {
-  if (typeof window === 'undefined') return defaultUnits;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Migrate old records that may be missing layoutPosition
-      return parsed.map((m: MapUnit) => ({
-        ...m,
-        layoutPosition: m.layoutPosition ?? { x: 50, y: 50 },
-      }));
-    }
-  } catch {}
-  return defaultUnits;
-}
-
-function saveMarkers(markers: MapUnit[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(markers));
-  } catch {}
-}
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function AdminMapEditor() {
   const [activeTab, setActiveTab] = useState<TabId>('layout');
-  const [markers, setMarkers] = useState<MapUnit[]>(() => loadMarkers());
+  const [markers, setMarkers] = useState<MapUnit[]>(defaultUnits);
+  const [savedSnapshot, setSavedSnapshot] = useState<MapUnit[]>(defaultUnits);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addingMode, setAddingMode] = useState<AddingMode>(null);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [copiedExport, setCopiedExport] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const selected = markers.find((m) => m.id === selectedId) ?? null;
   const rentalUnits = markers.filter((m) => m.type === 'unit');
   const landmarks = markers.filter((m) => m.type === 'landmark');
+  const isDirty = JSON.stringify(markers) !== JSON.stringify(savedSnapshot);
 
+  // Load markers from API on mount
   useEffect(() => {
-    saveMarkers(markers);
-    setHasChanges(JSON.stringify(markers) !== JSON.stringify(defaultUnits));
-  }, [markers]);
+    let cancelled = false;
+    fetch('/api/admin/map-markers')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data.markers) && data.markers.length > 0) {
+          const normalized = data.markers.map((m: MapUnit) => ({
+            ...m,
+            layoutPosition: m.layoutPosition ?? { x: 50, y: 50 },
+          }));
+          setMarkers(normalized);
+          setSavedSnapshot(normalized);
+        }
+      })
+      .catch((err) => console.error('Failed to load markers:', err))
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const updateMarker = useCallback((id: string, updates: Partial<MapUnit>) => {
     setMarkers((prev) =>
@@ -70,6 +69,8 @@ export default function AdminMapEditor() {
       description: '',
       coordinates,
       layoutPosition,
+      showOnLayout: true,
+      showOnLocation: true,
       ...(type === 'unit' ? {
         unitType: 'cabin' as UnitType,
         capacity: 2,
@@ -89,45 +90,91 @@ export default function AdminMapEditor() {
   }, [selectedId]);
 
   const handleReset = useCallback(() => {
-    setMarkers(defaultUnits);
+    setMarkers(savedSnapshot);
     setSelectedId(null);
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+  }, [savedSnapshot]);
 
-  const handleExport = useCallback(async () => {
-    const json = JSON.stringify(markers, null, 2);
+  const handleSave = useCallback(async () => {
+    setSaveStatus('saving');
     try {
-      await navigator.clipboard.writeText(json);
-      setCopiedExport(true);
-      setTimeout(() => setCopiedExport(false), 2000);
-    } catch {}
+      const res = await fetch('/api/admin/map-markers', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markers }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      setSavedSnapshot(markers);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (err) {
+      console.error('Save error:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
   }, [markers]);
 
   return (
-    <div className="flex h-[calc(100vh-100px)]">
+    <div className="flex flex-col lg:flex-row h-full relative">
+      {/* Mobile toggle for sidebar */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden absolute top-2 left-2 z-30 bg-white shadow-md rounded-md p-2"
+        aria-label="Toggle marker list"
+      >
+        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
       {/* Sidebar */}
-      <aside className="w-96 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+      <aside className={`
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+        fixed lg:relative top-0 lg:top-auto left-0 z-20
+        w-full max-w-sm lg:w-96 h-full
+        bg-white border-r border-gray-200 flex flex-col overflow-hidden
+        transition-transform duration-300
+      `}>
         {/* Toolbar */}
-        <div className="p-3 border-b border-gray-200 flex items-center gap-2 flex-shrink-0">
+        <div className="p-3 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 flex-wrap">
           <button
-            onClick={handleExport}
-            className="text-xs px-3 py-1.5 rounded-md bg-[#2D5A47] text-white hover:bg-[#2D5A47]/90 transition-colors"
+            onClick={handleSave}
+            disabled={!isDirty || saveStatus === 'saving'}
+            className="text-xs px-3 py-1.5 rounded-md bg-[#B87333] text-white hover:bg-[#B87333]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
-            {copiedExport ? 'Copied!' : 'Export JSON'}
+            {saveStatus === 'saving' && (
+              <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
+              </svg>
+            )}
+            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : saveStatus === 'error' ? 'Error' : 'Save'}
           </button>
           <button
             onClick={handleReset}
-            disabled={!hasChanges}
+            disabled={!isDirty}
             className="text-xs px-3 py-1.5 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Reset Defaults
+            Discard Changes
           </button>
-          {hasChanges && (
+          {isLoading ? (
+            <span className="ml-auto text-xs text-gray-400">Loading...</span>
+          ) : isDirty ? (
             <span className="ml-auto flex items-center gap-1.5 text-xs text-amber-600">
               <span className="w-2 h-2 rounded-full bg-amber-500" />
               Unsaved
             </span>
+          ) : (
+            <span className="ml-auto text-xs text-green-600">All changes saved</span>
           )}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-gray-400 hover:text-gray-600"
+            aria-label="Close sidebar"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Marker list + edit form */}
@@ -397,6 +444,7 @@ function LayoutTab({
           unit={unit}
           isSelected={selectedId === unit.id}
           isDragging={draggingId === unit.id}
+          isHidden={unit.showOnLayout === false}
           onPointerDown={(e) => handlePointerDown(e, unit.id)}
           onClick={(e) => { e.stopPropagation(); onSelect(unit.id); }}
         />
@@ -409,12 +457,14 @@ function LayoutDraggableMarker({
   unit,
   isSelected,
   isDragging,
+  isHidden,
   onPointerDown,
   onClick,
 }: {
   unit: MapUnit;
   isSelected: boolean;
   isDragging: boolean;
+  isHidden: boolean;
   onPointerDown: (e: React.PointerEvent) => void;
   onClick: (e: React.MouseEvent) => void;
 }) {
@@ -430,6 +480,7 @@ function LayoutDraggableMarker({
         top: `${unit.layoutPosition.y}%`,
         transform: 'translate(-50%, -100%)',
         cursor: isDragging ? 'grabbing' : 'grab',
+        opacity: isHidden ? 0.35 : 1,
       }}
       onPointerDown={onPointerDown}
       onClick={onClick}
@@ -521,6 +572,7 @@ function LocationTab({
             key={unit.id}
             unit={unit}
             isSelected={selectedId === unit.id}
+            isHidden={unit.showOnLocation === false}
             onSelect={() => onSelect(unit.id)}
             onDragEnd={(lng, lat) => onDragEnd(unit.id, lng, lat)}
           />
@@ -533,11 +585,13 @@ function LocationTab({
 function LocationDraggableMarker({
   unit,
   isSelected,
+  isHidden,
   onSelect,
   onDragEnd,
 }: {
   unit: MapUnit;
   isSelected: boolean;
+  isHidden: boolean;
   onSelect: () => void;
   onDragEnd: (lng: number, lat: number) => void;
 }) {
@@ -557,7 +611,7 @@ function LocationDraggableMarker({
         onSelect();
       }}
     >
-      <div className="flex flex-col items-center cursor-grab active:cursor-grabbing">
+      <div className="flex flex-col items-center cursor-grab active:cursor-grabbing" style={{ opacity: isHidden ? 0.35 : 1 }}>
         <div
           style={{
             backgroundColor: bg,
@@ -750,6 +804,48 @@ function MarkerEditForm({
           </div>
         </>
       )}
+
+      <Field label="Image URL">
+        <input
+          type="text"
+          value={marker.image || ''}
+          onChange={(e) => onChange({ image: e.target.value || undefined })}
+          placeholder="/images/cozy-cottage.jpg or https://..."
+          className="w-full text-sm border border-gray-300 rounded-md px-2.5 py-1.5 focus:ring-1 focus:ring-[#B87333] focus:border-[#B87333] outline-none"
+        />
+        {marker.image && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={marker.image}
+            alt={marker.name}
+            className="mt-2 w-full h-24 object-cover rounded-md border border-gray-200"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
+      </Field>
+
+      <Field label="Visibility">
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={marker.showOnLayout !== false}
+              onChange={(e) => onChange({ showOnLayout: e.target.checked })}
+              className="rounded border-gray-300 text-[#B87333] focus:ring-[#B87333]"
+            />
+            Show on Property Layout
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={marker.showOnLocation !== false}
+              onChange={(e) => onChange({ showOnLocation: e.target.checked })}
+              className="rounded border-gray-300 text-[#B87333] focus:ring-[#B87333]"
+            />
+            Show on Location Map
+          </label>
+        </div>
+      </Field>
 
       <Field label="Layout Position">
         <div className="text-xs font-mono text-gray-500 bg-gray-100 rounded-md px-2.5 py-1.5">

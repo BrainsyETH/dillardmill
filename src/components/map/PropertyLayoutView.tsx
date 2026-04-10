@@ -1,24 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { mapUnits as defaultMarkers, DRONE_PHOTO_URL } from '@/lib/map/map-units';
 import type { MapUnit } from '@/lib/map/map-units';
 
 interface PropertyLayoutViewProps {
   variant?: 'embedded' | 'fullscreen';
-  markers?: MapUnit[];
 }
 
 export default function PropertyLayoutView({
   variant = 'embedded',
-  markers = defaultMarkers,
 }: PropertyLayoutViewProps) {
+  const [markers, setMarkers] = useState<MapUnit[]>(defaultMarkers);
   const [selected, setSelected] = useState<MapUnit | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/admin/map-markers')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data.markers) && data.markers.length > 0) {
+          setMarkers(data.markers);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const visibleMarkers = markers.filter((m) => m.showOnLayout !== false);
+
   const heightClass = variant === 'fullscreen'
-    ? 'h-[calc(100vh-80px)]'
-    : 'h-[500px] rounded-2xl';
+    ? 'h-[calc(100dvh-160px)] min-h-[400px]'
+    : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   return (
     <div
@@ -35,7 +50,7 @@ export default function PropertyLayoutView({
 
       {/* Markers overlay */}
       <div className="absolute inset-0">
-        {markers.map((unit) => (
+        {visibleMarkers.map((unit) => (
           <LayoutMarker
             key={unit.id}
             unit={unit}
@@ -160,6 +175,17 @@ function LayoutPopup({ unit, onClose }: { unit: MapUnit; onClose: () => void }) 
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+
+        {/* Image */}
+        {unit.image && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={unit.image}
+            alt={unit.name}
+            className="w-full h-36 object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
 
         {isLandmark ? (
           <div className="p-4">

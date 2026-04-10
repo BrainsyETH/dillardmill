@@ -14,6 +14,11 @@ export interface MapUnit {
   plumbing?: 'full' | 'shared-barn';
   detailUrl?: string;
   bookingUrl?: string;
+  // Optional image URL shown in the popup
+  image?: string;
+  // Visibility flags — default to true if undefined
+  showOnLayout?: boolean;
+  showOnLocation?: boolean;
   // Geographic coordinates for the Mapbox satellite map
   coordinates: { lng: number; lat: number };
   // Position on the drone photo layout view, as percentages (0-100)
