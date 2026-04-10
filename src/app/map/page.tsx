@@ -2,14 +2,12 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { PropertyMapDynamic } from '@/components/map';
-import { mapUnits } from '@/lib/map/map-units';
+import { PropertyMapDynamic, PropertyLayoutViewDynamic } from '@/components/map';
+
+type TabId = 'layout' | 'location';
 
 export default function MapPage() {
-  const [showSidebar, setShowSidebar] = useState(false);
-
-  const rentalUnits = mapUnits.filter((u) => u.type === 'unit');
-  const landmarks = mapUnits.filter((u) => u.type === 'landmark');
+  const [activeTab, setActiveTab] = useState<TabId>('layout');
 
   return (
     <div className="relative">
@@ -29,75 +27,50 @@ export default function MapPage() {
             Property Map
           </h1>
         </div>
-
-        <button
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="md:hidden text-brand-forest hover:text-brand-copper transition-colors p-2"
-          aria-label="Toggle unit list"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
       </div>
 
-      <div className="flex relative">
-        {/* Sidebar - unit list */}
-        <aside className={`
-          absolute md:relative z-10 bg-white border-r border-brand-sand
-          w-72 h-[calc(100vh-80px)] overflow-y-auto
-          transition-transform duration-300
-          ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}>
-          <div className="p-4">
-            <h2 className="text-sm font-semibold text-brand-stone uppercase tracking-wider mb-3">
-              Rental Units
-            </h2>
-            <div className="space-y-2">
-              {rentalUnits.map((unit) => (
-                <div
-                  key={unit.id}
-                  className="p-3 rounded-lg hover:bg-brand-sand/30 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-medium text-brand-charcoal text-sm">{unit.name}</h3>
-                      {unit.beds && (
-                        <p className="text-xs text-brand-stone mt-0.5">{unit.beds}</p>
-                      )}
-                    </div>
-                    {unit.capacity && (
-                      <span className="text-xs bg-brand-copper/10 text-brand-copper px-1.5 py-0.5 rounded-full flex-shrink-0">
-                        {unit.capacity}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Tabs */}
+      <div className="bg-white border-b border-brand-sand px-4 flex gap-1">
+        <TabButton
+          label="Property Layout"
+          sublabel="Our property from above"
+          isActive={activeTab === 'layout'}
+          onClick={() => setActiveTab('layout')}
+        />
+        <TabButton
+          label="Location"
+          sublabel="Where to find us"
+          isActive={activeTab === 'location'}
+          onClick={() => setActiveTab('location')}
+        />
+      </div>
 
-            <h2 className="text-sm font-semibold text-brand-stone uppercase tracking-wider mb-3 mt-6">
-              Landmarks
-            </h2>
-            <div className="space-y-2">
-              {landmarks.map((unit) => (
-                <div
-                  key={unit.id}
-                  className="p-3 rounded-lg hover:bg-brand-sage/10 transition-colors cursor-pointer"
-                >
-                  <h3 className="font-medium text-brand-charcoal text-sm">{unit.name}</h3>
-                  <p className="text-xs text-brand-stone mt-0.5">{unit.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        {/* Map */}
-        <div className="flex-1">
+      {/* Active tab */}
+      <div>
+        {activeTab === 'layout' ? (
+          <PropertyLayoutViewDynamic variant="fullscreen" />
+        ) : (
           <PropertyMapDynamic variant="fullscreen" />
-        </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function TabButton({ label, sublabel, isActive, onClick }: {
+  label: string; sublabel: string; isActive: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-5 py-3 text-left border-b-2 transition-colors ${
+        isActive
+          ? 'border-brand-copper text-brand-charcoal'
+          : 'border-transparent text-brand-stone hover:text-brand-charcoal'
+      }`}
+    >
+      <div className="text-sm font-semibold">{label}</div>
+      <div className="text-[10px] text-brand-stone uppercase tracking-wider">{sublabel}</div>
+    </button>
   );
 }

@@ -5,6 +5,11 @@ export const PropertyMapDynamic = dynamic(
   { ssr: false }
 );
 
+export const PropertyLayoutViewDynamic = dynamic(
+  () => import('./PropertyLayoutView'),
+  { ssr: false }
+);
+
 export const AdminMapEditorDynamic = dynamic(
   () => import('./AdminMapEditor'),
   { ssr: false }

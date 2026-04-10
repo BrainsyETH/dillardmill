@@ -14,24 +14,18 @@ export interface MapUnit {
   plumbing?: 'full' | 'shared-barn';
   detailUrl?: string;
   bookingUrl?: string;
+  // Geographic coordinates for the Mapbox satellite map
   coordinates: { lng: number; lat: number };
+  // Position on the drone photo layout view, as percentages (0-100)
+  layoutPosition: { x: number; y: number };
 }
 
 // Property center: 126 Dillard Mill Road, Davisville, MO 65456
 export const PROPERTY_CENTER = { lng: -91.2061, lat: 37.7241 };
 export const DEFAULT_ZOOM = 16;
 
-// Drone photo overlay — placed on the map at these geographic bounds
-// Adjust corner coordinates to align the photo with the terrain
-export const DRONE_OVERLAY = {
-  url: '/property-drone.PNG',
-  coordinates: [
-    [-91.2095, 37.7265], // top-left (NW)
-    [-91.2027, 37.7265], // top-right (NE)
-    [-91.2027, 37.7217], // bottom-right (SE)
-    [-91.2095, 37.7217], // bottom-left (SW)
-  ] as [[number, number], [number, number], [number, number], [number, number]],
-};
+// Drone photo used as the base for the Property Layout view
+export const DRONE_PHOTO_URL = '/property-drone.PNG';
 
 export const mapUnits: MapUnit[] = [
   // === Rental Units ===
@@ -48,6 +42,7 @@ export const mapUnits: MapUnit[] = [
     detailUrl: '/cozycottage',
     bookingUrl: 'https://www.airbnb.com/rooms/29332611',
     coordinates: { lng: -91.2068, lat: 37.7248 },
+    layoutPosition: { x: 35, y: 30 },
   },
   {
     id: 'the-airstream',
@@ -62,6 +57,7 @@ export const mapUnits: MapUnit[] = [
     detailUrl: '/airstream',
     bookingUrl: 'https://www.airbnb.com/rooms/27518141',
     coordinates: { lng: -91.2055, lat: 37.7245 },
+    layoutPosition: { x: 55, y: 35 },
   },
   {
     id: 'the-sebastian',
@@ -76,6 +72,7 @@ export const mapUnits: MapUnit[] = [
     detailUrl: '/sebastian',
     bookingUrl: 'https://www.airbnb.com/rooms/29634317',
     coordinates: { lng: -91.2053, lat: 37.7238 },
+    layoutPosition: { x: 60, y: 50 },
   },
   {
     id: 'multi-purpose-cafe',
@@ -90,6 +87,7 @@ export const mapUnits: MapUnit[] = [
     detailUrl: '/dillardmill',
     bookingUrl: 'https://www.airbnb.com/rooms/44360355',
     coordinates: { lng: -91.2064, lat: 37.7235 },
+    layoutPosition: { x: 45, y: 55 },
   },
   {
     id: 'tiny-cabin-1',
@@ -102,6 +100,7 @@ export const mapUnits: MapUnit[] = [
     amenities: ['A/C', 'Courtyard Access', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
     coordinates: { lng: -91.2057, lat: 37.7232 },
+    layoutPosition: { x: 50, y: 65 },
   },
   {
     id: 'tiny-cabin-2',
@@ -114,6 +113,7 @@ export const mapUnits: MapUnit[] = [
     amenities: ['A/C', 'Courtyard Access', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
     coordinates: { lng: -91.2055, lat: 37.7230 },
+    layoutPosition: { x: 55, y: 68 },
   },
   {
     id: 'the-argosy',
@@ -126,6 +126,7 @@ export const mapUnits: MapUnit[] = [
     amenities: ['A/C', 'Airstream', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
     coordinates: { lng: -91.2050, lat: 37.7234 },
+    layoutPosition: { x: 65, y: 60 },
   },
   {
     id: 'the-sherman',
@@ -138,6 +139,7 @@ export const mapUnits: MapUnit[] = [
     amenities: ['A/C', 'Airstream', 'Shared Barn Bathhouse'],
     plumbing: 'shared-barn',
     coordinates: { lng: -91.2048, lat: 37.7232 },
+    layoutPosition: { x: 70, y: 63 },
   },
 
   // === Landmarks ===
@@ -147,6 +149,7 @@ export const mapUnits: MapUnit[] = [
     type: 'landmark',
     description: 'Shared outdoor shower area for guests.',
     coordinates: { lng: -91.2059, lat: 37.7234 },
+    layoutPosition: { x: 48, y: 58 },
   },
   {
     id: 'barn',
@@ -154,6 +157,7 @@ export const mapUnits: MapUnit[] = [
     type: 'landmark',
     description: 'Shared bathhouse facility with showers and restrooms.',
     coordinates: { lng: -91.2054, lat: 37.7231 },
+    layoutPosition: { x: 58, y: 60 },
   },
   {
     id: 'huzzah-creek-access',
@@ -161,6 +165,7 @@ export const mapUnits: MapUnit[] = [
     type: 'landmark',
     description: 'Trail access point to Huzzah Creek for swimming, fishing, and floating.',
     coordinates: { lng: -91.2075, lat: 37.7255 },
+    layoutPosition: { x: 15, y: 15 },
   },
   {
     id: 'dillard-mill',
@@ -168,5 +173,6 @@ export const mapUnits: MapUnit[] = [
     type: 'landmark',
     description: 'Historic 1908 gristmill on Huzzah Creek. Walking distance from the property.',
     coordinates: { lng: -91.2082, lat: 37.7260 },
+    layoutPosition: { x: 8, y: 10 },
   },
 ];
