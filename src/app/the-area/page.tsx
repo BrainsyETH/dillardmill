@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { PropertyMapDynamic } from '@/components/map';
 
 const attractions = [
   {
@@ -189,28 +190,20 @@ export default function AreaPage() {
             </h2>
           </div>
 
-          <div className="bg-gradient-to-br from-brand-sand/50 to-brand-sage/10 rounded-2xl h-80 flex items-center justify-center border border-brand-sand">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-brand-copper/10 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-brand-copper" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <p className="text-brand-charcoal font-medium mb-2">126 Dillard Mill Road</p>
-              <p className="text-brand-stone">Davisville, MO 65456</p>
-              <a
-                href="https://maps.google.com/?q=Dillard+Mill+State+Historic+Site+Missouri"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 text-brand-copper hover:text-brand-copper-dark font-medium transition-colors"
-              >
-                Open in Google Maps
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            </div>
+          <PropertyMapDynamic variant="embedded" />
+
+          <div className="mt-4 text-center">
+            <p className="text-brand-charcoal font-medium">126 Dillard Mill Road</p>
+            <p className="text-brand-stone text-sm">Davisville, MO 65456</p>
+            <Link
+              href="/map"
+              className="inline-flex items-center gap-2 mt-3 text-brand-copper hover:text-brand-copper-dark font-medium transition-colors text-sm"
+            >
+              View Full Map
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </Link>
           </div>
         </motion.div>
 
