@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { PropertyMapDynamic } from '@/components/map';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -416,6 +417,38 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Where We Are */}
+      <section className="py-20 bg-brand-cream">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="section-header justify-center mb-12">
+              <h2 className="font-serif text-3xl md:text-4xl font-semibold text-brand-forest px-6">
+                Where We Are
+              </h2>
+            </div>
+            <PropertyMapDynamic variant="embedded" />
+            <div className="mt-6 text-center">
+              <p className="text-brand-charcoal font-medium">126 Dillard Mill Road</p>
+              <p className="text-brand-stone text-sm">Davisville, MO 65456</p>
+              <Link
+                href="/map"
+                className="inline-flex items-center gap-2 mt-3 text-brand-copper font-semibold hover:text-brand-copper-dark transition-colors"
+              >
+                View Full Map
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 

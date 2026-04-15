@@ -72,16 +72,13 @@ export default function AreaPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-brand-forest to-brand-forest/90 text-brand-cream py-20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-sage/10 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-brand-copper/10 to-transparent" />
-        
+      <section className="bg-brand-forest text-brand-cream py-20 relative overflow-hidden">
         <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl">
             <span className="inline-block text-brand-copper font-medium tracking-wide mb-4">
               DISCOVER THE OZARKS
             </span>
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold mb-6">
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 text-brand-cream">
               Explore the Area
             </h1>
             <p className="text-xl text-brand-sand/90 leading-relaxed">

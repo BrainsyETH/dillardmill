@@ -33,8 +33,8 @@ export default function Footer() {
       {/* Decorative top border */}
       <div className="h-1 bg-gradient-to-r from-brand-copper via-brand-sage to-brand-copper" />
       
-      <div className="container mx-auto px-4 py-16 relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="container mx-auto px-4 py-10 md:py-16 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           {/* Brand Section */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -90,21 +90,26 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <h4 className="font-serif text-lg font-semibold mb-6 text-brand-sage">
-              Accommodations
-            </h4>
-            <ul className="space-y-3">
-              {footerLinks.accommodations.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-white/70 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <details className="footer-accordion [&[open]_.chevron]:rotate-180">
+              <summary className="font-serif text-lg font-semibold mb-3 md:mb-6 text-brand-sage cursor-pointer flex items-center justify-between">
+                Accommodations
+                <svg className="chevron w-4 h-4 transition-transform md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <ul className="space-y-2 md:space-y-3 pb-2 md:pb-0">
+                {footerLinks.accommodations.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-white/70 hover:text-white transition-colors text-sm"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </motion.div>
 
           {/* Explore Links */}
@@ -114,21 +119,26 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <h4 className="font-serif text-lg font-semibold mb-6 text-brand-sage">
-              Explore
-            </h4>
-            <ul className="space-y-3">
-              {footerLinks.explore.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-white/70 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <details className="footer-accordion [&[open]_.chevron]:rotate-180">
+              <summary className="font-serif text-lg font-semibold mb-3 md:mb-6 text-brand-sage cursor-pointer flex items-center justify-between">
+                Explore
+                <svg className="chevron w-4 h-4 transition-transform md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <ul className="space-y-2 md:space-y-3 pb-2 md:pb-0">
+                {footerLinks.explore.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-white/70 hover:text-white transition-colors text-sm"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </motion.div>
 
           {/* Contact & Booking */}
@@ -138,35 +148,40 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <h4 className="font-serif text-lg font-semibold mb-6 text-brand-sage">
-              Book Your Stay
-            </h4>
-            <ul className="space-y-3 mb-6">
-              {footerLinks.booking.map((link) => (
-                <li key={link.href}>
-                  {link.external ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/70 hover:text-white transition-colors text-sm inline-flex items-center gap-1"
-                    >
-                      {link.label}
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  ) : (
-                    <Link
-                      href={link.href}
-                      className="text-white/70 hover:text-white transition-colors text-sm"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <details className="footer-accordion [&[open]_.chevron]:rotate-180 mb-6">
+              <summary className="font-serif text-lg font-semibold mb-3 md:mb-6 text-brand-sage cursor-pointer flex items-center justify-between">
+                Book Your Stay
+                <svg className="chevron w-4 h-4 transition-transform md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <ul className="space-y-2 md:space-y-3 pb-2 md:pb-0">
+                {footerLinks.booking.map((link) => (
+                  <li key={link.href}>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/70 hover:text-white transition-colors text-sm inline-flex items-center gap-1"
+                      >
+                        {link.label}
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-white/70 hover:text-white transition-colors text-sm"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
 
             {/* Contact Info */}
             <div className="pt-4 border-t border-white/10">
@@ -196,7 +211,7 @@ export default function Footer() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="border-t border-white/10 mt-12 pt-8"
+          className="border-t border-white/10 mt-8 md:mt-12 pt-6 md:pt-8"
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-white/60 text-sm">
