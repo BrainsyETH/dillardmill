@@ -361,6 +361,11 @@ export function UnitDetail({ unit }: UnitDetailProps) {
                 slug: unit.slug,
                 basePrice: unit.basePrice || 0,
                 cleaningFee: unit.cleaningFee || 0,
+                baseGuests: unit.baseGuests,
+                extraGuestFee: unit.extraGuestFee,
+                petsAllowed: unit.petsAllowed,
+                maxPets: unit.maxPets,
+                petFee: unit.petFee,
                 minStay: unit.minStay,
                 maxGuests: unit.maxGuests || 1,
               }}

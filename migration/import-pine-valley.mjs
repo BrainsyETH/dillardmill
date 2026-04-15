@@ -229,7 +229,7 @@ async function createSiteSettings() {
         { label: 'Contact', url: '/contact' },
       ],
       bookingNotice: 'Book directly through Airbnb or Hipcamp, or contact us for group bookings.',
-      airbnbProfileUrl: 'https://www.airbnb.com/users/show/309588444',
+      airbnbProfileUrl: 'https://www.airbnb.com/rooms/44360355',
       socialLinks: [
         { platform: 'Instagram', url: 'https://instagram.com/pinevalleydm' },
         { platform: 'Facebook', url: 'https://facebook.com/pinevalley' },

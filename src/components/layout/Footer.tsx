@@ -22,7 +22,7 @@ export default function Footer() {
       { label: 'Our Thoughts', href: '/thoughts' },
     ],
     booking: [
-      { label: 'View on Airbnb', href: 'https://www.airbnb.com/users/show/309588444', external: true },
+      { label: 'View on Airbnb', href: 'https://www.airbnb.com/rooms/44360355', external: true },
       { label: 'View on Hipcamp', href: 'https://www.hipcamp.com/en-US/land/missouri-pine-valley-at-dillard-mill-5x5heyxd', external: true },
       { label: 'Contact Us', href: '/contact' },
     ],

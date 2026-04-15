@@ -124,7 +124,7 @@ export default function ReviewsPage() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="https://www.airbnb.com/users/show/309588444"
+                href="https://www.airbnb.com/rooms/44360355"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-outline"

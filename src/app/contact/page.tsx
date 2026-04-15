@@ -247,7 +247,7 @@ export default function ContactPage() {
               </p>
               <div className="space-y-3">
                 <a
-                  href="https://www.airbnb.com/users/show/309588444"
+                  href="https://www.airbnb.com/rooms/44360355"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between p-4 bg-white rounded-xl border border-brand-sand hover:border-brand-copper transition-colors group"

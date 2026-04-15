@@ -15,6 +15,11 @@ interface BookingFormProps {
     slug: { current: string };
     basePrice: number;
     cleaningFee: number;
+    baseGuests?: number;
+    extraGuestFee?: number;
+    petsAllowed?: boolean;
+    maxPets?: number;
+    petFee?: number;
     minStay?: number;
     maxGuests: number;
   };
@@ -30,6 +35,7 @@ export function BookingForm({ unit }: BookingFormProps) {
   const [checkIn, setCheckIn] = useState<Date | undefined>();
   const [checkOut, setCheckOut] = useState<Date | undefined>();
   const [numGuests, setNumGuests] = useState(1);
+  const [numPets, setNumPets] = useState(0);
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -39,12 +45,25 @@ export function BookingForm({ unit }: BookingFormProps) {
   const numNights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
   const basePrice = unit.basePrice || 0;
   const cleaningFee = unit.cleaningFee || 0;
-  const subtotal = numNights * basePrice;
-  const total = subtotal + cleaningFee;
+  const baseGuests = unit.baseGuests ?? unit.maxGuests;
+  const extraGuestFee = unit.extraGuestFee || 0;
+  const petFee = unit.petFee || 0;
+
+  const extraGuests = Math.max(0, numGuests - baseGuests);
+  const extraGuestsTotal = extraGuests * extraGuestFee * numNights;
+  const petsTotal = unit.petsAllowed ? numPets * petFee : 0;
+  const nightlySubtotal = numNights * basePrice;
+  const total = nightlySubtotal + extraGuestsTotal + cleaningFee + petsTotal;
 
   // Validation
   const canProceedToDates = checkIn && checkOut && numNights >= (unit.minStay || 1);
-  const canProceedToPayment = canProceedToDates && guestName && guestEmail && numGuests > 0 && numGuests <= unit.maxGuests;
+  const canProceedToPayment =
+    canProceedToDates &&
+    guestName &&
+    guestEmail &&
+    numGuests > 0 &&
+    numGuests <= unit.maxGuests &&
+    (!unit.petsAllowed || numPets <= (unit.maxPets ?? 0));
 
   const handleDateSelection = async () => {
     if (!checkIn || !checkOut) return;
@@ -94,9 +113,12 @@ export function BookingForm({ unit }: BookingFormProps) {
           checkIn: checkIn.toISOString().split('T')[0],
           checkOut: checkOut.toISOString().split('T')[0],
           numGuests,
+          numPets,
           numNights,
           basePrice,
           cleaningFee,
+          extraGuestsTotal,
+          petsTotal,
           totalAmount: total * 100,
           paymentId,
           guestName,
@@ -129,7 +151,7 @@ export function BookingForm({ unit }: BookingFormProps) {
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-brand-sand overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-brand-forest to-brand-forest/90 text-brand-cream p-6">
+      <div className="bg-brand-forest text-brand-cream p-6">
         <div className="font-serif text-2xl font-semibold mb-1">Book Your Stay</div>
         <div className="text-brand-sand/80 text-sm">{unit.name}</div>
       </div>
@@ -211,8 +233,25 @@ export function BookingForm({ unit }: BookingFormProps) {
                 <div className="space-y-3">
                   <div className="flex justify-between text-brand-charcoal">
                     <span>${basePrice} × {numNights} night{numNights !== 1 ? 's' : ''}</span>
-                    <span className="font-semibold">${subtotal}</span>
+                    <span className="font-semibold">${nightlySubtotal}</span>
                   </div>
+                  {extraGuestsTotal > 0 && (
+                    <div className="flex justify-between text-brand-charcoal">
+                      <span>
+                        Extra guests ({extraGuests} × ${extraGuestFee} × {numNights}{' '}
+                        night{numNights !== 1 ? 's' : ''})
+                      </span>
+                      <span className="font-semibold">${extraGuestsTotal}</span>
+                    </div>
+                  )}
+                  {petsTotal > 0 && (
+                    <div className="flex justify-between text-brand-charcoal">
+                      <span>
+                        Pet fee ({numPets} × ${petFee})
+                      </span>
+                      <span className="font-semibold">${petsTotal}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-brand-charcoal">
                     <span>Cleaning fee</span>
                     <span className="font-semibold">${cleaningFee}</span>
@@ -222,6 +261,12 @@ export function BookingForm({ unit }: BookingFormProps) {
                       <span className="font-serif font-bold text-brand-forest text-lg">Total</span>
                       <span className="font-serif font-bold text-brand-copper text-2xl">${total}</span>
                     </div>
+                    {extraGuestFee > 0 && (
+                      <p className="text-xs text-brand-stone mt-2">
+                        Base price includes {baseGuests} guest{baseGuests !== 1 ? 's' : ''};
+                        ${extraGuestFee}/night per additional guest.
+                      </p>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -280,7 +325,34 @@ export function BookingForm({ unit }: BookingFormProps) {
                   onChange={setNumGuests}
                   max={unit.maxGuests}
                 />
+                {extraGuestFee > 0 && (
+                  <p className="mt-2 text-xs text-brand-stone">
+                    Base price includes {baseGuests} guest{baseGuests !== 1 ? 's' : ''}.
+                    ${extraGuestFee}/night per additional guest.
+                  </p>
+                )}
               </div>
+
+              {unit.petsAllowed && (unit.maxPets ?? 0) > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-brand-forest mb-2">
+                    Number of Pets
+                  </label>
+                  <GuestSelector
+                    value={numPets}
+                    onChange={setNumPets}
+                    max={unit.maxPets ?? 0}
+                    min={0}
+                    singularLabel="pet"
+                    pluralLabel="pets"
+                  />
+                  {petFee > 0 && (
+                    <p className="mt-2 text-xs text-brand-stone">
+                      ${petFee} per pet, per stay.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-brand-forest mb-2">
@@ -382,8 +454,36 @@ export function BookingForm({ unit }: BookingFormProps) {
                   <span className="text-brand-stone">Guests</span>
                   <span className="font-medium text-brand-charcoal">{numGuests}</span>
                 </div>
-                <div className="border-t border-brand-sand pt-3 mt-3">
+                {unit.petsAllowed && numPets > 0 && (
                   <div className="flex justify-between">
+                    <span className="text-brand-stone">Pets</span>
+                    <span className="font-medium text-brand-charcoal">{numPets}</span>
+                  </div>
+                )}
+                <div className="border-t border-brand-sand pt-3 mt-3 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-brand-stone">
+                      ${basePrice} × {numNights} night{numNights !== 1 ? 's' : ''}
+                    </span>
+                    <span className="font-medium text-brand-charcoal">${nightlySubtotal}</span>
+                  </div>
+                  {extraGuestsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-brand-stone">Extra guests</span>
+                      <span className="font-medium text-brand-charcoal">${extraGuestsTotal}</span>
+                    </div>
+                  )}
+                  {petsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-brand-stone">Pet fee</span>
+                      <span className="font-medium text-brand-charcoal">${petsTotal}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-brand-stone">Cleaning fee</span>
+                    <span className="font-medium text-brand-charcoal">${cleaningFee}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-brand-sand">
                     <span className="font-serif font-bold text-brand-forest">Total</span>
                     <span className="font-serif font-bold text-brand-copper text-xl">${total}</span>
                   </div>

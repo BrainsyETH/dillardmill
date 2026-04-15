@@ -60,6 +60,11 @@ export interface RentalUnit {
   basePrice: number;
   seasonalPricing?: SeasonalPricing[];
   cleaningFee?: number;
+  baseGuests?: number;
+  extraGuestFee?: number;
+  petsAllowed?: boolean;
+  maxPets?: number;
+  petFee?: number;
   minStay?: number;
   maxGuests: number;
   bedrooms: number;

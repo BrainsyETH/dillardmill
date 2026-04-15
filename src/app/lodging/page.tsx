@@ -118,7 +118,7 @@ export default async function UnitsPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="https://www.airbnb.com/users/show/309588444"
+                href="https://www.airbnb.com/rooms/44360355"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary text-lg"
