@@ -7,19 +7,19 @@
  */
 
 :root {
-  /* Primary Colors - Softer, More Natural */
-  --color-forest: #2D5A47;        /* Deep forest green - primary brand */
-  --color-sage: #7A9E8E;          /* Soft sage - secondary */
+  /* Primary Colors - Hunter, outdoorsy */
+  --color-forest: #2F4A34;        /* Deep hunter green - primary brand */
+  --color-sage: #8FA888;          /* Muted olive-sage - secondary */
   --color-cream: #FAFAF8;         /* Clean off-white - backgrounds */
   --color-charcoal: #374151;      /* Soft charcoal - body text */
-  
+
   /* Accent Colors */
-  --color-copper: #B87333;        /* Warm copper - CTAs, accents */
-  --color-copper-dark: #8B5A2B;   /* Darker copper for hovers */
+  --color-copper: #C68A4E;        /* Warm tan - CTAs, accents */
+  --color-copper-dark: #A06F3A;   /* Lighter brown for hovers */
   --color-sky: #6B9AC4;           /* Soft blue - water, calm */
   --color-stone: #9CA3AF;         /* Neutral stone gray */
   --color-sand: #E5E1D8;          /* Light warm neutral - borders */
-  --color-bark: #4A3728;          /* Dark brown - used sparingly */
+  --color-bark: #6B4E35;          /* Lighter bark brown - used sparingly */
   
   /* Semantic Mapping */
   --color-primary: var(--color-forest);
@@ -106,27 +106,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-copper) 0%, var(--color-copper-dark) 100%);
+  background-color: var(--color-copper);
   color: white;
-  box-shadow: 0 4px 14px -3px rgba(184, 115, 51, 0.4);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--color-copper-dark) 0%, #6B4423 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px -3px rgba(184, 115, 51, 0.5);
+  background-color: var(--color-copper-dark);
 }
 
 .btn-secondary {
   background-color: var(--color-forest);
   color: white;
-  box-shadow: 0 4px 14px -3px rgba(45, 90, 71, 0.3);
 }
 
 .btn-secondary:hover {
-  background-color: #234536;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px -3px rgba(45, 90, 71, 0.4);
+  background-color: #233826;
 }
 
 .btn-outline {
@@ -164,12 +158,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card:hover {
-  box-shadow: 0 20px 40px -12px rgba(45, 90, 71, 0.15);
-  transform: translateY(-4px);
+  box-shadow: 0 6px 16px -8px rgba(47, 74, 52, 0.12);
 }
 
 .card-featured {
-  background: linear-gradient(135deg, white 0%, var(--color-sand) 100%);
+  background-color: white;
   border: 2px solid var(--color-sand);
   border-radius: 1.5rem;
 }
@@ -203,20 +196,11 @@ h1, h2, h3, h4, h5, h6 {
    ======================================== */
 
 .gradient-hero {
-  background: linear-gradient(
-    135deg,
-    var(--color-forest) 0%,
-    #3D6B57 50%,
-    #4A7A67 100%
-  );
+  background-color: var(--color-forest);
 }
 
 .gradient-hero-light {
-  background: linear-gradient(
-    135deg,
-    var(--color-sage) 0%,
-    #8FB3A3 100%
-  );
+  background-color: var(--color-sage);
 }
 
 /* ========================================
@@ -279,7 +263,35 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--color-forest);
-  box-shadow: 0 0 0 3px rgba(45, 90, 71, 0.1);
+  box-shadow: 0 0 0 3px rgba(47, 74, 52, 0.15);
+}
+
+/* ========================================
+   FOOTER ACCORDION (mobile)
+   ======================================== */
+
+/* On desktop, footer <details> groups are always expanded and non-interactive */
+@media (min-width: 768px) {
+  .footer-accordion > *:not(summary) {
+    display: block !important;
+  }
+  .footer-accordion > summary {
+    list-style: none;
+    pointer-events: none;
+  }
+  .footer-accordion > summary::-webkit-details-marker,
+  .footer-accordion > summary::marker {
+    display: none;
+  }
+}
+
+/* Hide default marker on mobile too (we render our own chevron) */
+.footer-accordion > summary {
+  list-style: none;
+}
+.footer-accordion > summary::-webkit-details-marker,
+.footer-accordion > summary::marker {
+  display: none;
 }
 
 /* ========================================
