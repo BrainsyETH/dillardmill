@@ -474,7 +474,7 @@ export default function Home() {
                 Book Direct
               </Link>
               <a 
-                href="https://www.airbnb.com/users/show/309588444"
+                href="https://www.airbnb.com/rooms/44360355"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-outline text-lg px-10 py-4"

@@ -13,10 +13,13 @@ interface PropertyLayoutViewProps {
 export default function PropertyLayoutView({
   variant = 'embedded',
 }: PropertyLayoutViewProps) {
-  const [markers, setMarkers] = useState<MapUnit[]>(defaultMarkers);
+  // Start empty so the published marker set from the API is the first thing
+  // painted — avoids the brief flash of draft/hardcoded markers.
+  const [markers, setMarkers] = useState<MapUnit[]>([]);
   const [selected, setSelected] = useState<MapUnit | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
+  const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
   const [aspectRatio, setAspectRatio] = useState<number>(3 / 2);
 
   useEffect(() => {
@@ -27,10 +30,27 @@ export default function PropertyLayoutView({
         if (cancelled) return;
         if (Array.isArray(data.markers) && data.markers.length > 0) {
           setMarkers(data.markers);
+        } else {
+          setMarkers(defaultMarkers);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setMarkers(defaultMarkers);
+      });
     return () => { cancelled = true; };
+  }, []);
+
+  // Track container size for popup clamping
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      setContainerBounds({ width: el.clientWidth, height: el.clientHeight });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const visibleMarkers = markers.filter((m) => m.showOnLayout !== false);
@@ -126,6 +146,7 @@ export default function PropertyLayoutView({
           marker={selected}
           onClose={() => setSelected(null)}
           screenPosition={popupScreenPos ?? undefined}
+          containerBounds={containerBounds ?? undefined}
         />
       )}
 

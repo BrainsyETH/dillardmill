@@ -16,10 +16,14 @@ interface PropertyMapProps {
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) {
-  const [markers, setMarkers] = useState<MapUnit[]>(defaultMarkers);
+  // Start empty so the published marker set from the API is the first thing
+  // painted — avoids the brief flash of draft/hardcoded markers.
+  const [markers, setMarkers] = useState<MapUnit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<MapUnit | null>(null);
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
+  const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
   const mapRef = useRef<MapRef>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,10 +33,28 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
         if (cancelled) return;
         if (Array.isArray(data.markers) && data.markers.length > 0) {
           setMarkers(data.markers);
+        } else {
+          // No saved markers — fall back to bundled defaults
+          setMarkers(defaultMarkers);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setMarkers(defaultMarkers);
+      });
     return () => { cancelled = true; };
+  }, []);
+
+  // Track container size for popup clamping
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      setContainerBounds({ width: el.clientWidth, height: el.clientHeight });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const visibleMarkers = markers.filter((m) => m.showOnLocation !== false);
@@ -72,7 +94,7 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
     : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   return (
-    <div className={`${heightClass} w-full overflow-hidden relative`}>
+    <div ref={containerRef} className={`${heightClass} w-full overflow-hidden relative`}>
       <Map
         ref={mapRef}
         initialViewState={{
@@ -102,6 +124,7 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
           marker={selectedUnit}
           onClose={handlePopupClose}
           screenPosition={popupScreenPos ?? undefined}
+          containerBounds={containerBounds ?? undefined}
         />
       )}
 

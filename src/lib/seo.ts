@@ -122,7 +122,7 @@ export function generateLocalBusinessStructuredData() {
     sameAs: [
       'https://www.instagram.com/pinevalleydm',
       'https://www.facebook.com/pinevalley',
-      'https://www.airbnb.com/users/show/309588444',
+      'https://www.airbnb.com/rooms/44360355',
     ],
     amenityFeature: [
       {

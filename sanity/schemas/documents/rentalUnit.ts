@@ -59,6 +59,46 @@ export default defineType({
       validation: (Rule) => Rule.min(0),
     },
     {
+      name: 'baseGuests',
+      title: 'Guests Included in Base Price',
+      type: 'number',
+      description:
+        'Number of guests covered by the base nightly rate. Extra guests above this count are charged the per-guest fee below.',
+      validation: (Rule) => Rule.min(1).integer(),
+    },
+    {
+      name: 'extraGuestFee',
+      title: 'Extra Guest Fee (per guest, per night)',
+      type: 'number',
+      description:
+        'Additional nightly fee for each guest above the included count. Leave blank for no surcharge.',
+      validation: (Rule) => Rule.min(0),
+    },
+    {
+      name: 'petsAllowed',
+      title: 'Pets Allowed',
+      type: 'boolean',
+      description: 'Uncheck to hide the pet field on the booking form.',
+      initialValue: false,
+    },
+    {
+      name: 'maxPets',
+      title: 'Maximum Pets',
+      type: 'number',
+      description: 'Max number of pets per booking. Ignored if pets are not allowed.',
+      validation: (Rule) => Rule.min(0).integer(),
+      hidden: ({ parent }) => !parent?.petsAllowed,
+    },
+    {
+      name: 'petFee',
+      title: 'Pet Fee (per pet, per stay)',
+      type: 'number',
+      description:
+        'Flat fee charged once per booking for each pet. Ignored if pets are not allowed.',
+      validation: (Rule) => Rule.min(0),
+      hidden: ({ parent }) => !parent?.petsAllowed,
+    },
+    {
       name: 'minStay',
       title: 'Minimum Stay (nights)',
       type: 'number',

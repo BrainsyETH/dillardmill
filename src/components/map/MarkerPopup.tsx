@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { MapUnit } from '@/lib/map/map-units';
 
@@ -8,14 +9,68 @@ interface MarkerPopupProps {
   onClose: () => void;
   /** Desktop-only: screen coordinates (px) relative to the map container */
   screenPosition?: { x: number; y: number };
+  /** Desktop-only: map container dimensions used to clamp popup placement */
+  containerBounds?: { width: number; height: number };
 }
+
+const EDGE_MARGIN = 12;
+const MARKER_OFFSET = 48;
 
 /**
  * Shared popup for map markers.
  * - Mobile (< 640px): full-width bottom sheet
- * - Desktop (>= 640px): floating card positioned near the marker
+ * - Desktop (>= 640px): floating card positioned near the marker, clamped
+ *   within the map container bounds
  */
-export default function MarkerPopup({ marker, onClose, screenPosition }: MarkerPopupProps) {
+export default function MarkerPopup({
+  marker,
+  onClose,
+  screenPosition,
+  containerBounds,
+}: MarkerPopupProps) {
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState<{
+    left: number;
+    top: number;
+    anchor: 'above' | 'below';
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!screenPosition || !containerBounds || !popupRef.current) {
+      setPlacement(null);
+      return;
+    }
+    const popup = popupRef.current;
+    const popupWidth = popup.offsetWidth;
+    const popupHeight = popup.offsetHeight;
+    const half = popupWidth / 2;
+
+    // Clamp horizontal center so the popup stays inside the container
+    const minX = half + EDGE_MARGIN;
+    const maxX = Math.max(minX, containerBounds.width - half - EDGE_MARGIN);
+    const clampedX = Math.max(minX, Math.min(maxX, screenPosition.x));
+
+    // Prefer above the marker; flip below if there isn't room
+    const spaceAbove = screenPosition.y - MARKER_OFFSET;
+    const spaceBelow = containerBounds.height - screenPosition.y - MARKER_OFFSET;
+    const anchor: 'above' | 'below' =
+      spaceAbove >= popupHeight + EDGE_MARGIN || spaceAbove >= spaceBelow
+        ? 'above'
+        : 'below';
+
+    let top =
+      anchor === 'above'
+        ? screenPosition.y - MARKER_OFFSET - popupHeight
+        : screenPosition.y + MARKER_OFFSET;
+    // Final vertical clamp so popup never spills out of the container
+    top = Math.max(
+      EDGE_MARGIN,
+      Math.min(containerBounds.height - popupHeight - EDGE_MARGIN, top)
+    );
+
+    setPlacement({ left: clampedX, top, anchor });
+  }, [screenPosition, containerBounds, marker]);
+
   return (
     <>
       {/* Backdrop (mobile only) to close on tap outside */}
@@ -39,21 +94,31 @@ export default function MarkerPopup({ marker, onClose, screenPosition }: MarkerP
         </div>
       </div>
 
-      {/* Desktop: floating card */}
+      {/* Desktop: floating card, clamped within the map container */}
       <div
         className="hidden sm:block absolute z-40 pointer-events-none"
         style={
           screenPosition
-            ? {
-                left: `${screenPosition.x}px`,
-                top: `${screenPosition.y}px`,
-                transform: 'translate(-50%, calc(-100% - 56px))',
-              }
+            ? placement
+              ? {
+                  left: `${placement.left}px`,
+                  top: `${placement.top}px`,
+                  transform: 'translateX(-50%)',
+                }
+              : {
+                  // Hidden first paint so we can measure the popup before
+                  // committing to a final position.
+                  left: `${screenPosition.x}px`,
+                  top: `${screenPosition.y}px`,
+                  transform: 'translate(-50%, -100%)',
+                  visibility: 'hidden',
+                }
             : undefined
         }
       >
         <div
-          className="w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl overflow-hidden relative pointer-events-auto"
+          ref={popupRef}
+          className="w-80 max-w-[min(20rem,calc(100%-1.5rem))] bg-white rounded-xl shadow-2xl overflow-hidden relative pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <CloseButton onClose={onClose} />

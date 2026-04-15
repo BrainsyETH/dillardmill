@@ -61,7 +61,7 @@ export default function BookingRequestPage() {
                 <p className="text-sm text-[#6F8291]">Browse our listings on Airbnb</p>
               </div>
               <a
-                href="https://www.airbnb.com/users/show/309588444"
+                href="https://www.airbnb.com/rooms/44360355"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#9C5A3C] text-[#F4F1EB] px-6 py-2 rounded-lg font-semibold hover:bg-[#7D4830] transition-colors"
