@@ -5,6 +5,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { mapUnits as defaultMarkers, DRONE_PHOTO_URL } from '@/lib/map/map-units';
 import type { MapUnit } from '@/lib/map/map-units';
 import MarkerPopup from './MarkerPopup';
+import MarkerFilter, { type MarkerFilterValue } from './MarkerFilter';
 
 interface PropertyLayoutViewProps {
   variant?: 'embedded' | 'fullscreen';
@@ -21,6 +22,7 @@ export default function PropertyLayoutView({
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
   const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
   const [aspectRatio, setAspectRatio] = useState<number>(3 / 2);
+  const [filter, setFilter] = useState<MarkerFilterValue>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +55,24 @@ export default function PropertyLayoutView({
     return () => observer.disconnect();
   }, []);
 
-  const visibleMarkers = markers.filter((m) => m.showOnLayout !== false);
+  const layoutMarkers = markers.filter((m) => m.showOnLayout !== false);
+  const unitCount = layoutMarkers.filter((m) => m.type === 'unit').length;
+  const landmarkCount = layoutMarkers.filter((m) => m.type === 'landmark').length;
+  const visibleMarkers = layoutMarkers.filter((m) => {
+    if (filter === 'units') return m.type === 'unit';
+    if (filter === 'landmarks') return m.type === 'landmark';
+    return true;
+  });
+
+  const handleFilterChange = (next: MarkerFilterValue) => {
+    setFilter(next);
+    setSelected((current) => {
+      if (!current) return null;
+      if (next === 'units' && current.type !== 'unit') return null;
+      if (next === 'landmarks' && current.type !== 'landmark') return null;
+      return current;
+    });
+  };
 
   const heightClass = variant === 'fullscreen'
     ? 'h-[calc(100dvh-160px)] min-h-[400px]'
@@ -150,23 +169,19 @@ export default function PropertyLayoutView({
         />
       )}
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-2.5 text-xs pointer-events-none">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-brand-copper" />
-            <span className="text-brand-charcoal">Units</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-brand-forest" />
-            <span className="text-brand-charcoal">Landmarks</span>
-          </div>
-        </div>
+      {/* Filter chips */}
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
+        <MarkerFilter
+          value={filter}
+          onChange={handleFilterChange}
+          counts={{ units: unitCount, landmarks: landmarkCount }}
+        />
       </div>
 
-      {/* Gesture hint (mobile) */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 sm:hidden bg-black/50 text-white text-[10px] px-2 py-1 rounded-full pointer-events-none">
-        Pinch to zoom · Drag to pan
+      {/* Gesture hint */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full pointer-events-none">
+        <span className="sm:hidden">Pinch to zoom · Drag to pan</span>
+        <span className="hidden sm:inline">Scroll to zoom · Drag to pan</span>
       </div>
     </div>
   );

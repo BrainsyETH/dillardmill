@@ -8,6 +8,10 @@ import { mapUnits as defaultMarkers, PROPERTY_CENTER, DEFAULT_ZOOM } from '@/lib
 import type { MapUnit } from '@/lib/map/map-units';
 import UnitMarker from './UnitMarker';
 import MarkerPopup from './MarkerPopup';
+import MarkerFilter, { type MarkerFilterValue } from './MarkerFilter';
+
+const DIRECTIONS_URL =
+  'https://maps.google.com/?q=126+Dillard+Mill+Road+Davisville+MO+65456';
 
 interface PropertyMapProps {
   variant?: 'embedded' | 'fullscreen';
@@ -22,6 +26,7 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
   const [selectedUnit, setSelectedUnit] = useState<MapUnit | null>(null);
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
   const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
+  const [filter, setFilter] = useState<MarkerFilterValue>('all');
   const mapRef = useRef<MapRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +62,14 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
     return () => observer.disconnect();
   }, []);
 
-  const visibleMarkers = markers.filter((m) => m.showOnLocation !== false);
+  const locationMarkers = markers.filter((m) => m.showOnLocation !== false);
+  const unitCount = locationMarkers.filter((m) => m.type === 'unit').length;
+  const landmarkCount = locationMarkers.filter((m) => m.type === 'landmark').length;
+  const visibleMarkers = locationMarkers.filter((m) => {
+    if (filter === 'units') return m.type === 'unit';
+    if (filter === 'landmarks') return m.type === 'landmark';
+    return true;
+  });
 
   const updateScreenPos = useCallback((unit: MapUnit) => {
     const map = mapRef.current?.getMap();
@@ -84,6 +96,19 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
     map.on('move', handler);
     return () => { map.off('move', handler); };
   }, [selectedUnit, updateScreenPos]);
+
+  const handleFilterChange = useCallback(
+    (next: MarkerFilterValue) => {
+      setFilter(next);
+      setSelectedUnit((current) => {
+        if (!current) return null;
+        if (next === 'units' && current.type !== 'unit') return null;
+        if (next === 'landmarks' && current.type !== 'landmark') return null;
+        return current;
+      });
+    },
+    []
+  );
 
   if (!MAPBOX_TOKEN) {
     return <MapFallback variant={variant} />;
@@ -128,19 +153,27 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
         />
       )}
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 text-xs">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-brand-copper" />
-            <span className="text-brand-charcoal">Rental Units</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-brand-forest" />
-            <span className="text-brand-charcoal">Landmarks</span>
-          </div>
-        </div>
+      {/* Filter chips */}
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+        <MarkerFilter
+          value={filter}
+          onChange={handleFilterChange}
+          counts={{ units: unitCount, landmarks: landmarkCount }}
+        />
       </div>
+
+      {/* Get directions */}
+      <a
+        href={DIRECTIONS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-4 left-4 inline-flex items-center gap-2 bg-white/95 hover:bg-white backdrop-blur-sm rounded-full shadow-lg px-4 py-2 text-sm font-semibold text-brand-forest transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m-6 3l6-3" />
+        </svg>
+        Get Directions
+      </a>
     </div>
   );
 }

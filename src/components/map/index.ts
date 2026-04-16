@@ -1,5 +1,8 @@
 import dynamic from 'next/dynamic';
 
+export { default as MarkerFilter } from './MarkerFilter';
+export type { MarkerFilterValue } from './MarkerFilter';
+
 export const PropertyMapDynamic = dynamic(
   () => import('./PropertyMap'),
   { ssr: false }

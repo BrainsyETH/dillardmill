@@ -7,7 +7,9 @@ import { PropertyMapDynamic, PropertyLayoutViewDynamic } from '@/components/map'
 type TabId = 'layout' | 'location';
 
 export default function MapPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('layout');
+  // Default to Location for first-time visitors — they want to know where
+  // the property is before they care about the internal layout.
+  const [activeTab, setActiveTab] = useState<TabId>('location');
 
   return (
     <div className="relative">
@@ -32,16 +34,16 @@ export default function MapPage() {
       {/* Tabs */}
       <div className="bg-white border-b border-brand-sand px-2 sm:px-4 flex gap-1 overflow-x-auto">
         <TabButton
-          label="Property Layout"
-          sublabel="Our property from above"
-          isActive={activeTab === 'layout'}
-          onClick={() => setActiveTab('layout')}
-        />
-        <TabButton
           label="Location"
-          sublabel="Where to find us"
+          sublabel="Find & get directions"
           isActive={activeTab === 'location'}
           onClick={() => setActiveTab('location')}
+        />
+        <TabButton
+          label="Property Layout"
+          sublabel="Aerial view of the grounds"
+          isActive={activeTab === 'layout'}
+          onClick={() => setActiveTab('layout')}
         />
       </div>
 
