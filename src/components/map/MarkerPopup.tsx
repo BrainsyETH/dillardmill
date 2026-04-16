@@ -220,7 +220,7 @@ function PopupContent({ marker }: { marker: MapUnit }) {
           )}
 
           {marker.amenities && marker.amenities.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-3 items-center">
               {marker.amenities.slice(0, 5).map((amenity) => (
                 <span
                   key={amenity}
@@ -230,9 +230,18 @@ function PopupContent({ marker }: { marker: MapUnit }) {
                 </span>
               ))}
               {marker.amenities.length > 5 && (
-                <span className="text-xs text-brand-stone">
-                  +{marker.amenities.length - 5} more
-                </span>
+                marker.detailUrl ? (
+                  <Link
+                    href={marker.detailUrl}
+                    className="text-xs font-semibold text-brand-copper hover:text-brand-copper-dark underline underline-offset-2"
+                  >
+                    +{marker.amenities.length - 5} more
+                  </Link>
+                ) : (
+                  <span className="text-xs text-brand-stone">
+                    +{marker.amenities.length - 5} more
+                  </span>
+                )
               )}
             </div>
           )}

@@ -21,9 +21,16 @@ export interface HomeReview {
   rating: number;
 }
 
+export interface HomeImage {
+  url: string;
+  alt: string;
+}
+
 interface HomeClientProps {
   units: HomeUnit[];
   review: HomeReview | null;
+  heroImage?: HomeImage | null;
+  experienceImages?: HomeImage[];
 }
 
 const fadeInUp = {
@@ -40,27 +47,44 @@ const staggerContainer = {
   }
 };
 
-export default function Home({ units, review }: HomeClientProps) {
+export default function Home({ units, review, heroImage, experienceImages = [] }: HomeClientProps) {
   return (
     <div className="relative">
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center gradient-hero text-white overflow-hidden">
+        {/* Background photo (when available) */}
+        {heroImage && (
+          <Image
+            src={heroImage.url}
+            alt={heroImage.alt}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        )}
+
         {/* Decorative Background Elements */}
         <div className="absolute inset-0">
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-forest/90 via-brand-forest/70 to-transparent" />
-          
-          {/* Decorative Shapes */}
-          <div className="absolute top-20 right-10 w-72 h-72 bg-brand-copper/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-brand-sage/20 rounded-full blur-3xl" />
-          
-          {/* Subtle Pattern */}
-          <svg className="absolute inset-0 w-full h-full opacity-5" xmlns="http://www.w3.org/2000/svg">
-            <pattern id="heroPattern" width="60" height="60" patternUnits="userSpaceOnUse">
-              <circle cx="30" cy="30" r="1.5" fill="currentColor" />
-            </pattern>
-            <rect width="100%" height="100%" fill="url(#heroPattern)" />
-          </svg>
+          {/* Darkening overlay for legibility over the photo (or gradient fallback) */}
+          <div className={`absolute inset-0 ${
+            heroImage
+              ? 'bg-gradient-to-br from-brand-forest/80 via-brand-forest/60 to-brand-forest/30'
+              : 'bg-gradient-to-br from-brand-forest/90 via-brand-forest/70 to-transparent'
+          }`} />
+
+          {!heroImage && (
+            <>
+              <div className="absolute top-20 right-10 w-72 h-72 bg-brand-copper/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-20 left-10 w-96 h-96 bg-brand-sage/20 rounded-full blur-3xl" />
+              <svg className="absolute inset-0 w-full h-full opacity-5" xmlns="http://www.w3.org/2000/svg">
+                <pattern id="heroPattern" width="60" height="60" patternUnits="userSpaceOnUse">
+                  <circle cx="30" cy="30" r="1.5" fill="currentColor" />
+                </pattern>
+                <rect width="100%" height="100%" fill="url(#heroPattern)" />
+              </svg>
+            </>
+          )}
         </div>
 
         <div className="relative container mx-auto px-4 py-20">
@@ -390,15 +414,31 @@ export default function Home({ units, review }: HomeClientProps) {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="relative"
             >
-              {/* Image Grid Placeholder */}
+              {/* Image grid — real photos when available, gradient tiles otherwise */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4">
-                  <div className="h-48 bg-gradient-to-br from-brand-sage/40 to-brand-sage/20 rounded-2xl" />
-                  <div className="h-64 bg-gradient-to-br from-brand-copper/30 to-brand-copper/10 rounded-2xl" />
+                  <ExperienceTile
+                    image={experienceImages[0]}
+                    className="h-48"
+                    fallback="bg-gradient-to-br from-brand-sage/40 to-brand-sage/20"
+                  />
+                  <ExperienceTile
+                    image={experienceImages[1]}
+                    className="h-64"
+                    fallback="bg-gradient-to-br from-brand-copper/30 to-brand-copper/10"
+                  />
                 </div>
                 <div className="space-y-4 pt-8">
-                  <div className="h-64 bg-gradient-to-br from-brand-sky/30 to-brand-sky/10 rounded-2xl" />
-                  <div className="h-48 bg-gradient-to-br from-white/20 to-white/5 rounded-2xl" />
+                  <ExperienceTile
+                    image={experienceImages[2]}
+                    className="h-64"
+                    fallback="bg-gradient-to-br from-brand-sky/30 to-brand-sky/10"
+                  />
+                  <ExperienceTile
+                    image={experienceImages[3]}
+                    className="h-48"
+                    fallback="bg-gradient-to-br from-white/20 to-white/5"
+                  />
                 </div>
               </div>
               
@@ -487,6 +527,31 @@ export default function Home({ units, review }: HomeClientProps) {
           </motion.div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ExperienceTile({
+  image,
+  className,
+  fallback,
+}: {
+  image?: HomeImage;
+  className: string;
+  fallback: string;
+}) {
+  if (!image) {
+    return <div className={`${className} ${fallback} rounded-2xl`} />;
+  }
+  return (
+    <div className={`${className} relative rounded-2xl overflow-hidden`}>
+      <Image
+        src={image.url}
+        alt={image.alt}
+        fill
+        sizes="(max-width: 1024px) 50vw, 25vw"
+        className="object-cover"
+      />
     </div>
   );
 }

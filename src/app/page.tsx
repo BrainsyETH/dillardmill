@@ -1,8 +1,16 @@
-import HomeClient, { type HomeUnit, type HomeReview } from './HomeClient';
-import { getAllUnits, getFeaturedReviews } from '@/lib/sanity/queries';
+import HomeClient, {
+  type HomeUnit,
+  type HomeReview,
+  type HomeImage,
+} from './HomeClient';
+import {
+  getAllUnits,
+  getFeaturedReviews,
+  getAllGalleryImages,
+} from '@/lib/sanity/queries';
 import { urlFor } from '@/lib/sanity/client';
 import { getUnitUrl } from '@/lib/utils/slugToUrl';
-import type { RentalUnit } from '@/lib/sanity/schemas';
+import type { RentalUnit, SanityImage } from '@/lib/sanity/schemas';
 
 // Fallback tiles used when Sanity returns no units (keeps the homepage
 // meaningful in dev / empty-dataset environments).
@@ -96,7 +104,70 @@ async function loadReview(): Promise<HomeReview | null> {
   }
 }
 
+interface GalleryEntry {
+  unitName: string;
+  unitSlug: string;
+  images: Array<{
+    image: SanityImage;
+    caption?: string;
+    alt?: string;
+    featured?: boolean;
+  }> | null;
+}
+
+async function loadImagery(): Promise<{
+  heroImage: HomeImage | null;
+  experienceImages: HomeImage[];
+}> {
+  try {
+    const gallery = (await getAllGalleryImages()) as GalleryEntry[];
+    const flat = gallery.flatMap((g) =>
+      (g.images ?? []).map((img) => ({
+        image: img.image,
+        alt: img.alt ?? g.unitName,
+        featured: !!img.featured,
+      }))
+    );
+
+    // Hero: first featured image, else the first image overall.
+    const heroSource = flat.find((i) => i.featured) ?? flat[0];
+    const heroImage: HomeImage | null = heroSource
+      ? {
+          url: urlFor(heroSource.image).width(2000).height(1200).fit('crop').url(),
+          alt: heroSource.alt,
+        }
+      : null;
+
+    // Experience grid: up to 4 distinct images, featured first.
+    const ordered = [...flat].sort(
+      (a, b) => Number(b.featured) - Number(a.featured)
+    );
+    const picks = ordered
+      .filter((i) => i !== heroSource) // avoid reusing the hero shot
+      .slice(0, 4);
+    const experienceImages: HomeImage[] = picks.map((i) => ({
+      url: urlFor(i.image).width(800).height(800).fit('crop').url(),
+      alt: i.alt,
+    }));
+
+    return { heroImage, experienceImages };
+  } catch {
+    return { heroImage: null, experienceImages: [] };
+  }
+}
+
 export default async function Page() {
-  const [units, review] = await Promise.all([loadUnits(), loadReview()]);
-  return <HomeClient units={units} review={review} />;
+  const [units, review, imagery] = await Promise.all([
+    loadUnits(),
+    loadReview(),
+    loadImagery(),
+  ]);
+  return (
+    <HomeClient
+      units={units}
+      review={review}
+      heroImage={imagery.heroImage}
+      experienceImages={imagery.experienceImages}
+    />
+  );
 }
