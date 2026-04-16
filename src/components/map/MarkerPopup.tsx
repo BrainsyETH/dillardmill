@@ -252,24 +252,35 @@ function PopupContent({ marker }: { marker: MapUnit }) {
             </p>
           )}
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            {marker.detailUrl && (
+          {/* Action buttons — lead with direct booking (unit detail page),
+              keep external platforms as a secondary link. */}
+          <div className="flex flex-col gap-2">
+            {marker.detailUrl ? (
               <Link
                 href={marker.detailUrl}
-                className="flex-1 text-center text-sm font-medium py-2.5 px-3 rounded-lg border border-brand-forest text-brand-forest hover:bg-brand-forest/5 transition-colors"
+                className="text-center text-sm font-semibold py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
               >
-                View Details
+                Book Direct
               </Link>
-            )}
-            {marker.bookingUrl && (
+            ) : marker.bookingUrl ? (
               <a
                 href={marker.bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center text-sm font-medium py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
+                className="text-center text-sm font-semibold py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
               >
                 Book Now
+              </a>
+            ) : null}
+
+            {marker.detailUrl && marker.bookingUrl && (
+              <a
+                href={marker.bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center text-xs font-medium text-brand-stone hover:text-brand-charcoal transition-colors"
+              >
+                Or view on Airbnb
               </a>
             )}
           </div>
