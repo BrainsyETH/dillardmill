@@ -3,6 +3,8 @@ import { getAllUnits } from '@/lib/sanity/queries';
 import { UnitCard } from '@/components/units/UnitCard';
 import AvailabilitySearch from '@/components/booking/AvailabilitySearch';
 import { generateLodgingBusinessSchema, generateJsonLdScript } from '@/lib/schema';
+import { checkAvailabilityWithExternal } from '@/lib/calendar/sync';
+import type { RentalUnit } from '@/lib/sanity/schemas';
 
 export const metadata = {
   title: 'Lodging | Pine Valley at Dillard Mill',
@@ -82,6 +84,37 @@ interface UnitsPageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
+function nightsBetween(checkIn: string, checkOut: string): number {
+  const a = new Date(`${checkIn}T00:00:00`);
+  const b = new Date(`${checkOut}T00:00:00`);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
+  const diff = Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+  return diff > 0 ? diff : 0;
+}
+
+/**
+ * Check each unit's availability in parallel for the requested window.
+ * Returns a map of unit._id -> boolean. Units missing from the map mean
+ * we couldn't determine availability (DB error, missing config, etc.) —
+ * the UI treats those as "unknown" and falls back to the default state.
+ */
+async function loadAvailability(
+  units: RentalUnit[],
+  checkIn: string,
+  checkOut: string
+): Promise<Map<string, boolean>> {
+  const settled = await Promise.allSettled(
+    units.map((u) => checkAvailabilityWithExternal(u._id, checkIn, checkOut))
+  );
+  const map = new Map<string, boolean>();
+  settled.forEach((result, i) => {
+    if (result.status === 'fulfilled' && typeof result.value === 'boolean') {
+      map.set(units[i]._id, result.value);
+    }
+  });
+  return map;
+}
+
 export default async function UnitsPage({ searchParams }: UnitsPageProps) {
   // Exclude "Book the Farm" — it has a dedicated page and footer link,
   // so we don't list it as a regular lodging unit here.
@@ -91,11 +124,25 @@ export default async function UnitsPage({ searchParams }: UnitsPageProps) {
   const lodgingSchema = generateLodgingBusinessSchema(units);
 
   const resolvedParams = (await searchParams) ?? {};
+  const checkInParam = toParam(resolvedParams.checkIn);
+  const checkOutParam = toParam(resolvedParams.checkOut);
+  const validDates =
+    !!checkInParam &&
+    !!checkOutParam &&
+    ISO_DATE_RE.test(checkInParam) &&
+    ISO_DATE_RE.test(checkOutParam) &&
+    checkOutParam > checkInParam;
+
   const searchQuery = buildSearchQuery({
-    checkIn: toParam(resolvedParams.checkIn),
-    checkOut: toParam(resolvedParams.checkOut),
+    checkIn: checkInParam,
+    checkOut: checkOutParam,
     guests: toParam(resolvedParams.guests),
   });
+
+  const availabilityMap = validDates
+    ? await loadAvailability(units, checkInParam!, checkOutParam!)
+    : new Map<string, boolean>();
+  const nights = validDates ? nightsBetween(checkInParam!, checkOutParam!) : 0;
 
   // Separate featured and regular units
   const featuredUnits = units.filter((unit) => unit.featured);
@@ -227,6 +274,8 @@ export default async function UnitsPage({ searchParams }: UnitsPageProps) {
                         unit={unit}
                         featured={true}
                         searchQuery={searchQuery || undefined}
+                        availability={availabilityMap.get(unit._id)}
+                        nights={nights || undefined}
                       />
                     ))}
                   </div>
@@ -249,6 +298,8 @@ export default async function UnitsPage({ searchParams }: UnitsPageProps) {
                         unit={unit}
                         featured={false}
                         searchQuery={searchQuery || undefined}
+                        availability={availabilityMap.get(unit._id)}
+                        nights={nights || undefined}
                       />
                     ))}
                   </div>

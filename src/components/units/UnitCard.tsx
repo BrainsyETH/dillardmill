@@ -13,9 +13,30 @@ interface UnitCardProps {
   /** Query string (without leading ?) appended to the detail URL — used to
    *  carry selected dates / guests from /lodging into the booking form. */
   searchQuery?: string;
+  /** Server-checked availability for the chosen dates. `undefined` when no
+   *  dates are selected or availability could not be determined. */
+  availability?: boolean;
+  /** Number of nights for the chosen window — used for the savings badge. */
+  nights?: number;
 }
 
-export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps) {
+// Conservative estimate of platform service fees (Airbnb's published
+// guest service fee is typically up to ~14.2% on the nightly subtotal).
+// We round down so the displayed savings number is never overstated.
+const PLATFORM_FEE_RATE = 0.14;
+
+function estimateDirectSavings(basePrice: number | undefined, nights: number | undefined): number {
+  if (!basePrice || !nights) return 0;
+  return Math.floor(basePrice * nights * PLATFORM_FEE_RATE);
+}
+
+export function UnitCard({
+  unit,
+  featured = false,
+  searchQuery,
+  availability,
+  nights,
+}: UnitCardProps) {
   // Get image URL from Sanity
   const imageUrl = unit.featuredImage?.image
     ? urlFor(unit.featuredImage.image).width(800).height(600).url()
@@ -28,12 +49,18 @@ export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps)
     ? `${getUnitUrl(unit.slug.current)}?${searchQuery}`
     : getUnitUrl(unit.slug.current);
 
+  const isUnavailable = availability === false;
+  const isAvailable = availability === true;
+  const savings = isAvailable ? estimateDirectSavings(unit.basePrice, nights) : 0;
+
   // Featured unit - large horizontal layout
   if (featured) {
     return (
       <Link href={detailHref} className="group block">
         <motion.div
-          className="card-featured shadow-2xl overflow-hidden hover:shadow-3xl transition-all duration-500"
+          className={`card-featured shadow-2xl overflow-hidden hover:shadow-3xl transition-all duration-500 ${
+            isUnavailable ? 'opacity-75' : ''
+          }`}
           whileHover={{ y: -8 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
@@ -50,13 +77,23 @@ export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps)
                 </div>
               </div>
 
+              {/* Availability + savings badges (top-right) */}
+              {(isUnavailable || isAvailable) && (
+                <div className="absolute top-6 right-6 z-10 flex flex-col items-end gap-2">
+                  {isUnavailable && <UnavailableBadge size="lg" />}
+                  {isAvailable && savings > 0 && <SavingsBadge size="lg" amount={savings} />}
+                </div>
+              )}
+
               {/* Image or Gradient Placeholder */}
               {imageUrl ? (
                 <Image
                   src={imageUrl}
                   alt={imageAlt}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  className={`object-cover group-hover:scale-105 transition-transform duration-700 ${
+                    isUnavailable ? 'grayscale-[0.4]' : ''
+                  }`}
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               ) : (
@@ -156,8 +193,8 @@ export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps)
   // Regular unit - standard card layout
   return (
     <Link href={detailHref} className="group block h-full">
-      <motion.div 
-        className="card h-full flex flex-col"
+      <motion.div
+        className={`card h-full flex flex-col ${isUnavailable ? 'opacity-75' : ''}`}
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
@@ -168,13 +205,23 @@ export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps)
               src={imageUrl}
               alt={imageAlt}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-700"
+              className={`object-cover group-hover:scale-105 transition-transform duration-700 ${
+                isUnavailable ? 'grayscale-[0.4]' : ''
+              }`}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-sand/60 to-brand-olive/30" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+
+          {/* Availability + savings badges */}
+          {(isUnavailable || isAvailable) && (
+            <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+              {isUnavailable && <UnavailableBadge size="sm" />}
+              {isAvailable && savings > 0 && <SavingsBadge size="sm" amount={savings} />}
+            </div>
+          )}
         </div>
 
         <div className="p-6 flex-1 flex flex-col">
@@ -248,5 +295,34 @@ export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps)
         </div>
       </motion.div>
     </Link>
+  );
+}
+
+function UnavailableBadge({ size }: { size: 'sm' | 'lg' }) {
+  const padding = size === 'lg' ? 'px-3.5 py-1.5 text-sm' : 'px-2.5 py-1 text-xs';
+  return (
+    <span
+      className={`${padding} font-semibold rounded-full bg-brand-charcoal text-white shadow-md flex items-center gap-1.5`}
+    >
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      Booked on these dates
+    </span>
+  );
+}
+
+function SavingsBadge({ size, amount }: { size: 'sm' | 'lg'; amount: number }) {
+  const padding = size === 'lg' ? 'px-3.5 py-1.5 text-sm' : 'px-2.5 py-1 text-xs';
+  return (
+    <span
+      className={`${padding} font-semibold rounded-full bg-brand-sage text-brand-forest shadow-md flex items-center gap-1.5`}
+      title="Estimated vs. typical platform service fees"
+    >
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+      Save ~${amount} direct
+    </span>
   );
 }
