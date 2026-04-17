@@ -191,6 +191,18 @@ function PopupContent({ marker }: { marker: MapUnit }) {
             </h3>
           </div>
           <p className="text-sm text-brand-charcoal/80">{marker.description}</p>
+
+          {marker.detailUrl && (
+            <Link
+              href={marker.detailUrl}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-copper hover:text-brand-copper-dark transition-colors"
+            >
+              Learn more
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          )}
         </div>
       ) : (
         <div className="p-4">

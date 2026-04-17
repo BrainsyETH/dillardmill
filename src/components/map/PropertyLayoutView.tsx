@@ -23,6 +23,13 @@ export default function PropertyLayoutView({
   const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
   const [aspectRatio, setAspectRatio] = useState<number>(3 / 2);
   const [filter, setFilter] = useState<MarkerFilterValue>('all');
+  const [scale, setScale] = useState<number>(1);
+
+  // Below this zoom, hide marker labels to avoid overlap at base zoom —
+  // clustered units (Tiny Cabins, Argosy, Sherman) sit very close together
+  // in the drone photo. Selected / hovered markers always show their label.
+  const LABEL_SCALE_THRESHOLD = 1.4;
+  const labelsVisible = scale >= LABEL_SCALE_THRESHOLD;
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +114,7 @@ export default function PropertyLayoutView({
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
         panning={{ velocityDisabled: true }}
+        onTransform={(_ref, state) => setScale(state.scale)}
       >
         {({ resetTransform }) => (
           <>
@@ -146,6 +154,7 @@ export default function PropertyLayoutView({
                       key={unit.id}
                       unit={unit}
                       isSelected={selected?.id === unit.id}
+                      showLabel={labelsVisible}
                       onClick={(e) => handleMarkerClick(unit, e)}
                     />
                   ))}
@@ -206,19 +215,27 @@ function FitButton({ onReset }: { onReset: () => void }) {
 function LayoutMarker({
   unit,
   isSelected,
+  showLabel,
   onClick,
 }: {
   unit: MapUnit;
   isSelected: boolean;
+  /** When false, hide the label at rest — hover or selection still reveals it. */
+  showLabel: boolean;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const isLandmark = unit.type === 'landmark';
   const bg = isLandmark ? 'bg-brand-forest' : 'bg-brand-copper';
   const ring = isLandmark ? 'ring-brand-forest/30' : 'ring-brand-copper/30';
 
+  // Always visible when the marker is selected or the user hovers/focuses it.
+  // Otherwise follow the zoom-level decision from the parent.
+  const labelAtRestVisible = showLabel || isSelected;
+
   return (
     <button
       type="button"
+      aria-label={unit.name}
       className="absolute flex flex-col items-center group"
       style={{
         left: `${unit.layoutPosition.x}%`,
@@ -256,6 +273,8 @@ function LayoutMarker({
       <span className={`
         mt-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm
         whitespace-nowrap max-w-[100px] truncate
+        transition-opacity duration-150
+        ${labelAtRestVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}
         ${isLandmark ? 'bg-brand-forest/90 text-white' : 'bg-white/90 text-brand-charcoal'}
       `}>
         {unit.name}
