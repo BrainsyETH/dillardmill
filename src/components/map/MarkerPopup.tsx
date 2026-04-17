@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { MapUnit } from '@/lib/map/map-units';
 
@@ -16,6 +16,52 @@ interface MarkerPopupProps {
 const EDGE_MARGIN = 12;
 const MARKER_OFFSET = 48;
 
+interface PopupSize {
+  markerId: string;
+  width: number;
+  height: number;
+}
+
+interface Placement {
+  left: number;
+  top: number;
+  anchor: 'above' | 'below';
+}
+
+function computePlacement(
+  screenPosition: { x: number; y: number },
+  containerBounds: { width: number; height: number },
+  size: PopupSize
+): Placement {
+  const half = size.width / 2;
+
+  // Clamp horizontal center so the popup stays inside the container
+  const minX = half + EDGE_MARGIN;
+  const maxX = Math.max(minX, containerBounds.width - half - EDGE_MARGIN);
+  const clampedX = Math.max(minX, Math.min(maxX, screenPosition.x));
+
+  // Prefer above the marker; flip below if there isn't room
+  const spaceAbove = screenPosition.y - MARKER_OFFSET;
+  const spaceBelow = containerBounds.height - screenPosition.y - MARKER_OFFSET;
+  const anchor: 'above' | 'below' =
+    spaceAbove >= size.height + EDGE_MARGIN || spaceAbove >= spaceBelow
+      ? 'above'
+      : 'below';
+
+  const rawTop =
+    anchor === 'above'
+      ? screenPosition.y - MARKER_OFFSET - size.height
+      : screenPosition.y + MARKER_OFFSET;
+
+  // Final vertical clamp so popup never spills out of the container
+  const top = Math.max(
+    EDGE_MARGIN,
+    Math.min(containerBounds.height - size.height - EDGE_MARGIN, rawTop)
+  );
+
+  return { left: clampedX, top, anchor };
+}
+
 /**
  * Shared popup for map markers.
  * - Mobile (< 640px): full-width bottom sheet
@@ -28,48 +74,45 @@ export default function MarkerPopup({
   screenPosition,
   containerBounds,
 }: MarkerPopupProps) {
-  const popupRef = useRef<HTMLDivElement>(null);
-  const [placement, setPlacement] = useState<{
-    left: number;
-    top: number;
-    anchor: 'above' | 'below';
-  } | null>(null);
+  // Store the popup element as state so the measurement effect re-runs when
+  // it mounts / unmounts. State is only updated asynchronously from the
+  // ResizeObserver callback, never synchronously inside the effect body.
+  const [popupEl, setPopupEl] = useState<HTMLDivElement | null>(null);
+  const [popupSize, setPopupSize] = useState<PopupSize | null>(null);
 
-  useLayoutEffect(() => {
-    if (!screenPosition || !containerBounds || !popupRef.current) {
-      setPlacement(null);
-      return;
-    }
-    const popup = popupRef.current;
-    const popupWidth = popup.offsetWidth;
-    const popupHeight = popup.offsetHeight;
-    const half = popupWidth / 2;
+  useEffect(() => {
+    if (!popupEl) return;
+    // Capture the current marker id so the observer callback tags its
+    // measurement — if the marker changes we refuse to use stale dims.
+    const markerId = marker.id;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const box = entry.borderBoxSize?.[0];
+      const width = box ? box.inlineSize : popupEl.offsetWidth;
+      const height = box ? box.blockSize : popupEl.offsetHeight;
+      setPopupSize((prev) =>
+        prev &&
+        prev.markerId === markerId &&
+        prev.width === width &&
+        prev.height === height
+          ? prev
+          : { markerId, width, height }
+      );
+    });
+    observer.observe(popupEl);
+    return () => {
+      observer.disconnect();
+    };
+  }, [popupEl, marker.id]);
 
-    // Clamp horizontal center so the popup stays inside the container
-    const minX = half + EDGE_MARGIN;
-    const maxX = Math.max(minX, containerBounds.width - half - EDGE_MARGIN);
-    const clampedX = Math.max(minX, Math.min(maxX, screenPosition.x));
-
-    // Prefer above the marker; flip below if there isn't room
-    const spaceAbove = screenPosition.y - MARKER_OFFSET;
-    const spaceBelow = containerBounds.height - screenPosition.y - MARKER_OFFSET;
-    const anchor: 'above' | 'below' =
-      spaceAbove >= popupHeight + EDGE_MARGIN || spaceAbove >= spaceBelow
-        ? 'above'
-        : 'below';
-
-    let top =
-      anchor === 'above'
-        ? screenPosition.y - MARKER_OFFSET - popupHeight
-        : screenPosition.y + MARKER_OFFSET;
-    // Final vertical clamp so popup never spills out of the container
-    top = Math.max(
-      EDGE_MARGIN,
-      Math.min(containerBounds.height - popupHeight - EDGE_MARGIN, top)
-    );
-
-    setPlacement({ left: clampedX, top, anchor });
-  }, [screenPosition, containerBounds, marker]);
+  const placement = useMemo<Placement | null>(() => {
+    if (!screenPosition || !containerBounds || !popupSize) return null;
+    // Ignore measurements from a previous marker — they'd place the new
+    // popup incorrectly for a frame.
+    if (popupSize.markerId !== marker.id) return null;
+    return computePlacement(screenPosition, containerBounds, popupSize);
+  }, [screenPosition, containerBounds, popupSize, marker.id]);
 
   return (
     <>
@@ -117,7 +160,7 @@ export default function MarkerPopup({
         }
       >
         <div
-          ref={popupRef}
+          ref={setPopupEl}
           className="w-80 max-w-[min(20rem,calc(100%-1.5rem))] bg-white rounded-xl shadow-2xl overflow-hidden relative pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
