@@ -10,23 +10,29 @@ import { urlFor } from '@/lib/sanity/client';
 interface UnitCardProps {
   unit: RentalUnit;
   featured?: boolean;
+  /** Query string (without leading ?) appended to the detail URL — used to
+   *  carry selected dates / guests from /lodging into the booking form. */
+  searchQuery?: string;
 }
 
-export function UnitCard({ unit, featured = false }: UnitCardProps) {
+export function UnitCard({ unit, featured = false, searchQuery }: UnitCardProps) {
   // Get image URL from Sanity
-  const imageUrl = unit.featuredImage?.image 
+  const imageUrl = unit.featuredImage?.image
     ? urlFor(unit.featuredImage.image).width(800).height(600).url()
-    : unit.images?.[0]?.image 
+    : unit.images?.[0]?.image
       ? urlFor(unit.images[0].image).width(800).height(600).url()
       : null;
 
   const imageAlt = unit.featuredImage?.alt || unit.images?.[0]?.alt || unit.name;
+  const detailHref = searchQuery
+    ? `${getUnitUrl(unit.slug.current)}?${searchQuery}`
+    : getUnitUrl(unit.slug.current);
 
   // Featured unit - large horizontal layout
   if (featured) {
     return (
-      <Link href={getUnitUrl(unit.slug.current)} className="group block">
-        <motion.div 
+      <Link href={detailHref} className="group block">
+        <motion.div
           className="card-featured shadow-2xl overflow-hidden hover:shadow-3xl transition-all duration-500"
           whileHover={{ y: -8 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -149,7 +155,7 @@ export function UnitCard({ unit, featured = false }: UnitCardProps) {
 
   // Regular unit - standard card layout
   return (
-    <Link href={getUnitUrl(unit.slug.current)} className="group block h-full">
+    <Link href={detailHref} className="group block h-full">
       <motion.div 
         className="card h-full flex flex-col"
         whileHover={{ y: -6 }}

@@ -1,24 +1,110 @@
 import Link from 'next/link';
 import { getAllUnits } from '@/lib/sanity/queries';
 import { UnitCard } from '@/components/units/UnitCard';
+import AvailabilitySearch from '@/components/booking/AvailabilitySearch';
 import { generateLodgingBusinessSchema, generateJsonLdScript } from '@/lib/schema';
 
 export const metadata = {
   title: 'Lodging | Pine Valley at Dillard Mill',
-  description: 'Browse our unique rental units including vintage Airstreams, cozy cottages, and event spaces in Missouri\'s Mark Twain National Forest.',
+  description:
+    "Browse our unique rental units including vintage Airstreams, cozy cottages, and event spaces in Missouri's Mark Twain National Forest.",
 };
 
-export default async function UnitsPage() {
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function toParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+function buildSearchQuery(params: {
+  checkIn?: string;
+  checkOut?: string;
+  guests?: string;
+}): string {
+  const next = new URLSearchParams();
+  if (params.checkIn && ISO_DATE_RE.test(params.checkIn)) {
+    next.set('checkIn', params.checkIn);
+  }
+  if (params.checkOut && ISO_DATE_RE.test(params.checkOut)) {
+    next.set('checkOut', params.checkOut);
+  }
+  const guestsNum = Number.parseInt(params.guests ?? '', 10);
+  if (Number.isFinite(guestsNum) && guestsNum > 0) {
+    next.set('guests', String(guestsNum));
+  }
+  return next.toString();
+}
+
+const BOOK_DIRECT_BENEFITS = [
+  {
+    title: 'No platform fees',
+    description:
+      'Skip the service charges added by Airbnb and Hipcamp — you pay the host, not the middleman.',
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    ),
+  },
+  {
+    title: 'Talk to real hosts',
+    description:
+      'Questions about group bookings, pets, or accessibility? Get answers straight from us, not a support queue.',
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+      />
+    ),
+  },
+  {
+    title: 'Flexible stays',
+    description:
+      'Custom requests, multi-unit reservations, and whole-property bookings — possible when you work with us directly.',
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
+    ),
+  },
+];
+
+interface UnitsPageProps {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function UnitsPage({ searchParams }: UnitsPageProps) {
   // Exclude "Book the Farm" — it has a dedicated page and footer link,
   // so we don't list it as a regular lodging unit here.
   const units = (await getAllUnits()).filter(
-    unit => unit.slug.current !== 'book-the-farm'
+    (unit) => unit.slug.current !== 'book-the-farm'
   );
   const lodgingSchema = generateLodgingBusinessSchema(units);
 
+  const resolvedParams = (await searchParams) ?? {};
+  const searchQuery = buildSearchQuery({
+    checkIn: toParam(resolvedParams.checkIn),
+    checkOut: toParam(resolvedParams.checkOut),
+    guests: toParam(resolvedParams.guests),
+  });
+
   // Separate featured and regular units
-  const featuredUnits = units.filter(unit => unit.featured);
-  const regularUnits = units.filter(unit => !unit.featured);
+  const featuredUnits = units.filter((unit) => unit.featured);
+  const regularUnits = units.filter((unit) => !unit.featured);
+
+  const largestUnit = units.reduce(
+    (max, unit) => (unit.maxGuests > max ? unit.maxGuests : max),
+    1
+  );
 
   return (
     <>
@@ -47,13 +133,71 @@ export default async function UnitsPage() {
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4">
+          {/* Availability search — pulls the guest's dates straight into the
+              booking form on each unit page. */}
+          <div className="-mt-10 sm:-mt-14 relative z-10 max-w-5xl mx-auto">
+            <AvailabilitySearch maxGuests={Math.max(largestUnit, 12)} />
+          </div>
+
+          {/* Why Book Direct */}
+          <section aria-labelledby="why-book-direct" className="py-14">
+            <div className="text-center mb-10">
+              <span className="inline-block text-brand-copper font-medium tracking-wide mb-3">
+                BOOK DIRECT
+              </span>
+              <h2
+                id="why-book-direct"
+                className="font-serif text-3xl md:text-4xl font-semibold text-brand-forest"
+              >
+                Why book with us directly
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              {BOOK_DIRECT_BENEFITS.map((benefit) => (
+                <div
+                  key={benefit.title}
+                  className="bg-white rounded-2xl border border-brand-sand p-6 text-center"
+                >
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-brand-sage/15 text-brand-forest mb-4">
+                    <svg
+                      className="w-7 h-7"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      {benefit.icon}
+                    </svg>
+                  </div>
+                  <h3 className="font-serif text-xl font-semibold text-brand-forest mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-brand-stone leading-relaxed">
+                    {benefit.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <div className="container mx-auto px-4 pb-16">
           {units.length === 0 ? (
             <div className="text-center py-16">
               <div className="max-w-md mx-auto">
                 <div className="w-20 h-20 rounded-full bg-brand-sand/30 flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-brand-stone" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <svg
+                    className="w-10 h-10 text-brand-stone"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
                   </svg>
                 </div>
                 <h2 className="font-serif text-2xl font-semibold text-brand-forest mb-4">
@@ -62,17 +206,13 @@ export default async function UnitsPage() {
                 <p className="text-brand-stone mb-8">
                   Our accommodations are being prepared. Check back soon or contact us for availability!
                 </p>
-                <Link
-                  href="/contact"
-                  className="btn btn-primary"
-                >
+                <Link href="/contact" className="btn btn-primary">
                   Contact Us for Availability
                 </Link>
               </div>
             </div>
           ) : (
             <>
-              {/* Featured Units - Large Display */}
               {featuredUnits.length > 0 && (
                 <div className="mb-20">
                   <div className="section-header justify-center mb-12">
@@ -82,13 +222,17 @@ export default async function UnitsPage() {
                   </div>
                   <div className="space-y-8">
                     {featuredUnits.map((unit) => (
-                      <UnitCard key={unit._id} unit={unit} featured={true} />
+                      <UnitCard
+                        key={unit._id}
+                        unit={unit}
+                        featured={true}
+                        searchQuery={searchQuery || undefined}
+                      />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Regular Units Grid */}
               {regularUnits.length > 0 && (
                 <>
                   {featuredUnits.length > 0 && (
@@ -100,7 +244,12 @@ export default async function UnitsPage() {
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {regularUnits.map((unit) => (
-                      <UnitCard key={unit._id} unit={unit} featured={false} />
+                      <UnitCard
+                        key={unit._id}
+                        unit={unit}
+                        featured={false}
+                        searchQuery={searchQuery || undefined}
+                      />
                     ))}
                   </div>
                 </>
@@ -108,34 +257,38 @@ export default async function UnitsPage() {
             </>
           )}
 
-          {/* Booking CTA */}
+          {/* Booking CTA — direct booking first, external platforms second */}
           <div className="mt-20 bg-gradient-to-br from-brand-cream to-brand-sand/40 rounded-2xl p-10 md:p-12 text-center border border-brand-sand">
             <h2 className="font-serif text-3xl md:text-4xl font-semibold text-brand-forest mb-4">
               Ready to Book?
             </h2>
             <p className="text-brand-charcoal mb-8 max-w-2xl mx-auto text-lg">
-              Reserve your stay through Airbnb or Hipcamp, or contact us directly for group bookings and special arrangements.
+              Pick a unit above to book directly with us — no platform fees, secure Square payment,
+              and instant confirmation. Prefer a familiar platform? Airbnb and Hipcamp also have us.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://www.airbnb.com/rooms/44360355"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary text-lg"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 17.787c-.183.303-.453.508-.777.596-.324.088-.668.049-.968-.11a16.32 16.32 0 01-1.727-1.155c-1.199-.906-2.321-1.924-3.347-3.044-.506.555-1.037 1.088-1.592 1.595a18.01 18.01 0 01-1.79 1.494c-.3.206-.681.277-1.039.193a1.37 1.37 0 01-.789-.577c-.4-.649-.206-1.573.447-2.126.653-.553 1.359-1.048 2.108-1.477-1.053-1.445-1.881-3.053-2.442-4.766-.163-.498-.012-1.046.384-1.398.396-.352.958-.437 1.433-.217.475.22.797.674.822 1.156.168 1.371.601 2.697 1.277 3.896.676-1.199 1.109-2.525 1.277-3.896.025-.482.347-.936.822-1.156.475-.22 1.037-.135 1.433.217.396.352.547.9.384 1.398-.561 1.713-1.389 3.321-2.442 4.766.749.429 1.455.924 2.108 1.477.653.553.847 1.477.447 2.126z"/>
-                </svg>
-                View on Airbnb
-              </a>
-              <a
-                href="https://www.hipcamp.com/en-US/land/missouri-pine-valley-at-dillard-mill-5x5heyxd"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-outline text-lg"
-              >
-                View on Hipcamp
-              </a>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link href="/contact" className="btn btn-primary text-lg">
+                Have a question? Contact us
+              </Link>
+              <div className="flex items-center gap-4 text-sm">
+                <a
+                  href="https://www.airbnb.com/rooms/44360355"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-stone hover:text-brand-forest underline underline-offset-4 transition-colors"
+                >
+                  Airbnb
+                </a>
+                <span className="text-brand-sand">·</span>
+                <a
+                  href="https://www.hipcamp.com/en-US/land/missouri-pine-valley-at-dillard-mill-5x5heyxd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-stone hover:text-brand-forest underline underline-offset-4 transition-colors"
+                >
+                  Hipcamp
+                </a>
+              </div>
             </div>
           </div>
         </div>
