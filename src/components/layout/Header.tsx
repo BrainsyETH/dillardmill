@@ -53,7 +53,7 @@ export default function Header() {
               href="/lodging"
               className="btn btn-primary text-sm"
             >
-              Book Your Stay
+              Find a Stay
             </Link>
           </div>
 
@@ -108,7 +108,7 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="btn btn-primary w-full justify-center"
                   >
-                    Book Your Stay
+                    Find a Stay
                   </Link>
                 </div>
               </div>

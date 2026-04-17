@@ -1,13 +1,44 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PortableText } from '@portabletext/react';
 import type { RentalUnit } from '@/lib/sanity/schemas';
 import { urlFor } from '@/lib/sanity/client';
 import { AmenityList } from './AmenityList';
 import { BookingForm } from '../booking/BookingForm';
+
+function BookingFormWithParams({ unit }: { unit: RentalUnit }) {
+  const params = useSearchParams();
+  const checkIn = params.get('checkIn') ?? undefined;
+  const checkOut = params.get('checkOut') ?? undefined;
+  const guestsParam = params.get('guests');
+  const guests = guestsParam ? Number.parseInt(guestsParam, 10) : undefined;
+
+  return (
+    <BookingForm
+      unit={{
+        _id: unit._id,
+        name: unit.name,
+        slug: unit.slug,
+        basePrice: unit.basePrice || 0,
+        cleaningFee: unit.cleaningFee || 0,
+        baseGuests: unit.baseGuests,
+        extraGuestFee: unit.extraGuestFee,
+        petsAllowed: unit.petsAllowed,
+        maxPets: unit.maxPets,
+        petFee: unit.petFee,
+        minStay: unit.minStay,
+        maxGuests: unit.maxGuests || 1,
+      }}
+      initialCheckIn={checkIn}
+      initialCheckOut={checkOut}
+      initialGuests={Number.isFinite(guests) ? guests : undefined}
+    />
+  );
+}
 
 interface UnitDetailProps {
   unit: RentalUnit;
@@ -354,22 +385,28 @@ export function UnitDetail({ unit }: UnitDetailProps) {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <div className="sticky top-24">
-            <BookingForm
-              unit={{
-                _id: unit._id,
-                name: unit.name,
-                slug: unit.slug,
-                basePrice: unit.basePrice || 0,
-                cleaningFee: unit.cleaningFee || 0,
-                baseGuests: unit.baseGuests,
-                extraGuestFee: unit.extraGuestFee,
-                petsAllowed: unit.petsAllowed,
-                maxPets: unit.maxPets,
-                petFee: unit.petFee,
-                minStay: unit.minStay,
-                maxGuests: unit.maxGuests || 1,
-              }}
-            />
+            <Suspense
+              fallback={
+                <BookingForm
+                  unit={{
+                    _id: unit._id,
+                    name: unit.name,
+                    slug: unit.slug,
+                    basePrice: unit.basePrice || 0,
+                    cleaningFee: unit.cleaningFee || 0,
+                    baseGuests: unit.baseGuests,
+                    extraGuestFee: unit.extraGuestFee,
+                    petsAllowed: unit.petsAllowed,
+                    maxPets: unit.maxPets,
+                    petFee: unit.petFee,
+                    minStay: unit.minStay,
+                    maxGuests: unit.maxGuests || 1,
+                  }}
+                />
+              }
+            >
+              <BookingFormWithParams unit={unit} />
+            </Suspense>
           </div>
         </motion.div>
       </div>

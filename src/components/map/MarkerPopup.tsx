@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { MapUnit } from '@/lib/map/map-units';
 
@@ -16,6 +16,52 @@ interface MarkerPopupProps {
 const EDGE_MARGIN = 12;
 const MARKER_OFFSET = 48;
 
+interface PopupSize {
+  markerId: string;
+  width: number;
+  height: number;
+}
+
+interface Placement {
+  left: number;
+  top: number;
+  anchor: 'above' | 'below';
+}
+
+function computePlacement(
+  screenPosition: { x: number; y: number },
+  containerBounds: { width: number; height: number },
+  size: PopupSize
+): Placement {
+  const half = size.width / 2;
+
+  // Clamp horizontal center so the popup stays inside the container
+  const minX = half + EDGE_MARGIN;
+  const maxX = Math.max(minX, containerBounds.width - half - EDGE_MARGIN);
+  const clampedX = Math.max(minX, Math.min(maxX, screenPosition.x));
+
+  // Prefer above the marker; flip below if there isn't room
+  const spaceAbove = screenPosition.y - MARKER_OFFSET;
+  const spaceBelow = containerBounds.height - screenPosition.y - MARKER_OFFSET;
+  const anchor: 'above' | 'below' =
+    spaceAbove >= size.height + EDGE_MARGIN || spaceAbove >= spaceBelow
+      ? 'above'
+      : 'below';
+
+  const rawTop =
+    anchor === 'above'
+      ? screenPosition.y - MARKER_OFFSET - size.height
+      : screenPosition.y + MARKER_OFFSET;
+
+  // Final vertical clamp so popup never spills out of the container
+  const top = Math.max(
+    EDGE_MARGIN,
+    Math.min(containerBounds.height - size.height - EDGE_MARGIN, rawTop)
+  );
+
+  return { left: clampedX, top, anchor };
+}
+
 /**
  * Shared popup for map markers.
  * - Mobile (< 640px): full-width bottom sheet
@@ -28,48 +74,45 @@ export default function MarkerPopup({
   screenPosition,
   containerBounds,
 }: MarkerPopupProps) {
-  const popupRef = useRef<HTMLDivElement>(null);
-  const [placement, setPlacement] = useState<{
-    left: number;
-    top: number;
-    anchor: 'above' | 'below';
-  } | null>(null);
+  // Store the popup element as state so the measurement effect re-runs when
+  // it mounts / unmounts. State is only updated asynchronously from the
+  // ResizeObserver callback, never synchronously inside the effect body.
+  const [popupEl, setPopupEl] = useState<HTMLDivElement | null>(null);
+  const [popupSize, setPopupSize] = useState<PopupSize | null>(null);
 
-  useLayoutEffect(() => {
-    if (!screenPosition || !containerBounds || !popupRef.current) {
-      setPlacement(null);
-      return;
-    }
-    const popup = popupRef.current;
-    const popupWidth = popup.offsetWidth;
-    const popupHeight = popup.offsetHeight;
-    const half = popupWidth / 2;
+  useEffect(() => {
+    if (!popupEl) return;
+    // Capture the current marker id so the observer callback tags its
+    // measurement — if the marker changes we refuse to use stale dims.
+    const markerId = marker.id;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const box = entry.borderBoxSize?.[0];
+      const width = box ? box.inlineSize : popupEl.offsetWidth;
+      const height = box ? box.blockSize : popupEl.offsetHeight;
+      setPopupSize((prev) =>
+        prev &&
+        prev.markerId === markerId &&
+        prev.width === width &&
+        prev.height === height
+          ? prev
+          : { markerId, width, height }
+      );
+    });
+    observer.observe(popupEl);
+    return () => {
+      observer.disconnect();
+    };
+  }, [popupEl, marker.id]);
 
-    // Clamp horizontal center so the popup stays inside the container
-    const minX = half + EDGE_MARGIN;
-    const maxX = Math.max(minX, containerBounds.width - half - EDGE_MARGIN);
-    const clampedX = Math.max(minX, Math.min(maxX, screenPosition.x));
-
-    // Prefer above the marker; flip below if there isn't room
-    const spaceAbove = screenPosition.y - MARKER_OFFSET;
-    const spaceBelow = containerBounds.height - screenPosition.y - MARKER_OFFSET;
-    const anchor: 'above' | 'below' =
-      spaceAbove >= popupHeight + EDGE_MARGIN || spaceAbove >= spaceBelow
-        ? 'above'
-        : 'below';
-
-    let top =
-      anchor === 'above'
-        ? screenPosition.y - MARKER_OFFSET - popupHeight
-        : screenPosition.y + MARKER_OFFSET;
-    // Final vertical clamp so popup never spills out of the container
-    top = Math.max(
-      EDGE_MARGIN,
-      Math.min(containerBounds.height - popupHeight - EDGE_MARGIN, top)
-    );
-
-    setPlacement({ left: clampedX, top, anchor });
-  }, [screenPosition, containerBounds, marker]);
+  const placement = useMemo<Placement | null>(() => {
+    if (!screenPosition || !containerBounds || !popupSize) return null;
+    // Ignore measurements from a previous marker — they'd place the new
+    // popup incorrectly for a frame.
+    if (popupSize.markerId !== marker.id) return null;
+    return computePlacement(screenPosition, containerBounds, popupSize);
+  }, [screenPosition, containerBounds, popupSize, marker.id]);
 
   return (
     <>
@@ -117,7 +160,7 @@ export default function MarkerPopup({
         }
       >
         <div
-          ref={popupRef}
+          ref={setPopupEl}
           className="w-80 max-w-[min(20rem,calc(100%-1.5rem))] bg-white rounded-xl shadow-2xl overflow-hidden relative pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
@@ -191,6 +234,18 @@ function PopupContent({ marker }: { marker: MapUnit }) {
             </h3>
           </div>
           <p className="text-sm text-brand-charcoal/80">{marker.description}</p>
+
+          {marker.detailUrl && (
+            <Link
+              href={marker.detailUrl}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-copper hover:text-brand-copper-dark transition-colors"
+            >
+              Learn more
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          )}
         </div>
       ) : (
         <div className="p-4">
@@ -220,7 +275,7 @@ function PopupContent({ marker }: { marker: MapUnit }) {
           )}
 
           {marker.amenities && marker.amenities.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-3 items-center">
               {marker.amenities.slice(0, 5).map((amenity) => (
                 <span
                   key={amenity}
@@ -230,9 +285,18 @@ function PopupContent({ marker }: { marker: MapUnit }) {
                 </span>
               ))}
               {marker.amenities.length > 5 && (
-                <span className="text-xs text-brand-stone">
-                  +{marker.amenities.length - 5} more
-                </span>
+                marker.detailUrl ? (
+                  <Link
+                    href={marker.detailUrl}
+                    className="text-xs font-semibold text-brand-copper hover:text-brand-copper-dark underline underline-offset-2"
+                  >
+                    +{marker.amenities.length - 5} more
+                  </Link>
+                ) : (
+                  <span className="text-xs text-brand-stone">
+                    +{marker.amenities.length - 5} more
+                  </span>
+                )
               )}
             </div>
           )}
@@ -243,24 +307,35 @@ function PopupContent({ marker }: { marker: MapUnit }) {
             </p>
           )}
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            {marker.detailUrl && (
+          {/* Action buttons — lead with direct booking (unit detail page),
+              keep external platforms as a secondary link. */}
+          <div className="flex flex-col gap-2">
+            {marker.detailUrl ? (
               <Link
                 href={marker.detailUrl}
-                className="flex-1 text-center text-sm font-medium py-2.5 px-3 rounded-lg border border-brand-forest text-brand-forest hover:bg-brand-forest/5 transition-colors"
+                className="text-center text-sm font-semibold py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
               >
-                View Details
+                Book Direct
               </Link>
-            )}
-            {marker.bookingUrl && (
+            ) : marker.bookingUrl ? (
               <a
                 href={marker.bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 text-center text-sm font-medium py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
+                className="text-center text-sm font-semibold py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
               >
                 Book Now
+              </a>
+            ) : null}
+
+            {marker.detailUrl && marker.bookingUrl && (
+              <a
+                href={marker.bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center text-xs font-medium text-brand-stone hover:text-brand-charcoal transition-colors"
+              >
+                Or view on Airbnb
               </a>
             )}
           </div>

@@ -23,18 +23,44 @@ interface BookingFormProps {
     minStay?: number;
     maxGuests: number;
   };
+  /** Pre-fill check-in date (accepts Date or ISO yyyy-mm-dd). */
+  initialCheckIn?: Date | string;
+  /** Pre-fill check-out date (accepts Date or ISO yyyy-mm-dd). */
+  initialCheckOut?: Date | string;
+  /** Pre-fill the guest count. Capped to the unit's maxGuests. */
+  initialGuests?: number;
 }
 
-export function BookingForm({ unit }: BookingFormProps) {
+function parseDate(value: Date | string | undefined): Date | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? undefined : value;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return undefined;
+  const [, y, m, d] = match;
+  const date = new Date(Number(y), Number(m) - 1, Number(d));
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+export function BookingForm({
+  unit,
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
+}: BookingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<'dates' | 'details' | 'payment'>('dates');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form data
-  const [checkIn, setCheckIn] = useState<Date | undefined>();
-  const [checkOut, setCheckOut] = useState<Date | undefined>();
-  const [numGuests, setNumGuests] = useState(1);
+  // Form data — seeded from props so guests arriving from /lodging keep
+  // their date + guest selection.
+  const [checkIn, setCheckIn] = useState<Date | undefined>(() => parseDate(initialCheckIn));
+  const [checkOut, setCheckOut] = useState<Date | undefined>(() => parseDate(initialCheckOut));
+  const [numGuests, setNumGuests] = useState(() => {
+    const seeded = initialGuests ?? 1;
+    const max = unit.maxGuests || seeded;
+    return Math.max(1, Math.min(seeded, max));
+  });
   const [numPets, setNumPets] = useState(0);
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
@@ -90,7 +116,7 @@ export function BookingForm({ unit }: BookingFormProps) {
       }
 
       setStep('details');
-    } catch (err) {
+    } catch {
       setError('Error checking availability. Please try again.');
     } finally {
       setLoading(false);
@@ -135,8 +161,9 @@ export function BookingForm({ unit }: BookingFormProps) {
       }
 
       router.push(`/booking/confirmation/${data.confirmationCode}`);
-    } catch (err: any) {
-      setError(err.message || 'Booking failed. Please contact us.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Booking failed. Please contact us.';
+      setError(message);
     } finally {
       setLoading(false);
     }
