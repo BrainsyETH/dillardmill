@@ -64,6 +64,20 @@ export default function PropertyMap({ variant = 'embedded', embed = false }: Pro
     return () => observer.disconnect();
   }, []);
 
+  // When embedded in a cross-origin iframe, notify the parent window so it
+  // can grow the iframe to fit the popup on narrow viewports.
+  useEffect(() => {
+    if (!embed) return;
+    try {
+      window.parent.postMessage(
+        { source: 'dillardmill-map', popupOpen: !!selectedUnit },
+        '*'
+      );
+    } catch {
+      // parent postMessage is best-effort; ignore failures
+    }
+  }, [embed, selectedUnit]);
+
   const locationMarkers = markers.filter((m) => m.showOnLocation !== false);
   const unitCount = locationMarkers.filter((m) => m.type === 'unit').length;
   const landmarkCount = locationMarkers.filter((m) => m.type === 'landmark').length;

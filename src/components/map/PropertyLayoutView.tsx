@@ -65,6 +65,20 @@ export default function PropertyLayoutView({
     return () => observer.disconnect();
   }, []);
 
+  // When embedded in a cross-origin iframe, notify the parent window so it
+  // can grow the iframe to fit the popup on narrow viewports.
+  useEffect(() => {
+    if (!embed) return;
+    try {
+      window.parent.postMessage(
+        { source: 'dillardmill-map', popupOpen: !!selected },
+        '*'
+      );
+    } catch {
+      // parent postMessage is best-effort; ignore failures
+    }
+  }, [embed, selected]);
+
   const layoutMarkers = markers.filter((m) => m.showOnLayout !== false);
   const unitCount = layoutMarkers.filter((m) => m.type === 'unit').length;
   const landmarkCount = layoutMarkers.filter((m) => m.type === 'landmark').length;
