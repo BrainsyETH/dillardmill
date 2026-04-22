@@ -11,6 +11,21 @@ interface MarkerPopupProps {
   screenPosition?: { x: number; y: number };
   /** Desktop-only: map container dimensions used to clamp popup placement */
   containerBounds?: { width: number; height: number };
+  /**
+   * When rendered inside a cross-origin iframe embed, use absolute links
+   * back to the public site and navigate the parent window (target="_top")
+   * so clicks break out of the iframe.
+   */
+  embed?: boolean;
+}
+
+const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://dillardmill.com';
+
+function toAbsoluteDetailUrl(detailUrl: string): string {
+  if (/^https?:\/\//i.test(detailUrl)) return detailUrl;
+  const path = detailUrl.startsWith('/') ? detailUrl : `/${detailUrl}`;
+  return `${PUBLIC_SITE_URL}${path}`;
 }
 
 const EDGE_MARGIN = 12;
@@ -73,6 +88,7 @@ export default function MarkerPopup({
   onClose,
   screenPosition,
   containerBounds,
+  embed = false,
 }: MarkerPopupProps) {
   // Store the popup element as state so the measurement effect re-runs when
   // it mounts / unmounts. State is only updated asynchronously from the
@@ -133,7 +149,7 @@ export default function MarkerPopup({
         </div>
         <div className="relative">
           <CloseButton onClose={onClose} />
-          <PopupContent marker={marker} />
+          <PopupContent marker={marker} embed={embed} />
         </div>
       </div>
 
@@ -165,7 +181,7 @@ export default function MarkerPopup({
           onClick={(e) => e.stopPropagation()}
         >
           <CloseButton onClose={onClose} />
-          <PopupContent marker={marker} />
+          <PopupContent marker={marker} embed={embed} />
         </div>
       </div>
 
@@ -198,7 +214,37 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   );
 }
 
-function PopupContent({ marker }: { marker: MapUnit }) {
+function DetailLink({
+  href,
+  embed,
+  className,
+  children,
+}: {
+  href: string;
+  embed?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (embed) {
+    return (
+      <a
+        href={toAbsoluteDetailUrl(href)}
+        target="_top"
+        rel="noopener"
+        className={className}
+      >
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+function PopupContent({ marker, embed }: { marker: MapUnit; embed?: boolean }) {
   const isLandmark = marker.type === 'landmark';
 
   return (
@@ -236,15 +282,16 @@ function PopupContent({ marker }: { marker: MapUnit }) {
           <p className="text-sm text-brand-charcoal/80">{marker.description}</p>
 
           {marker.detailUrl && (
-            <Link
+            <DetailLink
               href={marker.detailUrl}
+              embed={embed}
               className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-copper hover:text-brand-copper-dark transition-colors"
             >
               Learn more
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </Link>
+            </DetailLink>
           )}
         </div>
       ) : (
@@ -286,12 +333,13 @@ function PopupContent({ marker }: { marker: MapUnit }) {
               ))}
               {marker.amenities.length > 5 && (
                 marker.detailUrl ? (
-                  <Link
+                  <DetailLink
                     href={marker.detailUrl}
+                    embed={embed}
                     className="text-xs font-semibold text-brand-copper hover:text-brand-copper-dark underline underline-offset-2"
                   >
                     +{marker.amenities.length - 5} more
-                  </Link>
+                  </DetailLink>
                 ) : (
                   <span className="text-xs text-brand-stone">
                     +{marker.amenities.length - 5} more
@@ -311,12 +359,13 @@ function PopupContent({ marker }: { marker: MapUnit }) {
               keep external platforms as a secondary link. */}
           <div className="flex flex-col gap-2">
             {marker.detailUrl ? (
-              <Link
+              <DetailLink
                 href={marker.detailUrl}
+                embed={embed}
                 className="text-center text-sm font-semibold py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
               >
                 Book Direct
-              </Link>
+              </DetailLink>
             ) : marker.bookingUrl ? (
               <a
                 href={marker.bookingUrl}

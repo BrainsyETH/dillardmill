@@ -15,11 +15,13 @@ const DIRECTIONS_URL =
 
 interface PropertyMapProps {
   variant?: 'embedded' | 'fullscreen';
+  /** Rendered inside a cross-origin iframe — make POI links absolute and target the top frame. */
+  embed?: boolean;
 }
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) {
+export default function PropertyMap({ variant = 'embedded', embed = false }: PropertyMapProps) {
   // Start empty so the published marker set from the API is the first thing
   // painted — avoids the brief flash of draft/hardcoded markers.
   const [markers, setMarkers] = useState<MapUnit[]>([]);
@@ -111,12 +113,14 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
   );
 
   if (!MAPBOX_TOKEN) {
-    return <MapFallback variant={variant} />;
+    return <MapFallback variant={variant} embed={embed} />;
   }
 
-  const heightClass = variant === 'fullscreen'
-    ? 'h-[calc(100dvh-160px)] min-h-[400px]'
-    : 'h-[400px] sm:h-[500px] rounded-2xl';
+  const heightClass = embed
+    ? 'h-dvh'
+    : variant === 'fullscreen'
+      ? 'h-[calc(100dvh-160px)] min-h-[400px]'
+      : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   return (
     <div ref={containerRef} className={`${heightClass} w-full overflow-hidden relative`}>
@@ -150,6 +154,7 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
           onClose={handlePopupClose}
           screenPosition={popupScreenPos ?? undefined}
           containerBounds={containerBounds ?? undefined}
+          embed={embed}
         />
       )}
 
@@ -178,10 +183,12 @@ export default function PropertyMap({ variant = 'embedded' }: PropertyMapProps) 
   );
 }
 
-function MapFallback({ variant }: { variant: string }) {
-  const heightClass = variant === 'fullscreen'
-    ? 'h-[calc(100dvh-160px)] min-h-[400px]'
-    : 'h-[400px] sm:h-[500px] rounded-2xl';
+function MapFallback({ variant, embed }: { variant: string; embed?: boolean }) {
+  const heightClass = embed
+    ? 'h-dvh'
+    : variant === 'fullscreen'
+      ? 'h-[calc(100dvh-160px)] min-h-[400px]'
+      : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   return (
     <div className={`${heightClass} w-full bg-gradient-to-br from-brand-sand/50 to-brand-sage/10 flex items-center justify-center border border-brand-sand`}>
