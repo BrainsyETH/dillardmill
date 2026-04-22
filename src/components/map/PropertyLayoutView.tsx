@@ -24,7 +24,7 @@ export default function PropertyLayoutView({
   const containerRef = useRef<HTMLDivElement>(null);
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
   const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<number>(3 / 2);
+  const [aspectRatio, setAspectRatio] = useState<number>(16 / 9);
   const [filter, setFilter] = useState<MarkerFilterValue>('all');
   const [scale, setScale] = useState<number>(1);
 
@@ -151,14 +151,23 @@ export default function PropertyLayoutView({
                   embed ? 'p-0' : 'p-2'
                 }`}
               >
-                {/* Aspect-ratio container matching the drone photo */}
+                {/*
+                  In embed mode the Squarespace wrapper enforces the correct
+                  aspect ratio, so the photo should fill the iframe edge-to-edge.
+                  On the main /map route we keep the aspect-ratio container so
+                  the photo sits in a rounded frame without cropping.
+                */}
                 <div
                   className="relative"
-                  style={{
-                    aspectRatio: `${aspectRatio}`,
-                    width: `min(100%, calc((100% - 0px) * ${aspectRatio}))`,
-                    height: `min(100%, calc((100% - 0px) / ${aspectRatio}))`,
-                  }}
+                  style={
+                    embed
+                      ? { width: '100%', height: '100%' }
+                      : {
+                          aspectRatio: `${aspectRatio}`,
+                          width: `min(100%, calc((100% - 0px) * ${aspectRatio}))`,
+                          height: `min(100%, calc((100% - 0px) / ${aspectRatio}))`,
+                        }
+                  }
                 >
                   {/* Drone photo — fills the aspect-ratio container exactly */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
