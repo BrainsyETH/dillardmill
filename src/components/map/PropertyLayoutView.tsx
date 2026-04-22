@@ -9,10 +9,13 @@ import MarkerFilter, { type MarkerFilterValue } from './MarkerFilter';
 
 interface PropertyLayoutViewProps {
   variant?: 'embedded' | 'fullscreen';
+  /** Rendered inside a cross-origin iframe — make POI links absolute and target the top frame. */
+  embed?: boolean;
 }
 
 export default function PropertyLayoutView({
   variant = 'embedded',
+  embed = false,
 }: PropertyLayoutViewProps) {
   // Start empty so the published marker set from the API is the first thing
   // painted — avoids the brief flash of draft/hardcoded markers.
@@ -81,9 +84,11 @@ export default function PropertyLayoutView({
     });
   };
 
-  const heightClass = variant === 'fullscreen'
-    ? 'h-[calc(100dvh-160px)] min-h-[400px]'
-    : 'h-[400px] sm:h-[500px] rounded-2xl';
+  const heightClass = embed
+    ? 'h-dvh'
+    : variant === 'fullscreen'
+      ? 'h-[calc(100dvh-160px)] min-h-[400px]'
+      : 'h-[400px] sm:h-[500px] rounded-2xl';
 
   const handleMarkerClick = (unit: MapUnit, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -175,6 +180,7 @@ export default function PropertyLayoutView({
           onClose={() => setSelected(null)}
           screenPosition={popupScreenPos ?? undefined}
           containerBounds={containerBounds ?? undefined}
+          embed={embed}
         />
       )}
 

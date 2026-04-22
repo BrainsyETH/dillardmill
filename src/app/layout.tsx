@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Crimson_Pro, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 import { generateSEOMetadata, generateLocalBusinessStructuredData } from "@/lib/seo";
 import Script from "next/script";
 
@@ -41,11 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-brand-parchment text-brand-charcoal">
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-        </div>
+        {children}
       </body>
     </html>
   );
