@@ -107,7 +107,11 @@ export default function PropertyLayoutView({
   return (
     <div
       ref={containerRef}
-      className={`${heightClass} w-full relative overflow-hidden bg-gradient-to-br from-brand-forest/80 to-brand-forest`}
+      className={`${heightClass} w-full relative overflow-hidden ${
+        embed
+          ? 'bg-transparent'
+          : 'bg-gradient-to-br from-brand-forest/80 to-brand-forest'
+      }`}
     >
       <TransformWrapper
         initialScale={1}
@@ -128,7 +132,11 @@ export default function PropertyLayoutView({
               contentClass="!w-full !h-full"
             >
               {/* Flex wrapper to center the aspect-ratio container */}
-              <div className="w-full h-full flex items-center justify-center p-2">
+              <div
+                className={`w-full h-full flex items-center justify-center ${
+                  embed ? 'p-0' : 'p-2'
+                }`}
+              >
                 {/* Aspect-ratio container matching the drone photo */}
                 <div
                   className="relative"
