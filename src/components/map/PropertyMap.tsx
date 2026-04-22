@@ -29,6 +29,8 @@ export default function PropertyMap({ variant = 'embedded', embed = false }: Pro
   const [popupScreenPos, setPopupScreenPos] = useState<{ x: number; y: number } | null>(null);
   const [containerBounds, setContainerBounds] = useState<{ width: number; height: number } | null>(null);
   const [filter, setFilter] = useState<MarkerFilterValue>('all');
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const didInitialFit = useRef(false);
   const mapRef = useRef<MapRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +83,35 @@ export default function PropertyMap({ variant = 'embedded', embed = false }: Pro
   const locationMarkers = markers.filter((m) => m.showOnLocation !== false);
   const unitCount = locationMarkers.filter((m) => m.type === 'unit').length;
   const landmarkCount = locationMarkers.filter((m) => m.type === 'landmark').length;
+
+  // Fit the viewport to the active POIs once, after the map + markers load.
+  // We don't re-fit on filter changes so the user's zoom/pan is preserved.
+  useEffect(() => {
+    if (didInitialFit.current) return;
+    if (!mapLoaded) return;
+    if (locationMarkers.length === 0) return;
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    if (locationMarkers.length === 1) {
+      map.jumpTo({
+        center: [locationMarkers[0].coordinates.lng, locationMarkers[0].coordinates.lat],
+        zoom: DEFAULT_ZOOM,
+      });
+    } else {
+      const lngs = locationMarkers.map((m) => m.coordinates.lng);
+      const lats = locationMarkers.map((m) => m.coordinates.lat);
+      map.fitBounds(
+        [
+          [Math.min(...lngs), Math.min(...lats)],
+          [Math.max(...lngs), Math.max(...lats)],
+        ],
+        { padding: 60, duration: 0, maxZoom: 17 }
+      );
+    }
+    didInitialFit.current = true;
+  }, [mapLoaded, locationMarkers]);
+
   const visibleMarkers = locationMarkers.filter((m) => {
     if (filter === 'units') return m.type === 'unit';
     if (filter === 'landmarks') return m.type === 'landmark';
@@ -148,6 +179,7 @@ export default function PropertyMap({ variant = 'embedded', embed = false }: Pro
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
         mapboxAccessToken={MAPBOX_TOKEN}
+        onLoad={() => setMapLoaded(true)}
         onClick={() => setSelectedUnit(null)}
       >
         <NavigationControl position="top-right" />
