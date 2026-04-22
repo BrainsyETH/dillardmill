@@ -364,7 +364,7 @@ function PopupContent({ marker, embed }: { marker: MapUnit; embed?: boolean }) {
                 embed={embed}
                 className="text-center text-sm font-semibold py-2.5 px-3 rounded-lg bg-brand-copper text-white hover:bg-brand-copper-dark transition-colors"
               >
-                Book Direct
+                View Listing
               </DetailLink>
             ) : marker.bookingUrl ? (
               <a

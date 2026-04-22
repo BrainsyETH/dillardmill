@@ -182,6 +182,7 @@ export default function PropertyLayoutView({
                       unit={unit}
                       isSelected={selected?.id === unit.id}
                       showLabel={labelsVisible}
+                      scale={scale}
                       onClick={(e) => handleMarkerClick(unit, e)}
                     />
                   ))}
@@ -214,12 +215,6 @@ export default function PropertyLayoutView({
           counts={{ units: unitCount, landmarks: landmarkCount }}
         />
       </div>
-
-      {/* Gesture hint */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full pointer-events-none">
-        <span className="sm:hidden">Pinch to zoom · Drag to pan</span>
-        <span className="hidden sm:inline">Scroll to zoom · Drag to pan</span>
-      </div>
     </div>
   );
 }
@@ -244,12 +239,16 @@ function LayoutMarker({
   unit,
   isSelected,
   showLabel,
+  scale,
   onClick,
 }: {
   unit: MapUnit;
   isSelected: boolean;
   /** When false, hide the label at rest — hover or selection still reveals it. */
   showLabel: boolean;
+  /** Current TransformWrapper zoom level — used to counter-scale the pin so
+      its visual size stays constant as the photo zooms in. */
+  scale: number;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const isLandmark = unit.type === 'landmark';
@@ -260,6 +259,10 @@ function LayoutMarker({
   // Otherwise follow the zoom-level decision from the parent.
   const labelAtRestVisible = showLabel || isSelected;
 
+  // Counter-scale so the pin keeps a constant on-screen size as the user
+  // zooms in. Clamp so we don't grow pins unreasonably at zoom < 1.
+  const inverseScale = 1 / Math.max(scale, 1);
+
   return (
     <button
       type="button"
@@ -268,7 +271,8 @@ function LayoutMarker({
       style={{
         left: `${unit.layoutPosition.x}%`,
         top: `${unit.layoutPosition.y}%`,
-        transform: 'translate(-50%, -100%)',
+        transform: `translate(-50%, -100%) scale(${inverseScale})`,
+        transformOrigin: 'bottom center',
       }}
       onClick={onClick}
     >
