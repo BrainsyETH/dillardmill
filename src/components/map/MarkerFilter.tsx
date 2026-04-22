@@ -25,7 +25,7 @@ export default function MarkerFilter({
     <div
       role="tablist"
       aria-label="Filter map markers"
-      className={`inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-full shadow-lg p-1 ${className}`}
+      className={`inline-flex items-center gap-0.5 sm:gap-1 bg-white/95 backdrop-blur-sm rounded-full shadow-lg p-0.5 sm:p-1 ${className}`}
     >
       {OPTIONS.map((opt) => {
         const isActive = value === opt.id;
@@ -44,7 +44,7 @@ export default function MarkerFilter({
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(opt.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold transition-colors ${
               isActive
                 ? 'bg-brand-forest text-white'
                 : 'text-brand-charcoal hover:bg-brand-sand/50'
@@ -52,7 +52,7 @@ export default function MarkerFilter({
           >
             {opt.label}
             {typeof count === 'number' && (
-              <span className={`ml-1.5 ${isActive ? 'text-white/80' : 'text-brand-stone'}`}>
+              <span className={`ml-1 sm:ml-1.5 ${isActive ? 'text-white/80' : 'text-brand-stone'}`}>
                 {count}
               </span>
             )}
