@@ -128,7 +128,7 @@ export default function PropertyLayoutView({
       }`}
     >
       <TransformWrapper
-        initialScale={1.5}
+        initialScale={1}
         minScale={1}
         maxScale={4}
         centerOnInit
