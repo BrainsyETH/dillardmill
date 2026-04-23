@@ -144,6 +144,7 @@ export default function PropertyLayoutView({
             <TransformComponent
               wrapperClass="!w-full !h-full"
               contentClass="!w-full !h-full"
+              wrapperStyle={{ touchAction: 'pan-y' }}
             >
               {/* Flex wrapper to center the aspect-ratio container */}
               <div

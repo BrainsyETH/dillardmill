@@ -179,6 +179,7 @@ export default function PropertyMap({ variant = 'embedded', embed = false }: Pro
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
         mapboxAccessToken={MAPBOX_TOKEN}
+        cooperativeGestures
         onLoad={() => setMapLoaded(true)}
         onClick={() => setSelectedUnit(null)}
       >
