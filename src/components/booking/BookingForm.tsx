@@ -29,6 +29,12 @@ interface BookingFormProps {
   initialCheckOut?: Date | string;
   /** Pre-fill the guest count. Capped to the unit's maxGuests. */
   initialGuests?: number;
+  /**
+   * Override the post-booking redirect. When provided, called with the
+   * confirmation code instead of navigating in-place — used by the iframe
+   * embed so the parent (Squarespace) can break out of the iframe.
+   */
+  onComplete?: (confirmationCode: string) => void;
 }
 
 function parseDate(value: Date | string | undefined): Date | undefined {
@@ -46,6 +52,7 @@ export function BookingForm({
   initialCheckIn,
   initialCheckOut,
   initialGuests,
+  onComplete,
 }: BookingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<'dates' | 'details' | 'payment'>('dates');
@@ -160,7 +167,11 @@ export function BookingForm({
         throw new Error(data.error || 'Booking failed');
       }
 
-      router.push(`/booking/confirmation/${data.confirmationCode}`);
+      if (onComplete) {
+        onComplete(data.confirmationCode);
+      } else {
+        router.push(`/booking/confirmation/${data.confirmationCode}`);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Booking failed. Please contact us.';
       setError(message);

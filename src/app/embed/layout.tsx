@@ -7,5 +7,8 @@ export const metadata: Metadata = {
 export default function EmbedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <div className="h-dvh w-full overflow-hidden">{children}</div>;
+  // min-h-dvh keeps map embeds covering the viewport while letting the
+  // booking embed grow taller than the viewport — the parent iframe
+  // listens for postMessage resize events to match.
+  return <div className="min-h-dvh w-full">{children}</div>;
 }
