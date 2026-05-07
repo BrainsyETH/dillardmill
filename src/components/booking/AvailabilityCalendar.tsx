@@ -70,7 +70,6 @@ export function AvailabilityCalendar({
 
       {!loading && !error && (
         <DayPicker
-          mode="default"
           numberOfMonths={numberOfMonths}
           disabled={[...bookedDates, { before: today }]}
           modifiers={{ booked: bookedDates }}
