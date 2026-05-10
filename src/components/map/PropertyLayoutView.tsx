@@ -262,8 +262,8 @@ function LayoutMarker({
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const isLandmark = unit.type === 'landmark';
-  const bg = isLandmark ? 'bg-brand-forest' : 'bg-brand-copper';
-  const ring = isLandmark ? 'ring-brand-forest/30' : 'ring-brand-copper/30';
+  const bg = isLandmark ? 'bg-brand-seafoam' : 'bg-brand-blurple';
+  const ring = isLandmark ? 'ring-brand-seafoam/30' : 'ring-brand-blurple/30';
 
   // Always visible when the marker is selected or the user hovers/focuses it.
   // Otherwise follow the zoom-level decision from the parent.
@@ -308,7 +308,7 @@ function LayoutMarker({
       <div
         className={`
           w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-transparent
-          ${isLandmark ? 'border-t-brand-forest' : 'border-t-brand-copper'}
+          ${isLandmark ? 'border-t-brand-seafoam' : 'border-t-brand-blurple'}
           -mt-[1px]
         `}
       />
@@ -317,7 +317,7 @@ function LayoutMarker({
         whitespace-nowrap max-w-[100px] truncate
         transition-opacity duration-150
         ${labelAtRestVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}
-        ${isLandmark ? 'bg-brand-forest/90 text-white' : 'bg-white/90 text-brand-charcoal'}
+        ${isLandmark ? 'bg-brand-seafoam/90 text-white' : 'bg-white/90 text-brand-charcoal'}
       `}>
         {unit.name}
       </span>

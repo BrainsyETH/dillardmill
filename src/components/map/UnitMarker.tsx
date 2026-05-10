@@ -53,8 +53,8 @@ function getMarkerIcon(unit: MapUnit) {
 
 export default function UnitMarker({ unit, isSelected, onClick }: UnitMarkerProps) {
   const isLandmark = unit.type === 'landmark';
-  const bgColor = isLandmark ? 'bg-brand-forest' : 'bg-brand-copper';
-  const ringColor = isLandmark ? 'ring-brand-forest/30' : 'ring-brand-copper/30';
+  const bgColor = isLandmark ? 'bg-brand-seafoam' : 'bg-brand-blurple';
+  const ringColor = isLandmark ? 'ring-brand-seafoam/30' : 'ring-brand-blurple/30';
 
   return (
     <Marker
@@ -82,14 +82,14 @@ export default function UnitMarker({ unit, isSelected, onClick }: UnitMarkerProp
         <div
           className={`
             w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-transparent
-            ${isLandmark ? 'border-t-brand-forest' : 'border-t-brand-copper'}
+            ${isLandmark ? 'border-t-brand-seafoam' : 'border-t-brand-blurple'}
             -mt-[1px]
           `}
         />
         <span className={`
           mt-1 text-xs font-semibold px-2 py-0.5 rounded-full shadow-sm
           whitespace-nowrap max-w-[120px] truncate
-          ${isLandmark ? 'bg-brand-forest/90 text-white' : 'bg-white/90 text-brand-charcoal'}
+          ${isLandmark ? 'bg-brand-seafoam/90 text-white' : 'bg-white/90 text-brand-charcoal'}
         `}>
           {unit.name}
         </span>

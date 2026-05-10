@@ -20,6 +20,8 @@
   --color-stone: #9CA3AF;         /* Neutral stone gray */
   --color-sand: #E5E1D8;          /* Light warm neutral - borders */
   --color-bark: #6B4E35;          /* Lighter bark brown - used sparingly */
+  --color-seafoam: #3FB99A;       /* Seafoam - landmark markers */
+  --color-blurple: #5865F2;       /* Blurple - unit markers */
   
   /* Semantic Mapping */
   --color-primary: var(--color-forest);
@@ -46,6 +48,8 @@
   --color-brand-stone: var(--color-stone);
   --color-brand-sand: var(--color-sand);
   --color-brand-bark: var(--color-bark);
+  --color-brand-seafoam: var(--color-seafoam);
+  --color-brand-blurple: var(--color-blurple);
   
   /* Semantic aliases */
   --color-primary: var(--color-forest);
