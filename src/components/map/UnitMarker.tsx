@@ -18,11 +18,11 @@ function getMarkerIcon(unit: MapUnit) {
         );
       case 'barn':
         return (
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21V10l9-7 9 7v11M3 21h18M9 21v-7h6v7M12 14v7M9 17h6" />
         );
       case 'huzzah-creek-access':
         return (
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
         );
       default:
         return (
@@ -67,17 +67,26 @@ export default function UnitMarker({ unit, isSelected, onClick }: UnitMarkerProp
       }}
     >
       <div className="group cursor-pointer flex flex-col items-center">
-        <div
-          className={`
-            ${bgColor} rounded-full p-2 shadow-lg
-            transition-all duration-200
-            group-hover:scale-110 group-hover:shadow-xl
-            ${isSelected ? `scale-110 ring-4 ${ringColor}` : ''}
-          `}
-        >
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {getMarkerIcon(unit)}
-          </svg>
+        <div className="relative">
+          {isSelected && (
+            <span
+              aria-hidden
+              className={`absolute inset-0 rounded-full ${bgColor} opacity-50 animate-ping`}
+            />
+          )}
+          <div
+            className={`
+              relative ${bgColor} rounded-full p-2 shadow-lg
+              border-2 border-white
+              transition-all duration-200
+              group-hover:scale-110 group-hover:shadow-xl
+              ${isSelected ? `scale-110 ring-4 ${ringColor}` : ''}
+            `}
+          >
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {getMarkerIcon(unit)}
+            </svg>
+          </div>
         </div>
         <div
           className={`

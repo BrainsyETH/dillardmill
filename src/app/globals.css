@@ -20,7 +20,7 @@
   --color-stone: #9CA3AF;         /* Neutral stone gray */
   --color-sand: #E5E1D8;          /* Light warm neutral - borders */
   --color-bark: #6B4E35;          /* Lighter bark brown - used sparingly */
-  --color-seafoam: #3FB99A;       /* Seafoam - landmark markers */
+  --color-seafoam: #26A085;       /* Deep seafoam - landmark markers (WCAG 3:1 w/ white) */
   --color-blurple: #5865F2;       /* Blurple - unit markers */
   
   /* Semantic Mapping */
