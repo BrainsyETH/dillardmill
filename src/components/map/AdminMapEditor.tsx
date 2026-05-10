@@ -803,29 +803,27 @@ function MarkerEditForm({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Detail URL">
-              <input
-                type="text"
-                value={marker.detailUrl || ''}
-                onChange={(e) => onChange({ detailUrl: e.target.value || undefined })}
-                placeholder="/cozycottage"
-                className="w-full text-sm border border-gray-300 rounded-md px-2.5 py-1.5 focus:ring-1 focus:ring-[#B87333] focus:border-[#B87333] outline-none"
-              />
-            </Field>
-
-            <Field label="Booking URL">
-              <input
-                type="text"
-                value={marker.bookingUrl || ''}
-                onChange={(e) => onChange({ bookingUrl: e.target.value || undefined })}
-                placeholder="https://airbnb.com/..."
-                className="w-full text-sm border border-gray-300 rounded-md px-2.5 py-1.5 focus:ring-1 focus:ring-[#B87333] focus:border-[#B87333] outline-none"
-              />
-            </Field>
-          </div>
+          <Field label="Booking URL">
+            <input
+              type="text"
+              value={marker.bookingUrl || ''}
+              onChange={(e) => onChange({ bookingUrl: e.target.value || undefined })}
+              placeholder="https://airbnb.com/..."
+              className="w-full text-sm border border-gray-300 rounded-md px-2.5 py-1.5 focus:ring-1 focus:ring-[#B87333] focus:border-[#B87333] outline-none"
+            />
+          </Field>
         </>
       )}
+
+      <Field label="Detail URL">
+        <input
+          type="text"
+          value={marker.detailUrl || ''}
+          onChange={(e) => onChange({ detailUrl: e.target.value || undefined })}
+          placeholder={isUnit ? '/cozycottage' : '/the-area'}
+          className="w-full text-sm border border-gray-300 rounded-md px-2.5 py-1.5 focus:ring-1 focus:ring-[#B87333] focus:border-[#B87333] outline-none"
+        />
+      </Field>
 
       <Field label="Image URL">
         <input
