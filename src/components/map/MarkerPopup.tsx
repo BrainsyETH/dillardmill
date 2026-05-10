@@ -130,6 +130,26 @@ export default function MarkerPopup({
     return computePlacement(screenPosition, containerBounds, popupSize);
   }, [screenPosition, containerBounds, popupSize, marker.id]);
 
+  // Close on click outside the popup or on Escape.
+  useEffect(() => {
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      // Don't close on clicks inside the popup, or on a marker (its own
+      // click handler will swap selection — closing here would just flicker).
+      if (target?.closest('[data-marker-popup], [data-map-marker]')) return;
+      onClose();
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [onClose]);
+
   return (
     <>
       {/* Backdrop (mobile only) to close on tap outside */}
@@ -140,6 +160,7 @@ export default function MarkerPopup({
 
       {/* Mobile: bottom sheet */}
       <div
+        data-marker-popup
         className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl shadow-2xl max-h-[75vh] overflow-y-auto animate-[slideUp_200ms_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -177,6 +198,7 @@ export default function MarkerPopup({
       >
         <div
           ref={setPopupEl}
+          data-marker-popup
           className="w-80 max-w-[min(20rem,calc(100%-1.5rem))] bg-white rounded-xl shadow-2xl overflow-hidden relative pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
