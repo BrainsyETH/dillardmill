@@ -262,8 +262,8 @@ function LayoutMarker({
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const isLandmark = unit.type === 'landmark';
-  const bg = isLandmark ? 'bg-brand-forest' : 'bg-brand-copper';
-  const ring = isLandmark ? 'ring-brand-forest/30' : 'ring-brand-copper/30';
+  const bg = isLandmark ? 'bg-brand-seafoam' : 'bg-brand-blurple';
+  const ring = isLandmark ? 'ring-brand-seafoam/30' : 'ring-brand-blurple/30';
 
   // Always visible when the marker is selected or the user hovers/focuses it.
   // Otherwise follow the zoom-level decision from the parent.
@@ -286,29 +286,38 @@ function LayoutMarker({
       }}
       onClick={onClick}
     >
-      <div
-        className={`
-          ${bg} rounded-full p-1.5 shadow-lg
-          transition-all duration-200
-          group-hover:scale-110 group-hover:shadow-xl
-          ${isSelected ? `scale-110 ring-4 ${ring}` : ''}
-        `}
-      >
-        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {isLandmark ? (
-            <>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </>
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
-          )}
-        </svg>
+      <div className="relative">
+        {isSelected && (
+          <span
+            aria-hidden
+            className={`absolute inset-0 rounded-full ${bg} opacity-50 animate-ping`}
+          />
+        )}
+        <div
+          className={`
+            relative ${bg} rounded-full p-1.5 shadow-lg
+            border-2 border-white
+            transition-all duration-200
+            group-hover:scale-110 group-hover:shadow-xl
+            ${isSelected ? `scale-110 ring-4 ${ring}` : ''}
+          `}
+        >
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isLandmark ? (
+              <>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </>
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
+            )}
+          </svg>
+        </div>
       </div>
       <div
         className={`
           w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-transparent
-          ${isLandmark ? 'border-t-brand-forest' : 'border-t-brand-copper'}
+          ${isLandmark ? 'border-t-brand-seafoam' : 'border-t-brand-blurple'}
           -mt-[1px]
         `}
       />
@@ -317,7 +326,7 @@ function LayoutMarker({
         whitespace-nowrap max-w-[100px] truncate
         transition-opacity duration-150
         ${labelAtRestVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}
-        ${isLandmark ? 'bg-brand-forest/90 text-white' : 'bg-white/90 text-brand-charcoal'}
+        ${isLandmark ? 'bg-brand-seafoam/90 text-white' : 'bg-white/90 text-brand-charcoal'}
       `}>
         {unit.name}
       </span>
