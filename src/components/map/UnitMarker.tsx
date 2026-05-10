@@ -66,7 +66,7 @@ export default function UnitMarker({ unit, isSelected, onClick }: UnitMarkerProp
         onClick(unit);
       }}
     >
-      <div className="group cursor-pointer flex flex-col items-center">
+      <div data-map-marker className="group cursor-pointer flex flex-col items-center">
         <div className="relative">
           {isSelected && (
             <span

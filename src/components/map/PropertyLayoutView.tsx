@@ -276,6 +276,7 @@ function LayoutMarker({
   return (
     <button
       type="button"
+      data-map-marker
       aria-label={unit.name}
       className="absolute flex flex-col items-center group"
       style={{
