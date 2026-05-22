@@ -1,0 +1,312 @@
+<!-- =====================================================================
+  Dillard Mill — Book the Farm: Amenities grid
+  Paste this entire snippet into a Squarespace Code Block.
+  All styles are scoped under .dm-amenities so they won't leak.
+  No external assets, no JS, fully responsive.
+===================================================================== -->
+<style>
+  .dm-amenities {
+    --dm-bg: #F2E8D0;
+    --dm-ink: #2F3A28;
+    --dm-rule: rgba(47, 58, 40, 0.18);
+    background: var(--dm-bg);
+    color: var(--dm-ink);
+    padding: clamp(28px, 5vw, 64px) clamp(20px, 4vw, 56px);
+    border-radius: 6px;
+    font-family: "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
+    line-height: 1.25;
+    container-type: inline-size;
+  }
+  .dm-amenities__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(24px, 4cqi, 64px);
+    row-gap: 0;
+  }
+  .dm-amenities__item {
+    display: grid;
+    grid-template-columns: clamp(72px, 11cqi, 132px) 1fr;
+    align-items: center;
+    gap: clamp(18px, 2.5cqi, 36px);
+    padding: clamp(20px, 3.2cqi, 40px) 0;
+    border-bottom: 1px solid var(--dm-rule);
+  }
+  /* hide the last row's bottom rule per column */
+  .dm-amenities__item:nth-last-child(-n+2):nth-child(odd),
+  .dm-amenities__item:nth-last-child(1) {
+    border-bottom: 0;
+  }
+  /* vertical divider between columns */
+  .dm-amenities__grid > .dm-amenities__item:nth-child(odd) {
+    padding-right: clamp(12px, 2cqi, 32px);
+    border-right: 1px solid var(--dm-rule);
+  }
+  .dm-amenities__grid > .dm-amenities__item:nth-child(even) {
+    padding-left: clamp(12px, 2cqi, 32px);
+  }
+  .dm-amenities__icon {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 132px;
+    color: var(--dm-ink);
+    justify-self: center;
+  }
+  .dm-amenities__icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  .dm-amenities__label {
+    font-size: clamp(20px, 3.2cqi, 34px);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  /* Single column on narrow screens */
+  @container (max-width: 640px) {
+    .dm-amenities__grid { grid-template-columns: 1fr; }
+    .dm-amenities__grid > .dm-amenities__item:nth-child(odd) {
+      padding-right: 0;
+      border-right: 0;
+    }
+    .dm-amenities__grid > .dm-amenities__item:nth-child(even) {
+      padding-left: 0;
+    }
+    .dm-amenities__item { border-bottom: 1px solid var(--dm-rule); }
+    .dm-amenities__item:last-child { border-bottom: 0; }
+  }
+  /* Fallback for browsers without container queries */
+  @media (max-width: 640px) {
+    .dm-amenities__grid { grid-template-columns: 1fr; }
+    .dm-amenities__grid > .dm-amenities__item:nth-child(odd) {
+      padding-right: 0;
+      border-right: 0;
+    }
+    .dm-amenities__grid > .dm-amenities__item:nth-child(even) {
+      padding-left: 0;
+    }
+  }
+</style>
+
+<section class="dm-amenities" aria-label="Farm amenities">
+  <div class="dm-amenities__grid">
+
+    <!-- 1. Airstream -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- airstream body -->
+          <path d="M8 62 Q8 32 30 30 L74 30 Q88 30 90 50 L90 64 Q90 68 86 68 L12 68 Q8 68 8 64 Z"/>
+          <!-- highlight stripe -->
+          <path d="M14 48 Q14 38 26 38 L78 38" opacity="0.45"/>
+          <!-- door -->
+          <rect x="50" y="46" width="12" height="22" rx="1.5"/>
+          <circle cx="59" cy="58" r="0.9" fill="currentColor"/>
+          <!-- windows -->
+          <rect x="20" y="44" width="14" height="8" rx="1.5"/>
+          <rect x="68" y="44" width="14" height="8" rx="1.5"/>
+          <!-- wheel well + wheel -->
+          <path d="M22 68 Q22 56 32 56 Q42 56 42 68"/>
+          <circle cx="32" cy="74" r="6"/>
+          <circle cx="32" cy="74" r="1.6" fill="currentColor"/>
+          <!-- ground -->
+          <line x1="6" y1="82" x2="94" y2="82" opacity="0.35"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Unique Airstream<br/>Accommodations</p>
+    </div>
+
+    <!-- 2. 30amp RV hookups -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- RV body -->
+          <rect x="8" y="36" width="52" height="32" rx="3"/>
+          <!-- cab -->
+          <path d="M60 44 L74 44 L78 50 L78 68 L60 68"/>
+          <!-- windshield -->
+          <path d="M62 47 L74 47 L76 51 L62 51 Z"/>
+          <!-- side windows -->
+          <rect x="13" y="41" width="12" height="9" rx="1"/>
+          <rect x="28" y="41" width="12" height="9" rx="1"/>
+          <rect x="43" y="41" width="13" height="9" rx="1"/>
+          <!-- door -->
+          <rect x="43" y="54" width="10" height="14" rx="1"/>
+          <!-- wheels -->
+          <circle cx="22" cy="72" r="5.5"/>
+          <circle cx="22" cy="72" r="1.4" fill="currentColor"/>
+          <circle cx="66" cy="72" r="5.5"/>
+          <circle cx="66" cy="72" r="1.4" fill="currentColor"/>
+          <!-- hookup pedestal -->
+          <rect x="84" y="40" width="9" height="28" rx="1.5"/>
+          <circle cx="88.5" cy="48" r="1.6"/>
+          <circle cx="88.5" cy="58" r="1.6"/>
+          <!-- cord -->
+          <path d="M84 54 Q76 56 78 64 Q80 70 72 68" opacity="0.7"/>
+          <!-- ground -->
+          <line x1="6" y1="82" x2="94" y2="82" opacity="0.35"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">30 amp<br/>RV hookups</p>
+    </div>
+
+    <!-- 3. Private Bathrooms + Full Bath House -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- cabin body -->
+          <rect x="16" y="44" width="68" height="34"/>
+          <!-- roof -->
+          <path d="M10 46 L50 18 L90 46 Z"/>
+          <!-- chimney -->
+          <path d="M70 30 L70 20 L76 20 L76 34"/>
+          <!-- door -->
+          <rect x="44" y="58" width="12" height="20" rx="1"/>
+          <circle cx="53" cy="69" r="0.9" fill="currentColor"/>
+          <!-- windows w/ cross -->
+          <rect x="22" y="52" width="14" height="12"/>
+          <line x1="29" y1="52" x2="29" y2="64"/>
+          <line x1="22" y1="58" x2="36" y2="58"/>
+          <rect x="64" y="52" width="14" height="12"/>
+          <line x1="71" y1="52" x2="71" y2="64"/>
+          <line x1="64" y1="58" x2="78" y2="58"/>
+          <!-- log lines -->
+          <line x1="16" y1="69" x2="84" y2="69" opacity="0.4"/>
+          <line x1="16" y1="74" x2="84" y2="74" opacity="0.4"/>
+          <!-- ground -->
+          <line x1="6" y1="82" x2="94" y2="82" opacity="0.35"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Private Bathrooms<br/>+ Full Bath House</p>
+    </div>
+
+    <!-- 4. Group Camping -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- left tree -->
+          <g opacity="0.85">
+            <path d="M14 78 L14 70"/>
+            <path d="M5 70 L14 36 L23 70 Z"/>
+            <path d="M7 60 L14 42 L21 60"/>
+            <path d="M9 50 L14 38 L19 50"/>
+          </g>
+          <!-- right tree -->
+          <g opacity="0.85">
+            <path d="M86 78 L86 70"/>
+            <path d="M77 70 L86 32 L95 70 Z"/>
+            <path d="M79 60 L86 40 L93 60"/>
+            <path d="M81 50 L86 36 L91 50"/>
+          </g>
+          <!-- tent -->
+          <path d="M28 78 L50 30 L72 78 Z"/>
+          <!-- tent flap -->
+          <path d="M50 78 L42 50 M50 78 L58 50"/>
+          <!-- ridge -->
+          <line x1="50" y1="30" x2="50" y2="24"/>
+          <!-- ground -->
+          <line x1="6" y1="82" x2="94" y2="82" opacity="0.35"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Group<br/>Camping</p>
+    </div>
+
+    <!-- 5. Electric, A/C, & Plumbing -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- plug -->
+          <g transform="translate(2,18)">
+            <line x1="10" y1="6" x2="10" y2="20"/>
+            <line x1="20" y1="6" x2="20" y2="20"/>
+            <path d="M5 20 L25 20 L25 32 Q25 40 15 40 Q5 40 5 32 Z"/>
+            <line x1="15" y1="40" x2="15" y2="52"/>
+          </g>
+          <!-- snowflake -->
+          <g transform="translate(38,22)" stroke-width="2.2">
+            <line x1="12" y1="0" x2="12" y2="48"/>
+            <line x1="0" y1="24" x2="24" y2="24"/>
+            <line x1="3.5" y1="7" x2="20.5" y2="41"/>
+            <line x1="20.5" y1="7" x2="3.5" y2="41"/>
+            <!-- tips -->
+            <polyline points="9,3 12,0 15,3"/>
+            <polyline points="9,45 12,48 15,45"/>
+            <polyline points="3,21 0,24 3,27"/>
+            <polyline points="21,21 24,24 21,27"/>
+          </g>
+          <!-- faucet + drop -->
+          <g transform="translate(66,18)">
+            <rect x="6" y="2" width="14" height="6" rx="0.8"/>
+            <line x1="13" y1="0" x2="13" y2="2"/>
+            <path d="M2 14 L24 14 L24 22 L16 22 L16 32"/>
+            <path d="M16 38 Q12 42 13 46 Q14 50 18 50 Q22 50 23 46 Q24 42 20 38 Q18 36 18 36 Q18 36 16 38 Z"/>
+          </g>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Electric, A/C,<br/>&amp; Plumbing</p>
+    </div>
+
+    <!-- 6. Wifi -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 50 Q50 14 86 50"/>
+          <path d="M26 62 Q50 38 74 62"/>
+          <path d="M38 74 Q50 62 62 74"/>
+          <circle cx="50" cy="84" r="3.6" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Wifi</p>
+    </div>
+
+    <!-- 7. Trails & Water Access -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- mountains -->
+          <path d="M6 70 L28 38 L42 58 L60 28 L82 64 L94 70 Z"/>
+          <!-- snowcap -->
+          <path d="M53 38 L60 28 L67 38" opacity="0.5"/>
+          <!-- left tree -->
+          <g opacity="0.85">
+            <path d="M16 78 L16 70 M10 70 L16 54 L22 70 Z M12 64 L16 56 L20 64"/>
+          </g>
+          <!-- right tree -->
+          <g opacity="0.85">
+            <path d="M86 78 L86 70 M80 70 L86 50 L92 70 Z M82 64 L86 52 L90 64"/>
+          </g>
+          <!-- trail -->
+          <path d="M14 86 Q34 78 50 86 Q66 94 86 84"/>
+          <!-- ground -->
+          <line x1="6" y1="92" x2="94" y2="92" opacity="0.35"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Trails &amp;<br/>Water Access</p>
+    </div>
+
+    <!-- 8. Floating Outfitters -->
+    <div class="dm-amenities__item">
+      <div class="dm-amenities__icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- paddle -->
+          <g transform="rotate(-22 50 60)">
+            <line x1="50" y1="22" x2="50" y2="60"/>
+            <ellipse cx="50" cy="16" rx="6" ry="9"/>
+          </g>
+          <!-- canoe -->
+          <path d="M8 58 Q50 80 92 58 Q86 72 50 72 Q14 72 8 58 Z"/>
+          <!-- thwarts -->
+          <line x1="26" y1="66" x2="26" y2="70"/>
+          <line x1="74" y1="66" x2="74" y2="70"/>
+          <line x1="50" y1="68" x2="50" y2="72"/>
+          <!-- water ripples -->
+          <path d="M6 82 Q18 78 30 82 T54 82 T78 82 T96 82" opacity="0.55"/>
+          <path d="M14 90 Q26 86 38 90 T62 90 T86 90" opacity="0.4"/>
+        </svg>
+      </div>
+      <p class="dm-amenities__label">Floating Outfitters<br/>will pick you up</p>
+    </div>
+
+  </div>
+</section>
