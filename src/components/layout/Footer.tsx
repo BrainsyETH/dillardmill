@@ -17,6 +17,7 @@ export default function Footer() {
     explore: [
       { label: 'Photo Gallery', href: '/photos' },
       { label: 'The Area', href: '/the-area' },
+      { label: 'Floating Outfitters', href: '/the-area/floating-outfitters' },
       { label: 'Guest Reviews', href: '/reviews' },
       { label: 'Hiking Trails', href: '/trails' },
       { label: 'Our Thoughts', href: '/thoughts' },

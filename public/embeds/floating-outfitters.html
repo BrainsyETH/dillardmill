@@ -1,0 +1,488 @@
+<!--
+  Pine Valley — Floating Outfitters Near Pine Valley
+  ==================================================
+  Self-contained embed (paste into any HTML / CMS "code block").
+
+  River Conditions badges are Eddy's official "Condition Badge" (https://eddy.guide),
+  embedded per river via a self-sizing iframe:
+
+      <iframe src="https://eddy.guide/embed/badge/SLUG?theme=light" data-eddy-embed ...>
+
+  Rivers / slugs: huzzah · courtois · meramec · current
+  The <script> at the end resizes each badge to the height Eddy posts back.
+  (Note: Eddy's badge lives at /embed/badge/SLUG — the /embed?widget=badge builder
+  URL sends `frame-ancestors 'none'` and cannot be framed.)
+-->
+<style>
+.pv-out { font-family: 'Georgia', 'Times New Roman', serif; width: 100%; max-width: 760px; margin: 0 auto; color: #3a3a3a; padding: 1rem 0; box-sizing: border-box; }
+.pv-out *, .pv-out *::before, .pv-out *::after { box-sizing: border-box; }
+.pv-out-card { background: #fafaf7; border: 1px solid #e4ddd1; border-radius: 4px; overflow: hidden; }
+.pv-out-header { background: linear-gradient(135deg, #2d4a3e 0%, #3d5a4d 100%); color: #fff; padding: 24px 28px; position: relative; }
+.pv-out-eyebrow { font-family: 'Helvetica', sans-serif; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
+.pv-out-title { font-size: 24px; font-weight: 600; letter-spacing: 0.3px; line-height: 1.2; margin: 0; }
+.pv-out-subtitle { font-family: 'Helvetica', sans-serif; font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 6px; line-height: 1.5; max-width: 540px; }
+.pv-out-wave { position: absolute; bottom: -1px; left: 0; right: 0; height: 10px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M0,5 Q25,0 50,5 T100,5 V10 H0 Z' fill='%23fafaf7'/%3E%3C/svg%3E") repeat-x; background-size: 100px 10px; }
+.pv-river-section { padding: 18px 28px; border-bottom: 1px solid #e4ddd1; }
+.pv-river-section:last-of-type { border-bottom: none; }
+.pv-river-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e4ddd1; }
+.pv-river-head > div:first-child { flex: 1; min-width: 0; }
+.pv-river-name { font-family: 'Georgia', serif; font-size: 19px; font-weight: 700; color: #2c2c2c; display: flex; align-items: center; gap: 10px; }
+.pv-river-name::before { content: ''; width: 6px; height: 6px; background: #2d4a3e; border-radius: 50%; flex-shrink: 0; }
+.pv-river-meta { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #6b6b6b; font-style: italic; margin-top: 3px; }
+.pv-eddy-link { font-family: 'Helvetica', sans-serif; font-size: 10px; color: #2d4a3e; text-decoration: none; font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; padding-top: 4px; flex-shrink: 0; }
+.pv-eddy-link:hover { text-decoration: underline; }
+
+/* Eddy Condition Badge — official self-sizing iframe embed (eddy.guide).
+   Height (and width) are set at runtime by Eddy via postMessage — see the
+   resize script at the end of the file. */
+.pv-eddy-badge { border: none; overflow: hidden; display: inline-block; vertical-align: middle; width: 280px; max-width: 100%; flex-shrink: 0; }
+
+.pv-outfitters { display: grid; gap: 8px; }
+.pv-outfitter { background: #ffffff; border: 1px solid #e4ddd1; border-radius: 3px; padding: 12px 14px; transition: border-color 0.2s, box-shadow 0.2s; display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; align-items: start; }
+.pv-outfitter:hover { border-color: #2d4a3e; box-shadow: 0 2px 8px rgba(45, 74, 62, 0.08); }
+.pv-out-info { min-width: 0; }
+.pv-out-name { font-weight: 700; font-size: 14px; color: #2c2c2c; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; line-height: 1.3; }
+.pv-out-loc { font-family: 'Helvetica', sans-serif; font-size: 11px; color: #6b6b6b; margin-top: 3px; line-height: 1.45; }
+.pv-out-services { font-family: 'Helvetica', sans-serif; font-size: 10px; color: #8a6d3b; margin-top: 4px; letter-spacing: 0.2px; line-height: 1.5; }
+.pv-out-actions { display: flex; flex-direction: column; gap: 4px; align-items: stretch; min-width: 92px; }
+.pv-out-btn-row { display: flex; gap: 4px; }
+.pv-drive-time { font-family: 'Helvetica', sans-serif; font-size: 10px; color: #2d4a3e; font-weight: 600; background: #eef2e8; padding: 4px 8px; border-radius: 10px; letter-spacing: 0.3px; text-align: center; white-space: nowrap; }
+.pv-out-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-family: 'Helvetica', sans-serif; font-size: 10px; letter-spacing: 0.3px; padding: 6px 10px; border-radius: 3px; text-decoration: none; transition: background 0.2s; white-space: nowrap; font-weight: 500; flex: 1; }
+.pv-out-btn-map { background: #2d4a3e; color: #fff; }
+.pv-out-btn-map:hover { background: #1f3329; color: #fff; }
+.pv-out-btn-site { background: transparent; color: #8a6d3b; border: 1px solid #e4ddd1; }
+.pv-out-btn-site:hover { background: #f4ede0; color: #8a6d3b; }
+.pv-out-best { display: inline-block; background: #f4ede0; color: #8a6d3b; font-family: 'Helvetica', sans-serif; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; font-weight: 600; }
+.pv-out-nps { display: inline-block; background: #eef2e8; color: #5a7040; font-family: 'Helvetica', sans-serif; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; font-weight: 600; }
+.pv-out-footer { padding: 16px 28px; background: #f4ede0; text-align: center; font-family: 'Helvetica', sans-serif; font-size: 12px; color: #6b6b6b; }
+.pv-out-footer a { color: #2d4a3e; text-decoration: none; font-weight: 600; }
+.pv-out-footer a:hover { text-decoration: underline; }
+
+/* TABLET — outfitter card stacks, drive time + buttons go to top of card */
+@media (max-width: 680px) {
+  .pv-out-header { padding: 22px 22px; }
+  .pv-river-section { padding: 16px 20px; }
+  .pv-out-footer { padding: 14px 20px; }
+  .pv-outfitter { grid-template-columns: 1fr; gap: 10px; }
+  .pv-out-actions { flex-direction: row; flex-wrap: wrap; align-items: center; min-width: 0; gap: 6px; }
+  .pv-drive-time { padding: 5px 10px; font-size: 11px; }
+  .pv-out-btn-row { flex: 1; gap: 6px; }
+  .pv-out-btn { padding: 8px 12px; font-size: 11px; min-width: 100px; }
+}
+
+/* MOBILE — phones */
+@media (max-width: 480px) {
+  .pv-out { padding: 0.5rem 0; }
+  .pv-out-header { padding: 18px 16px; }
+  .pv-out-title { font-size: 19px; }
+  .pv-out-subtitle { font-size: 12px; }
+  .pv-river-section { padding: 14px 16px; }
+  .pv-out-footer { padding: 14px 16px; font-size: 11px; }
+  .pv-river-head { flex-direction: column; gap: 4px; align-items: flex-start; }
+  .pv-river-name { font-size: 17px; }
+  .pv-eddy-link { padding-top: 0; }
+  .pv-eddy-badge { margin-top: 6px; }
+  .pv-outfitter { padding: 12px; }
+  .pv-out-name { font-size: 14px; }
+  .pv-out-loc, .pv-out-services { font-size: 11px; }
+  .pv-out-actions { flex-direction: column; align-items: stretch; gap: 6px; }
+  .pv-drive-time { width: 100%; padding: 6px 10px; font-size: 11px; }
+  .pv-out-btn-row { display: flex; gap: 6px; }
+  .pv-out-btn { flex: 1; padding: 9px 12px; font-size: 11px; }
+}
+  @media (min-width: 900px) {
+  .pv-outfitters { grid-template-columns: 1fr 1fr; }
+  .pv-out { max-width: 1100px; }
+}
+</style>
+
+<div class="pv-out">
+  <div class="pv-out-card">
+
+    <div class="pv-out-header">
+      <div class="pv-out-eyebrow">Plan Your Float</div>
+      <div class="pv-out-title">Floating outfitters near Pine Valley</div>
+      <div class="pv-out-subtitle">Drive times from Pine Valley. Tap any outfitter for directions in Google Maps. Live conditions and full guides on Eddy.</div>
+      <div class="pv-out-wave"></div>
+    </div>
+
+    <div class="pv-river-section">
+      <div class="pv-river-head">
+        <div>
+          <div class="pv-river-name">Huzzah Creek</div>
+          <div class="pv-river-meta">Class I–II · 29 mi floatable · sharp turns, narrow channels</div>
+        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/huzzah?theme=light" data-eddy-embed width="280" title="Huzzah Creek - Condition Badge from Eddy" loading="lazy"></iframe>
+      </div>
+      <div class="pv-outfitters">
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Huzzah Valley Resort <span class="pv-out-best">Closest</span></div>
+            <div class="pv-out-loc">970 E Hwy 8, Steelville · (573) 786-2225</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Tube · Cabins · Restaurant · Pool · Horseback</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~30 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=970+E+Hwy+8,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://huzzahvalley.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Bass River Resort</div>
+            <div class="pv-out-loc">204 Butts Rd, Steelville · (573) 786-8517</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Cabins · Camping · Horseback · Family-run 50+ years</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~35 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=204+Butts+Rd,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://bassresort.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Ozark Outdoors Resort</div>
+            <div class="pv-out-loc">200 Ozark Outdoor Lane, Leasburg · (573) 245-6837</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Tube · Cabins · Aerial Park · Pool</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~40 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=200+Ozark+Outdoor+Lane,+Leasburg,+MO+65535" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://ozarkoutdoorsresort.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">The Rafting Company</div>
+            <div class="pv-out-loc">Steelville · rafting@theraftingco.com</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Shuttle</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~40 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=The+Rafting+Company+Steelville+MO" target="_blank" rel="noopener">📍 Directions</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-river-section">
+      <div class="pv-river-head">
+        <div>
+          <div class="pv-river-name">Courtois Creek</div>
+          <div class="pv-river-meta">Class I–II · 21 mi · "coat-a-way" · intimate, scenic</div>
+        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/courtois?theme=light" data-eddy-embed width="280" title="Courtois Creek - Condition Badge from Eddy" loading="lazy"></iframe>
+      </div>
+      <div class="pv-outfitters">
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Bass River Resort <span class="pv-out-best">On the Courtois</span></div>
+            <div class="pv-out-loc">204 Butts Rd, Steelville · (573) 786-8517</div>
+            <div class="pv-out-services">Camp-to-camp floats · directly on the Courtois</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~35 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=204+Butts+Rd,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://bassresort.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Huzzah Valley Resort</div>
+            <div class="pv-out-loc">970 E Hwy 8, Steelville · (573) 786-2225</div>
+            <div class="pv-out-services">Courtois floats · Canoe · Kayak · Raft · Tube</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~30 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=970+E+Hwy+8,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://huzzahvalley.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Ozark Outdoors Resort</div>
+            <div class="pv-out-loc">200 Ozark Outdoor Lane, Leasburg · (573) 245-6837</div>
+            <div class="pv-out-services">Courtois Primitive · Butts Slab routes · 5–10 mi floats</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~40 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=200+Ozark+Outdoor+Lane,+Leasburg,+MO+65535" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://ozarkoutdoorsresort.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-river-section">
+      <div class="pv-river-head">
+        <div>
+          <div class="pv-river-name">Meramec River</div>
+          <div class="pv-river-meta">Class I · 218 mi · wide, relaxed, swimming holes &amp; bluffs</div>
+        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/meramec?theme=light" data-eddy-embed width="280" title="Meramec River - Condition Badge from Eddy" loading="lazy"></iframe>
+      </div>
+      <div class="pv-outfitters">
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Ozark Outdoors Resort <span class="pv-out-best">Primary Meramec</span></div>
+            <div class="pv-out-loc">200 Ozark Outdoor Lane, Leasburg · (573) 245-6837</div>
+            <div class="pv-out-services">"The Y" · Tube Loop · 1 mi riverfront · Canoe · Kayak · Raft</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~40 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=200+Ozark+Outdoor+Lane,+Leasburg,+MO+65535" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://ozarkoutdoorsresort.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Meramec River Resort <span class="pv-out-best">Bird's Nest</span></div>
+            <div class="pv-out-loc">1441 Birds Nest Rd, Steelville · (573) 775-2606</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Cabins · Lodge · 29 acres riverfront</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~40 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=1441+Birds+Nest+Rd,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://meramecriverresort.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Adventure Outdoors (Fagan's)</div>
+            <div class="pv-out-loc">247 Thurman Lake Rd, Steelville · (573) 775-5744</div>
+            <div class="pv-out-services">Upper Meramec · Scotts Ford · Canoe · Kayak · Raft</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~45 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=247+Thurman+Lake+Rd,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="http://adventureoutdoorcanoeing.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Garrison's River Resort</div>
+            <div class="pv-out-loc">287 State Hwy TT, Steelville · (573) 775-2410</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Tube · Pool · 180 sites</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~45 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=287+State+Hwy+TT,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://garrisonscampground.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Lucky Clover Lakeside Resort</div>
+            <div class="pv-out-loc">69 Lucky Clover Rd, Steelville</div>
+            <div class="pv-out-services">100 acres · Canoe · Kayak · Raft · Tube · 2 lakes · Pool</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~50 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=69+Lucky+Clover+Rd,+Steelville,+MO+65565" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://luckyclovercampground.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Riverview Ranch</div>
+            <div class="pv-out-loc">7945 Hwy N, Bourbon · (573) 732-5544</div>
+            <div class="pv-out-services">Canoe · Kayak · Raft · Tube · 5 &amp; 10 mi floats · Cabins</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~55 min</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=7945+Hwy+N,+Bourbon,+MO+65441" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="http://riverviewranch.org/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-river-section">
+      <div class="pv-river-head">
+        <div>
+          <div class="pv-river-name">Current River</div>
+          <div class="pv-river-meta">Class I · 184 mi · spring-fed · Ozark National Scenic Riverways</div>
+        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/current?theme=light" data-eddy-embed width="280" title="Current River - Condition Badge from Eddy" loading="lazy"></iframe>
+      </div>
+      <div class="pv-outfitters">
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Jadwin Canoe Rental <span class="pv-out-nps">NPS</span> <span class="pv-out-best">Closest</span></div>
+            <div class="pv-out-loc">8754 Hwy K, Jadwin · (573) 729-5229</div>
+            <div class="pv-out-services">Mid-Current · Cedar Grove · 3–94 mi trips · Trout fishing</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1 hr</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=8754+Hwy+K,+Jadwin,+MO+65501" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="http://jadwincanoe.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Running River Canoe Rental</div>
+            <div class="pv-out-loc">17685 S Hwy 19, Salem · (573) 858-3371</div>
+            <div class="pv-out-services">Upper Current · Family-owned since 1979 · Canoe · Kayak · Raft</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1 hr</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=17685+S+Hwy+19,+Salem,+MO+65560" target="_blank" rel="noopener">📍 Directions</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Akers Ferry Canoe Rental <span class="pv-out-nps">NPS</span></div>
+            <div class="pv-out-loc">36869 State Route K, Salem · (573) 858-3224</div>
+            <div class="pv-out-services">Akers Ferry · most popular put-in · full shuttle · Camping</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1h 10m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=36869+State+Route+K,+Salem,+MO+65560" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://akersferrycanoe.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Current River Canoe Rental <span class="pv-out-nps">NPS</span></div>
+            <div class="pv-out-loc">31104 County Rd EE-356, Salem · (573) 858-3250</div>
+            <div class="pv-out-services">Pulltite &amp; Cedar Grove · upper Current · Canoe · Kayak · Raft</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1h 15m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=31104+County+Rd+EE-356,+Salem,+MO+65560" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://currentrivercanoe.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Carr's Canoe Rental</div>
+            <div class="pv-out-loc">Round Spring, Eminence · (573) 858-3240</div>
+            <div class="pv-out-services">Round Spring · 50+ years · Echo Bluff State Park service</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1h 30m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=Carrs+Canoe+Rental+Round+Spring+Eminence+MO" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://www.carrscanoerental.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Two Rivers Canoe Rental</div>
+            <div class="pv-out-loc">21575 State Hwy V, Eminence · (573) 226-3478</div>
+            <div class="pv-out-services">Current/Jacks Fork junction · Year-round floats · Camping</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1h 50m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=21575+State+Hwy+V,+Eminence,+MO+65466" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://www.2riverscanoe.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Harvey's Alley Spring <span class="pv-out-nps">NPS</span></div>
+            <div class="pv-out-loc">13863 MO-106, Eminence · (573) 226-3386</div>
+            <div class="pv-out-services">Alley Spring · est. 1963 · Jacks Fork &amp; Current</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1h 50m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=13863+MO-106,+Eminence,+MO+65466" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://harveysalleyspring.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Windy's Floats <span class="pv-out-nps">NPS</span></div>
+            <div class="pv-out-loc">513 N Main, Eminence · (573) 226-3404</div>
+            <div class="pv-out-services">Largest on Jacks Fork · since 1969 · Pet-friendly shuttle</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~1h 50m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=513+N+Main+St,+Eminence,+MO+65466" target="_blank" rel="noopener">📍 Directions</a>
+              <a class="pv-out-btn pv-out-btn-site" href="https://windysfloats.com/" target="_blank" rel="noopener">Site</a>
+            </div>
+          </div>
+        </div>
+        <div class="pv-outfitter">
+          <div class="pv-out-info">
+            <div class="pv-out-name">Silver Arrow Canoe Rental</div>
+            <div class="pv-out-loc">Van Buren · (573) 323-4657</div>
+            <div class="pv-out-services">Lower Current · Big Spring area · Canoe · Kayak · Tube</div>
+          </div>
+          <div class="pv-out-actions">
+            <span class="pv-drive-time">~2h 15m</span>
+            <div class="pv-out-btn-row">
+              <a class="pv-out-btn pv-out-btn-map" href="https://www.google.com/maps/dir/?api=1&origin=126+Dillard+Mill+Rd,+Davisville,+MO+65456&destination=Silver+Arrow+Canoe+Rental+Van+Buren+MO" target="_blank" rel="noopener">📍 Directions</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pv-out-footer">
+      Live conditions, full guides, and trip planning at <a href="https://eddy.guide" target="_blank" rel="noopener">eddy.guide</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* Eddy embed auto-resize (official snippet) — sets each badge iframe's height
+   and width from the message Eddy posts. Installed once. */
+(function () {
+  if (window.__eddyEmbedResizer) return;
+  window.__eddyEmbedResizer = 1;
+  window.addEventListener("message", function (e) {
+    var d = e && e.data;
+    if (!d || d.type !== "eddy-embed:resize" || typeof d.height !== "number") return;
+    var f = document.querySelectorAll("iframe[data-eddy-embed]");
+    for (var i = 0; i < f.length; i++) {
+      if (f[i].contentWindow === e.source) {
+        f[i].style.height = d.height + "px";
+        if (typeof d.width === "number") { f[i].style.width = d.width + "px"; }
+        break;
+      }
+    }
+  });
+})();
+</script>
