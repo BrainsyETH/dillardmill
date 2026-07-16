@@ -3,19 +3,15 @@
   ==================================================
   Self-contained embed (paste into any HTML / CMS "code block").
 
-  River Conditions badges are powered by Eddy (https://eddy.guide).
-  Each river header embeds an Eddy "badge" widget showing live conditions:
+  River Conditions badges are Eddy's official "Condition Badge" (https://eddy.guide),
+  embedded per river via a self-sizing iframe:
 
-      <iframe src="https://eddy.guide/embed?widget=badge&river=SLUG" ...>
+      <iframe src="https://eddy.guide/embed/badge/SLUG?theme=light" data-eddy-embed ...>
 
-  Rivers / slugs used below: huzzah · courtois · meramec · current
-
-  NOTE ON THE EMBED URL:
-  The iframe src/size were derived from Eddy's embed builder
-  (https://eddy.guide/embed?widget=badge&river=huzzah&tab=code). If Eddy's
-  official "Code" tab shows a different src or width/height, update the
-  .pv-eddy-badge <iframe> tags and the .pv-eddy-badge CSS width/height below —
-  nothing else needs to change.
+  Rivers / slugs: huzzah · courtois · meramec · current
+  The <script> at the end resizes each badge to the height Eddy posts back.
+  (Note: Eddy's badge lives at /embed/badge/SLUG — the /embed?widget=badge builder
+  URL sends `frame-ancestors 'none'` and cannot be framed.)
 -->
 <style>
 .pv-out { font-family: 'Georgia', 'Times New Roman', serif; width: 100%; max-width: 760px; margin: 0 auto; color: #3a3a3a; padding: 1rem 0; box-sizing: border-box; }
@@ -36,10 +32,10 @@
 .pv-eddy-link { font-family: 'Helvetica', sans-serif; font-size: 10px; color: #2d4a3e; text-decoration: none; font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; padding-top: 4px; flex-shrink: 0; }
 .pv-eddy-link:hover { text-decoration: underline; }
 
-/* River Conditions badge (Eddy) — sits in each river header, next to the name */
-.pv-river-conditions { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
-.pv-eddy-badge { width: 300px; max-width: 100%; height: 104px; border: 0; border-radius: 4px; overflow: hidden; display: block; background: #ffffff; }
-.pv-river-conditions .pv-eddy-link { padding-top: 0; }
+/* Eddy Condition Badge — official self-sizing iframe embed (eddy.guide).
+   Height (and width) are set at runtime by Eddy via postMessage — see the
+   resize script at the end of the file. */
+.pv-eddy-badge { border: none; overflow: hidden; display: inline-block; vertical-align: middle; width: 280px; max-width: 100%; flex-shrink: 0; }
 
 .pv-outfitters { display: grid; gap: 8px; }
 .pv-outfitter { background: #ffffff; border: 1px solid #e4ddd1; border-radius: 3px; padding: 12px 14px; transition: border-color 0.2s, box-shadow 0.2s; display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; align-items: start; }
@@ -85,8 +81,7 @@
   .pv-river-head { flex-direction: column; gap: 4px; align-items: flex-start; }
   .pv-river-name { font-size: 17px; }
   .pv-eddy-link { padding-top: 0; }
-  .pv-river-conditions { align-items: stretch; width: 100%; margin-top: 6px; }
-  .pv-eddy-badge { width: 100%; height: 108px; }
+  .pv-eddy-badge { margin-top: 6px; }
   .pv-outfitter { padding: 12px; }
   .pv-out-name { font-size: 14px; }
   .pv-out-loc, .pv-out-services { font-size: 11px; }
@@ -117,10 +112,7 @@
           <div class="pv-river-name">Huzzah Creek</div>
           <div class="pv-river-meta">Class I–II · 29 mi floatable · sharp turns, narrow channels</div>
         </div>
-        <div class="pv-river-conditions">
-          <iframe class="pv-eddy-badge" src="https://eddy.guide/embed?widget=badge&amp;river=huzzah" title="Live Huzzah Creek river conditions — Eddy" loading="lazy" width="300" height="104" scrolling="no"></iframe>
-          <a class="pv-eddy-link" href="https://eddy.guide/rivers/huzzah" target="_blank" rel="noopener">Full report on Eddy →</a>
-        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/huzzah?theme=light" data-eddy-embed width="280" title="Huzzah Creek - Condition Badge from Eddy" loading="lazy"></iframe>
       </div>
       <div class="pv-outfitters">
         <div class="pv-outfitter">
@@ -187,10 +179,7 @@
           <div class="pv-river-name">Courtois Creek</div>
           <div class="pv-river-meta">Class I–II · 21 mi · "coat-a-way" · intimate, scenic</div>
         </div>
-        <div class="pv-river-conditions">
-          <iframe class="pv-eddy-badge" src="https://eddy.guide/embed?widget=badge&amp;river=courtois" title="Live Courtois Creek river conditions — Eddy" loading="lazy" width="300" height="104" scrolling="no"></iframe>
-          <a class="pv-eddy-link" href="https://eddy.guide/rivers/courtois" target="_blank" rel="noopener">Full report on Eddy →</a>
-        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/courtois?theme=light" data-eddy-embed width="280" title="Courtois Creek - Condition Badge from Eddy" loading="lazy"></iframe>
       </div>
       <div class="pv-outfitters">
         <div class="pv-outfitter">
@@ -244,10 +233,7 @@
           <div class="pv-river-name">Meramec River</div>
           <div class="pv-river-meta">Class I · 218 mi · wide, relaxed, swimming holes &amp; bluffs</div>
         </div>
-        <div class="pv-river-conditions">
-          <iframe class="pv-eddy-badge" src="https://eddy.guide/embed?widget=badge&amp;river=meramec" title="Live Meramec River conditions — Eddy" loading="lazy" width="300" height="104" scrolling="no"></iframe>
-          <a class="pv-eddy-link" href="https://eddy.guide/rivers/meramec" target="_blank" rel="noopener">Full report on Eddy →</a>
-        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/meramec?theme=light" data-eddy-embed width="280" title="Meramec River - Condition Badge from Eddy" loading="lazy"></iframe>
       </div>
       <div class="pv-outfitters">
         <div class="pv-outfitter">
@@ -343,10 +329,7 @@
           <div class="pv-river-name">Current River</div>
           <div class="pv-river-meta">Class I · 184 mi · spring-fed · Ozark National Scenic Riverways</div>
         </div>
-        <div class="pv-river-conditions">
-          <iframe class="pv-eddy-badge" src="https://eddy.guide/embed?widget=badge&amp;river=current" title="Live Current River conditions — Eddy" loading="lazy" width="300" height="104" scrolling="no"></iframe>
-          <a class="pv-eddy-link" href="https://eddy.guide/rivers/current" target="_blank" rel="noopener">Full report on Eddy →</a>
-        </div>
+        <iframe class="pv-eddy-badge" src="https://eddy.guide/embed/badge/current?theme=light" data-eddy-embed width="280" title="Current River - Condition Badge from Eddy" loading="lazy"></iframe>
       </div>
       <div class="pv-outfitters">
         <div class="pv-outfitter">
@@ -482,3 +465,24 @@
 
   </div>
 </div>
+
+<script>
+/* Eddy embed auto-resize (official snippet) — sets each badge iframe's height
+   and width from the message Eddy posts. Installed once. */
+(function () {
+  if (window.__eddyEmbedResizer) return;
+  window.__eddyEmbedResizer = 1;
+  window.addEventListener("message", function (e) {
+    var d = e && e.data;
+    if (!d || d.type !== "eddy-embed:resize" || typeof d.height !== "number") return;
+    var f = document.querySelectorAll("iframe[data-eddy-embed]");
+    for (var i = 0; i < f.length; i++) {
+      if (f[i].contentWindow === e.source) {
+        f[i].style.height = d.height + "px";
+        if (typeof d.width === "number") { f[i].style.width = d.width + "px"; }
+        break;
+      }
+    }
+  });
+})();
+</script>

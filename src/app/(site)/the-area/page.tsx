@@ -130,6 +130,39 @@ export default function AreaPage() {
           </div>
         </motion.div>
 
+        {/* Floating Outfitters CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="mt-12"
+        >
+          <Link
+            href="/the-area/floating-outfitters"
+            className="group flex flex-col items-start gap-6 rounded-3xl border border-brand-sand bg-gradient-to-br from-brand-sky/10 to-brand-cream p-8 transition-colors hover:border-brand-sky sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex items-start gap-5">
+              <span className="text-5xl">🛶</span>
+              <div>
+                <h3 className="mb-2 font-serif text-2xl font-semibold text-brand-forest">
+                  Go Floating on the Ozark Rivers
+                </h3>
+                <p className="max-w-xl leading-relaxed text-brand-charcoal">
+                  Canoe, kayak, raft and tube outfitters on the Huzzah, Courtois, Meramec and
+                  Current — with live river conditions, drive times, and one-tap directions.
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-2 font-medium whitespace-nowrap text-brand-copper group-hover:text-brand-copper-dark">
+              View Outfitters
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </Link>
+        </motion.div>
+
         {/* On Property Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
