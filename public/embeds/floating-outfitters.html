@@ -9,10 +9,30 @@
       <iframe src="https://eddy.guide/embed/badge/SLUG?theme=light" data-eddy-embed ...>
 
   Rivers / slugs: huzzah · courtois · meramec · current
-  The <script> at the end resizes each badge to the height Eddy posts back.
+  The <script> below (kept ABOVE the badges) resizes each badge to the height Eddy posts back.
   (Note: Eddy's badge lives at /embed/badge/SLUG — the /embed?widget=badge builder
   URL sends `frame-ancestors 'none'` and cannot be framed.)
 -->
+<script>
+/* Eddy embed auto-resize (official snippet) — sets each badge iframe's height
+   and width from the message Eddy posts. Installed once. */
+(function () {
+  if (window.__eddyEmbedResizer) return;
+  window.__eddyEmbedResizer = 1;
+  window.addEventListener("message", function (e) {
+    var d = e && e.data;
+    if (!d || d.type !== "eddy-embed:resize" || typeof d.height !== "number") return;
+    var f = document.querySelectorAll("iframe[data-eddy-embed]");
+    for (var i = 0; i < f.length; i++) {
+      if (f[i].contentWindow === e.source) {
+        f[i].style.height = d.height + "px";
+        if (typeof d.width === "number") { f[i].style.width = d.width + "px"; }
+        break;
+      }
+    }
+  });
+})();
+</script>
 <style>
 .pv-out { font-family: 'Georgia', 'Times New Roman', serif; width: 100%; max-width: 760px; margin: 0 auto; color: #3a3a3a; padding: 1rem 0; box-sizing: border-box; }
 .pv-out *, .pv-out *::before, .pv-out *::after { box-sizing: border-box; }
@@ -465,24 +485,3 @@
 
   </div>
 </div>
-
-<script>
-/* Eddy embed auto-resize (official snippet) — sets each badge iframe's height
-   and width from the message Eddy posts. Installed once. */
-(function () {
-  if (window.__eddyEmbedResizer) return;
-  window.__eddyEmbedResizer = 1;
-  window.addEventListener("message", function (e) {
-    var d = e && e.data;
-    if (!d || d.type !== "eddy-embed:resize" || typeof d.height !== "number") return;
-    var f = document.querySelectorAll("iframe[data-eddy-embed]");
-    for (var i = 0; i < f.length; i++) {
-      if (f[i].contentWindow === e.source) {
-        f[i].style.height = d.height + "px";
-        if (typeof d.width === "number") { f[i].style.width = d.width + "px"; }
-        break;
-      }
-    }
-  });
-})();
-</script>
