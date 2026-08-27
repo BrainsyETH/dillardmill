@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Pine Valley — River Pickup Flyer</title>
+<style>
+  @page { size: 8.5in 11in; margin: 0; }
+
+  :root {
+    --espresso: #3A2A1E;
+    --parchment: #F4F1EB;
+    --charcoal: #2B2B2B;
+    --olive: #6B7A5A;
+    --river: #6F8291;
+    --tan: #CBB8A3;
+    --rust: #9C5A3C;
+    --card: #FBF9F5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 8.5in;
+    height: 11in;
+  }
+
+  body {
+    background: var(--parchment);
+    color: var(--charcoal);
+    font-family: "Liberation Sans", "DejaVu Sans", sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    position: relative;
+    width: 8.5in;
+    height: 11in;
+    padding: 0.52in 0.68in 0.46in;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* aged-paper mottling */
+    background:
+      radial-gradient(ellipse at 12% 8%, rgba(203,184,163,0.30), transparent 55%),
+      radial-gradient(ellipse at 92% 30%, rgba(203,184,163,0.22), transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(107,122,90,0.14), transparent 60%),
+      var(--parchment);
+  }
+
+  /* ---------- header ---------- */
+
+  .rule-top {
+    height: 5px;
+    background: var(--rust);
+    margin-bottom: 0.22in;
+  }
+
+  .eyebrow {
+    font-size: 8.5pt;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--olive);
+    font-weight: 700;
+  }
+
+  h1 {
+    font-family: "Bitstream Charter", "Charter", "DejaVu Serif", Georgia, serif;
+    font-size: 39pt;
+    line-height: 0.98;
+    color: var(--espresso);
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    margin: 0.075in 0 0;
+  }
+
+  h1 .em {
+    font-style: italic;
+    color: var(--rust);
+  }
+
+  .deck {
+    font-size: 11.5pt;
+    line-height: 1.48;
+    color: #4A4239;
+    max-width: 5.55in;
+    margin-top: 0.115in;
+  }
+
+  .deck strong { color: var(--espresso); }
+
+  .riverline {
+    display: block;
+    flex: none;
+    width: 100%;
+    height: 0.30in;
+    margin: 0.14in 0 0.12in;
+  }
+
+  /* ---------- cards ---------- */
+
+  /* Nothing in the page column may flex-shrink: the sheet is a fixed 11in and
+     a shrunk block would be silently clipped by the page's overflow:hidden. */
+  .page > * { flex: none; }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.135in;
+  }
+
+  .card {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--tan);
+    border-left: 6px solid var(--accent);
+    border-radius: 3px;
+    padding: 0.14in 0.24in 0.14in 0.20in;
+    gap: 0.22in;
+    align-items: flex-start;
+  }
+
+  .card:nth-child(1) { --accent: var(--olive); }
+  .card:nth-child(2) { --accent: var(--river); }
+  .card:nth-child(3) { --accent: var(--rust); }
+
+  .badge {
+    flex: none;
+    width: 0.82in;
+    text-align: center;
+    padding-top: 0.02in;
+  }
+
+  .badge svg { display: block; margin: 0 auto; }
+
+  .badge .num {
+    font-family: "Bitstream Charter", "Charter", "DejaVu Serif", Georgia, serif;
+    font-size: 9pt;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-top: 0.045in;
+    text-transform: uppercase;
+  }
+
+  .body { flex: 1; min-width: 0; }
+
+  .name {
+    font-family: "Bitstream Charter", "Charter", "DejaVu Serif", Georgia, serif;
+    font-size: 16.5pt;
+    color: var(--espresso);
+    font-weight: 700;
+    line-height: 1.12;
+  }
+
+  .river {
+    font-size: 9.5pt;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    margin-top: 0.055in;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.055in;
+    margin-top: 0.095in;
+  }
+
+  .chip {
+    font-size: 8pt;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #5C5347;
+    border: 1px solid var(--tan);
+    border-radius: 999px;
+    padding: 0.032in 0.085in;
+    background: rgba(203,184,163,0.14);
+  }
+
+  .note {
+    font-size: 9.5pt;
+    line-height: 1.42;
+    color: #554C42;
+    margin-top: 0.10in;
+  }
+
+  .contact {
+    display: flex;
+    align-items: baseline;
+    gap: 0.16in;
+    margin-top: 0.105in;
+    padding-top: 0.085in;
+    border-top: 1px dotted var(--tan);
+    font-size: 9.5pt;
+  }
+
+  .contact .ph {
+    font-weight: 700;
+    color: var(--espresso);
+    letter-spacing: 0.01em;
+  }
+
+  .contact .web { color: var(--river); }
+
+  /* ---------- footer ---------- */
+
+  .footer {
+    margin-top: 0.155in;
+    border-top: 2px solid var(--espresso);
+    padding-top: 0.13in;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 0.3in;
+  }
+
+  .foot-lead {
+    font-family: "Bitstream Charter", "Charter", "DejaVu Serif", Georgia, serif;
+    font-size: 13pt;
+    color: var(--espresso);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .foot-sub {
+    font-size: 8.7pt;
+    line-height: 1.45;
+    color: #5C5347;
+    margin-top: 0.055in;
+    max-width: 4.9in;
+  }
+
+  .stamp {
+    flex: none;
+    text-align: right;
+  }
+
+  .stamp .mark {
+    font-family: "Bitstream Charter", "Charter", "DejaVu Serif", Georgia, serif;
+    font-size: 12.5pt;
+    font-weight: 700;
+    color: var(--espresso);
+    line-height: 1.15;
+  }
+
+  .stamp .addr {
+    font-size: 8.2pt;
+    color: var(--olive);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 0.045in;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="rule-top"></div>
+
+  <div class="eyebrow">Pine Valley at Dillard Mill &nbsp;·&nbsp; Davisville, Missouri</div>
+
+  <h1>Leave the car.<br /><span class="em">They&rsquo;ll come get you.</span></h1>
+
+  <p class="deck">
+    Three Steelville river resorts will <strong>pick you up right here at Pine Valley</strong>,
+    put you on the water, and bring you back at the end of the day. No second vehicle,
+    no shuttle logistics, no wet seats on the drive home.
+  </p>
+
+  <!-- hand-drawn river divider -->
+  <svg class="riverline" viewBox="0 0 720 26" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 15 C 60 4, 108 25, 168 14 S 276 3, 336 14 S 444 25, 504 14 S 612 3, 720 13"
+          fill="none" stroke="#6F8291" stroke-width="2.1" stroke-linecap="round" opacity="0.85"/>
+    <path d="M0 21 C 66 12, 114 30, 174 20 S 282 10, 342 20 S 450 30, 510 20 S 618 10, 720 19"
+          fill="none" stroke="#CBB8A3" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+  </svg>
+
+  <div class="cards">
+
+    <!-- 1 — Lucky Clover -->
+    <div class="card">
+      <div class="badge">
+        <svg width="52" height="34" viewBox="0 0 52 34" aria-hidden="true">
+          <path d="M4 12 C 14 26, 38 26, 48 12" fill="none" stroke="#6B7A5A" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M4 12 C 18 16, 34 16, 48 12" fill="none" stroke="#6B7A5A" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+          <path d="M26 19 L 26 5" stroke="#3A2A1E" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M20 6 L 32 6" stroke="#3A2A1E" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M2 30 C 10 27, 16 33, 24 30 S 40 27, 50 30" fill="none" stroke="#6F8291" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+        </svg>
+        <div class="num">No. 01</div>
+      </div>
+      <div class="body">
+        <div class="name">Lucky Clover Lakeside River Resort</div>
+        <div class="river">Upper Meramec River</div>
+        <div class="chips">
+          <span class="chip">Canoe</span>
+          <span class="chip">Kayak</span>
+          <span class="chip">Raft</span>
+          <span class="chip">Tube</span>
+        </div>
+        <div class="note">
+          Family-run resort on the upper Meramec with its own pick-up and drop-off service.
+          Open roughly May through October.
+        </div>
+        <div class="contact">
+          <span class="ph">888-404-9154</span>
+          <span class="web">luckyclovercampground.com</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 — Garrison's -->
+    <div class="card">
+      <div class="badge">
+        <svg width="52" height="34" viewBox="0 0 52 34" aria-hidden="true">
+          <rect x="8" y="9" width="36" height="13" rx="6.5" fill="none" stroke="#6F8291" stroke-width="2.2"/>
+          <path d="M8 15.5 L 44 15.5" stroke="#6F8291" stroke-width="1.4" opacity="0.55"/>
+          <path d="M17 9 L 17 22 M26 9 L 26 22 M35 9 L 35 22" stroke="#6F8291" stroke-width="1.2" opacity="0.5"/>
+          <path d="M2 30 C 10 27, 16 33, 24 30 S 40 27, 50 30" fill="none" stroke="#6F8291" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+        </svg>
+        <div class="num">No. 02</div>
+      </div>
+      <div class="body">
+        <div class="name">Garrison&rsquo;s River Resort</div>
+        <div class="river">Meramec River</div>
+        <div class="chips">
+          <span class="chip">Canoe</span>
+          <span class="chip">Kayak</span>
+          <span class="chip">Raft</span>
+          <span class="chip">Tube</span>
+        </div>
+        <div class="note">
+          River shuttles run on the hour &mdash; 8, 9, 10, 11, 12 and 1 &mdash; so you can
+          match your float to a slow morning or a long afternoon.
+        </div>
+        <div class="contact">
+          <span class="ph">573-775-2410 &nbsp;·&nbsp; 800-367-8945</span>
+          <span class="web">garrisonscampground.com</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 — Huzzah Valley -->
+    <div class="card">
+      <div class="badge">
+        <svg width="52" height="34" viewBox="0 0 52 34" aria-hidden="true">
+          <circle cx="26" cy="15" r="10.5" fill="none" stroke="#9C5A3C" stroke-width="2.2"/>
+          <circle cx="26" cy="15" r="4.6" fill="none" stroke="#9C5A3C" stroke-width="1.5" opacity="0.6"/>
+          <path d="M2 30 C 10 27, 16 33, 24 30 S 40 27, 50 30" fill="none" stroke="#6F8291" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+        </svg>
+        <div class="num">No. 03</div>
+      </div>
+      <div class="body">
+        <div class="name">Huzzah Valley Resort</div>
+        <div class="river">Huzzah Creek &nbsp;·&nbsp; Courtois Creek &nbsp;·&nbsp; Meramec River</div>
+        <div class="chips">
+          <span class="chip">Canoe</span>
+          <span class="chip">Single Kayak</span>
+          <span class="chip">Tandem Kayak</span>
+          <span class="chip">Raft</span>
+          <span class="chip">Tube</span>
+        </div>
+        <div class="note">
+          Floats all three waters daily, with trips from two miles up to twelve &mdash;
+          the widest range of the three, and the closest to Pine Valley.
+        </div>
+        <div class="contact">
+          <span class="ph">573-786-8412 &nbsp;·&nbsp; 800-367-4516</span>
+          <span class="web">huzzahvalley.com</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="foot-lead">Book the float when you book the cabin.</div>
+      <div class="foot-sub">
+        Call the resort directly and tell them you&rsquo;re staying at Pine Valley on Dillard Mill Road &mdash;
+        arrange pickup when you reserve. Floats are seasonal and depend on water levels, so confirm
+        your trip and pickup time a day ahead.
+      </div>
+    </div>
+    <div class="stamp">
+      <div class="mark">Pine Valley<br />at Dillard Mill</div>
+      <div class="addr">126 Dillard Mill Rd<br />Davisville, MO 65456</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
