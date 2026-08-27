@@ -3,6 +3,28 @@
 Print pieces for the cabins. Each flyer is authored as a self-contained HTML
 file sized to a physical sheet, then rendered to PDF with headless Chromium.
 
+## safety-flyer
+
+Single 8.5×11 sheet for the cabins: 911 plus the property address, the hospital
+and the walk-in clinic with driving directions, and where to find the first aid
+kit and fire extinguisher.
+
+The address sits next to the 911 line on purpose — that is the thing a guest has
+to read aloud to a dispatcher, so it should not be at the bottom of the page.
+
+Driving directions and the hospital/clinic phone numbers were carried over
+verbatim from the previous version of this flyer. They have not been
+re-verified against a routing service; check them if the roads or the clinic
+change.
+
+**The photo is a placeholder.** `bathhouse-first-aid.jpg` is a generated gray
+box, not the real courtyard photo. Drop the real image in at that filename and
+re-render — the frame is `object-fit: cover` at 3.55in × 3.0in, so a landscape
+or squarish crop centered on the FIRST AID box works best.
+
+Note that the current photo of that spot shows a "Bath House" sign, while the
+flyer copy says "Hippy Showers". Confirm which name guests will be looking for.
+
 ## river-pickup-flyer
 
 Single 8.5×11 sheet listing the three outfitters that offer door-to-door pickup
@@ -11,7 +33,7 @@ layout of the laminated card already in the cabins — olive header band, one ca
 per outfitter with phone / website / address, and a "Plan Your Float" block
 carrying the QR code.
 
-Rendering to PDF (Chromium takes the page size from the `@page` rule, so no
+Both flyers render the same way (Chromium takes the page size from the `@page` rule, so no
 flags beyond `--no-pdf-header-footer` are needed):
 
 ```bash
