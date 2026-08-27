@@ -23,6 +23,14 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // Add URL redirects from Squarespace here during migration
+
+      // Short URL printed on the in-cabin float trip flyer (and its QR code).
+      // Cards are already laminated, so this mapping has to keep working.
+      {
+        source: '/floating',
+        destination: '/the-area/floating-outfitters',
+        permanent: true,
+      },
     ];
   },
   async headers() {
