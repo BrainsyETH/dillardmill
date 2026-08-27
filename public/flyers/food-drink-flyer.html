@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Pine Valley — Food &amp; Drink</title>
+<style>
+  @page { size: 8.5in 11in; margin: 0; }
+
+  :root {
+    --copper:    #9C5A3C;  /* header band, accents */
+    --olive:     #6B7A5A;
+    --parchment: #F4F1EB;
+    --card:      #FCFAF6;
+    --tan:       #D9CEBE;
+    --charcoal:  #2B2B2B;
+    --muted:     #6B6257;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { width: 8.5in; height: 11in; }
+
+  body {
+    background: var(--parchment);
+    color: var(--charcoal);
+    font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Block flow, not flex — the sheet is a hard 11in with overflow hidden. */
+  .page {
+    width: 8.5in;
+    height: 11in;
+    background: var(--parchment);
+    overflow: hidden;
+  }
+
+  /* ---------- header band ---------- */
+
+  .band {
+    background: var(--copper);
+    color: #fff;
+    padding: 0.40in 0.6in 0.42in;
+  }
+
+  .eyebrow {
+    font-size: 8.5pt;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(255,255,255,0.82);
+  }
+
+  .band h1 {
+    font-size: 34pt;
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-top: 0.07in;
+  }
+
+  .content { padding: 0.32in 0.6in 0; }
+
+  /* ---------- two towns ---------- */
+
+  .cols {
+    display: flex;
+    gap: 0.34in;
+    align-items: flex-start;
+  }
+
+  .col { flex: 1; min-width: 0; }
+
+  .town {
+    border-bottom: 2px solid var(--copper);
+    padding-bottom: 0.08in;
+    margin-bottom: 0.16in;
+  }
+
+  .town h2 {
+    font-size: 19pt;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #4A3222;
+  }
+
+  .town .dist {
+    font-size: 9.5pt;
+    color: var(--muted);
+    margin-top: 0.03in;
+  }
+
+  /* ---------- one place ---------- */
+
+  .place {
+    background: var(--card);
+    border: 1px solid var(--tan);
+    border-radius: 8px;
+    padding: 0.12in 0.16in 0.13in;
+    margin-bottom: 0.11in;
+  }
+
+  .place .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.12in;
+  }
+
+  .place h3 {
+    font-size: 12.5pt;
+    font-weight: 700;
+    line-height: 1.18;
+    color: #23291C;
+  }
+
+  .tag {
+    flex: none;
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--olive);
+    padding: 0.035in 0.10in;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .place .meta {
+    font-size: 9.5pt;
+    line-height: 1.34;
+    color: var(--muted);
+    margin-top: 0.05in;
+  }
+
+  .place .tel {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-top: 0.05in;
+  }
+
+  .place .hours {
+    font-size: 9pt;
+    line-height: 1.36;
+    color: var(--charcoal);
+    margin-top: 0.07in;
+    padding-top: 0.07in;
+    border-top: 1px solid var(--tan);
+  }
+
+  /* ---------- footer ---------- */
+
+  .footer {
+    margin-top: 0.26in;
+    padding-top: 0.13in;
+    border-top: 1px solid var(--tan);
+  }
+
+  .footer .who {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #4A3B33;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="band">
+    <div class="eyebrow">Pine Valley at Dillard Mill</div>
+    <h1>Food &amp; Drink</h1>
+  </div>
+
+  <div class="content">
+    <div class="cols">
+
+      <div class="col">
+        <div class="town">
+          <h2>Viburnum</h2>
+          <div class="dist">Within 6 miles</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>The Leadline</h3>
+          </div>
+          <div class="meta">4 Viburnum Center Rd</div>
+          <div class="tel">(573)&nbsp;217-1306</div>
+          <div class="hours">Daily 6am &ndash; 9pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>G &amp; W Foods</h3>
+            <span class="tag">Grocery</span>
+          </div>
+          <div class="meta">2 Stoneridge Center Rd</div>
+          <div class="tel">(573)&nbsp;244-5594</div>
+          <div class="hours">Mon &ndash; Thu 7am &ndash; 7pm<br />Fri &ndash; Sun 7am &ndash; 8pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Dollar General</h3>
+            <span class="tag">Grocery</span>
+          </div>
+          <div class="meta">Stoneridge Center Rd</div>
+          <div class="tel">(573)&nbsp;244-3282</div>
+          <div class="hours">Daily 8am &ndash; 9pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Casey&rsquo;s</h3>
+            <span class="tag">Pizza &amp; Gas</span>
+          </div>
+          <div class="meta">24 Missouri Ave</div>
+          <div class="tel">(573)&nbsp;244-3124</div>
+          <div class="hours">Daily 4am &ndash; 11pm</div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="town">
+          <h2>Steelville</h2>
+          <div class="dist">About 30 minutes</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Rich&rsquo;s Famous Burgers</h3>
+          </div>
+          <div class="meta">112 Main St</div>
+          <div class="tel">(573)&nbsp;775-8888</div>
+          <div class="hours">Mon &ndash; Fri 6am &ndash; 8pm<br />Sat &ndash; Sun 7am &ndash; 8pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Spare Rib Inn</h3>
+          </div>
+          <div class="meta">119 Main St</div>
+          <div class="tel">(573)&nbsp;775-2077</div>
+          <div class="hours">Daily 5:30am &ndash; 7pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Dairy Isle &amp; Grill</h3>
+          </div>
+          <div class="meta">502 W Main St</div>
+          <div class="tel">(573)&nbsp;775-5388</div>
+          <div class="hours">Mon &ndash; Thu 11am &ndash; 7pm<br />Fri &ndash; Sat 11am &ndash; 9pm &nbsp;·&nbsp; Sun 11am &ndash; 8pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Mr Tequila</h3>
+          </div>
+          <div class="meta">501 Main St</div>
+          <div class="tel">(573)&nbsp;775-5262</div>
+          <div class="hours">Mon &ndash; Thu 11am &ndash; 9pm<br />Fri 11am &ndash; 9:30pm</div>
+        </div>
+
+        <div class="place">
+          <div class="head">
+            <h3>Art &amp; Joe</h3>
+            <span class="tag">Coffee</span>
+          </div>
+          <div class="meta">105 E Main St</div>
+          <div class="tel">(573)&nbsp;775-5959</div>
+          <div class="hours">Mon &ndash; Sat 8am &ndash; 2pm<br />Wed from 10am &nbsp;·&nbsp; Closed Sun</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <div class="who">Pine Valley at Dillard Mill &nbsp;·&nbsp; Davisville, MO</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -21,6 +21,31 @@ footer get shrunk into the clip.
 Don't screenshot the HTML to check layout. The headless viewport truncates
 below ~980px and makes a correct page look broken. Inspect the PDF.
 
+## food-drink-flyer
+
+Groceries and places to eat, scoped to Viburnum and Steelville only. Salem and
+Cuba are deliberately out of scope.
+
+Hours print without a call-ahead caveat, by request. They do drift — three of
+six entries on the previous version of this flyer had changed by the time it was
+rebuilt — so re-check before each reprint.
+
+Sourced from current listings, not from the old flyer, except where noted:
+
+- **The Leadline** (new) — listings give the ZIP as 65560, which is Salem's;
+  Viburnum is 65566. The street address is unconfirmed.
+- **G & W Foods, Dollar General, Casey's** — carried over from the old flyer
+  unverified. Nothing contradicted them.
+- **Rich's Famous Burgers** — hours changed since the old flyer. It occupies the
+  former Missouri Hick B-B-Q South space at 112 Main St.
+- **Dairy Isle & Grill** — seasonal. Confirm it is open before a spring reprint.
+- **Mr Tequila** — no Saturday or Sunday hours were listed anywhere, so the card
+  shows Mon–Fri only rather than guessing.
+
+Dropped from the old flyer: the FourWay (closed, became Weir on 66, which also
+reads closed), Red Barn BBQ and Rockfair Tavern (Salem and Cuba, out of scope),
+and the Meramec Wine Trail footer line.
+
 ## safety-flyer
 
 911 and the property address, the hospital and walk-in clinic with directions,
