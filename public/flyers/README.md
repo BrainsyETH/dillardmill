@@ -26,6 +26,28 @@ below ~980px and makes a correct page look broken. Inspect the PDF.
 Groceries and places to eat, scoped to Viburnum and Steelville only. Salem and
 Cuba are deliberately out of scope.
 
+### Copy on the cards
+
+Only the businesses' own words appear as card subtext, in quotes: Rich's,
+Spare Rib Inn, and Dairy Isle. Everything else has no subtext, on purpose —
+do not write descriptions on their behalf. Casey's "Pizza and Gas" comes from
+the previous Pine Valley sheet.
+
+The other six have nothing quotable that was reachable. Their own copy lives on
+their websites and Facebook pages, which this environment's network policy
+blocks (403 at the proxy). Anything added later should be lifted from their own
+site or asked for directly.
+
+### Photos
+
+Not included. The plan was one image per place from each business's own site,
+but those domains are blocked here. To add them: drop files in
+`public/flyers/img/` and wire them into `.place`. They are the businesses'
+copyrighted photos — worth a quick ask before printing, which most will grant
+for a guest sheet that sends them customers.
+
+### Look
+
 Unlike the other two sheets it is deliberately playful: Pacifico script title,
 Fredoka for names, a scalloped awning edge under the band, and a colored icon
 badge per place. Fonts are vendored in `fonts/` — see the README there.
