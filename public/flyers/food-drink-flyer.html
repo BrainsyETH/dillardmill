@@ -6,14 +6,39 @@
 <style>
   @page { size: 8.5in 11in; margin: 0; }
 
+  /* Vendored from Google Fonts (SIL Open Font License) — see fonts/README.md.
+     Kept local so render.sh works offline and the sheet always prints the same. */
+  @font-face {
+    font-family: 'Pacifico';
+    src: url('fonts/Pacifico-Regular.ttf') format('truetype');
+    font-weight: 400; font-style: normal;
+  }
+  @font-face {
+    font-family: 'Fredoka';
+    src: url('fonts/Fredoka-SemiBold.ttf') format('truetype');
+    font-weight: 600; font-style: normal;
+  }
+  @font-face {
+    font-family: 'Fredoka';
+    src: url('fonts/Fredoka-Bold.ttf') format('truetype');
+    font-weight: 700; font-style: normal;
+  }
+
   :root {
-    --copper:    #9C5A3C;  /* header band, accents */
-    --olive:     #6B7A5A;
-    --parchment: #F4F1EB;
-    --card:      #FCFAF6;
-    --tan:       #D9CEBE;
-    --charcoal:  #2B2B2B;
-    --muted:     #6B6257;
+    --terracotta: #C4622D;
+    --brown:      #4A3222;
+    --cream:      #FBF4E6;
+    --card:       #FFFCF5;
+    --tan:        #E4D5BE;
+    --charcoal:   #33302B;
+    --muted:      #7A6F60;
+
+    /* per-place badge colors */
+    --olive:   #6B7A5A;
+    --gold:    #D99A2B;
+    --berry:   #B3453A;
+    --teal:    #4F8578;
+    --plum:    #8A5A72;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,7 +46,7 @@
   html, body { width: 8.5in; height: 11in; }
 
   body {
-    background: var(--parchment);
+    background: var(--cream);
     color: var(--charcoal);
     font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif;
     -webkit-print-color-adjust: exact;
@@ -32,137 +57,160 @@
   .page {
     width: 8.5in;
     height: 11in;
-    background: var(--parchment);
+    background: var(--cream);
     overflow: hidden;
   }
 
   /* ---------- header band ---------- */
 
   .band {
-    background: var(--copper);
+    background: var(--terracotta);
     color: #fff;
-    padding: 0.40in 0.6in 0.42in;
+    padding: 0.34in 0.6in 0.30in;
+    text-align: center;
   }
 
   .eyebrow {
     font-size: 8.5pt;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
     font-weight: 700;
-    color: rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.85);
   }
 
   .band h1 {
-    font-size: 34pt;
-    line-height: 1.02;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin-top: 0.07in;
+    font-family: 'Pacifico', cursive;
+    font-size: 46pt;
+    line-height: 1.06;
+    font-weight: 400;
+    margin-top: 0.06in;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.13);
   }
 
-  .content { padding: 0.32in 0.6in 0; }
+  /* scalloped bottom edge, like a diner awning */
+  .scallop {
+    height: 0.13in;
+    background-image: radial-gradient(circle at 50% 0%,
+      var(--terracotta) 0 0.082in, rgba(255,255,255,0) 0.084in);
+    background-size: 0.20in 0.13in;
+    background-repeat: repeat-x;
+  }
+
+  .content { padding: 0.26in 0.55in 0; }
 
   /* ---------- two towns ---------- */
 
-  .cols {
-    display: flex;
-    gap: 0.34in;
-    align-items: flex-start;
-  }
-
+  .cols { display: flex; gap: 0.28in; align-items: flex-start; }
   .col { flex: 1; min-width: 0; }
 
   .town {
-    border-bottom: 2px solid var(--copper);
-    padding-bottom: 0.08in;
-    margin-bottom: 0.16in;
+    text-align: center;
+    margin-bottom: 0.15in;
   }
 
   .town h2 {
-    font-size: 19pt;
+    font-family: 'Fredoka', sans-serif;
     font-weight: 700;
+    font-size: 21pt;
     line-height: 1.1;
-    color: #4A3222;
+    color: var(--terracotta);
   }
 
   .town .dist {
-    font-size: 9.5pt;
-    color: var(--muted);
-    margin-top: 0.03in;
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--brown);
+    padding: 0.035in 0.13in;
+    border-radius: 999px;
+    margin-top: 0.05in;
   }
 
   /* ---------- one place ---------- */
 
   .place {
     background: var(--card);
-    border: 1px solid var(--tan);
-    border-radius: 8px;
-    padding: 0.12in 0.16in 0.13in;
-    margin-bottom: 0.11in;
+    border: 1.5px solid var(--tan);
+    border-radius: 13px;
+    padding: 0.13in 0.15in 0.14in;
+    margin-bottom: 0.10in;
   }
 
   .place .head {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.12in;
+    align-items: center;
+    gap: 0.09in;
+  }
+
+  .badge {
+    flex: none;
+    width: 0.30in;
+    height: 0.30in;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .badge svg {
+    width: 0.19in;
+    height: 0.19in;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2.1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .place h3 {
-    font-size: 12.5pt;
-    font-weight: 700;
-    line-height: 1.18;
-    color: #23291C;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 13pt;
+    line-height: 1.12;
+    color: var(--brown);
   }
 
-  .tag {
-    flex: none;
-    font-size: 6.5pt;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #fff;
-    background: var(--olive);
-    padding: 0.035in 0.10in;
-    border-radius: 999px;
-    white-space: nowrap;
+  .place .blurb {
+    font-size: 8.5pt;
+    line-height: 1.3;
+    font-style: italic;
+    color: var(--terracotta);
+    margin-top: 0.06in;
   }
 
-  .place .meta {
+  .place .where {
     font-size: 9.5pt;
     line-height: 1.34;
     color: var(--muted);
-    margin-top: 0.05in;
+    margin-top: 0.055in;
   }
 
-  .place .tel {
-    font-size: 11pt;
-    font-weight: 700;
-    color: var(--charcoal);
-    margin-top: 0.05in;
-  }
+  .place .where b { color: var(--charcoal); font-size: 10.5pt; }
 
   .place .hours {
-    font-size: 9pt;
-    line-height: 1.36;
+    font-size: 8.5pt;
+    line-height: 1.38;
     color: var(--charcoal);
-    margin-top: 0.07in;
-    padding-top: 0.07in;
-    border-top: 1px solid var(--tan);
+    margin-top: 0.06in;
+    padding-top: 0.06in;
+    border-top: 1.5px dotted var(--tan);
   }
 
   /* ---------- footer ---------- */
 
   .footer {
-    margin-top: 0.26in;
-    padding-top: 0.13in;
-    border-top: 1px solid var(--tan);
+    margin-top: 0.18in;
+    text-align: center;
   }
 
   .footer .who {
-    font-size: 9.5pt;
-    font-weight: 700;
-    color: #4A3B33;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 10.5pt;
+    color: var(--terracotta);
     letter-spacing: 0.02em;
   }
 </style>
@@ -174,10 +222,12 @@
     <div class="eyebrow">Pine Valley at Dillard Mill</div>
     <h1>Food &amp; Drink</h1>
   </div>
+  <div class="scallop"></div>
 
   <div class="content">
     <div class="cols">
 
+      <!-- ============ VIBURNUM ============ -->
       <div class="col">
         <div class="town">
           <h2>Viburnum</h2>
@@ -186,44 +236,54 @@
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--berry)">
+              <svg viewBox="0 0 24 24"><path d="M6 3v6a2 2 0 0 0 4 0V3M8 11v10M17 3c-1.6 2-2 4-2 6h4V3M17 9v12"/></svg>
+            </span>
             <h3>The Leadline</h3>
           </div>
-          <div class="meta">4 Viburnum Center Rd</div>
-          <div class="tel">(573)&nbsp;217-1306</div>
+          <div class="blurb">Breakfast straight through dinner</div>
+          <div class="where">4 Viburnum Center Rd &nbsp;·&nbsp; <b>(573)&nbsp;217-1306</b></div>
           <div class="hours">Daily 6am &ndash; 9pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--olive)">
+              <svg viewBox="0 0 24 24"><path d="M3 8h18l-1.6 11a2 2 0 0 1-2 1.7H6.6a2 2 0 0 1-2-1.7L3 8zM9 8V5.5a3 3 0 0 1 6 0V8M9.5 12v5M14.5 12v5"/></svg>
+            </span>
             <h3>G &amp; W Foods</h3>
-            <span class="tag">Grocery</span>
           </div>
-          <div class="meta">2 Stoneridge Center Rd</div>
-          <div class="tel">(573)&nbsp;244-5594</div>
-          <div class="hours">Mon &ndash; Thu 7am &ndash; 7pm<br />Fri &ndash; Sun 7am &ndash; 8pm</div>
+          <div class="blurb">The full grocery run</div>
+          <div class="where">2 Stoneridge Center Rd &nbsp;·&nbsp; <b>(573)&nbsp;244-5594</b></div>
+          <div class="hours">Mon &ndash; Thu 7am &ndash; 7pm &nbsp;·&nbsp; Fri &ndash; Sun 7am &ndash; 8pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--teal)">
+              <svg viewBox="0 0 24 24"><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M2 3h3l2.6 12h11L21 6.5H6.2"/></svg>
+            </span>
             <h3>Dollar General</h3>
-            <span class="tag">Grocery</span>
           </div>
-          <div class="meta">Stoneridge Center Rd</div>
-          <div class="tel">(573)&nbsp;244-3282</div>
+          <div class="blurb">Snacks, basics, bug spray</div>
+          <div class="where">Stoneridge Center Rd &nbsp;·&nbsp; <b>(573)&nbsp;244-3282</b></div>
           <div class="hours">Daily 8am &ndash; 9pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--gold)">
+              <svg viewBox="0 0 24 24"><path d="M4 21V5.5A2.5 2.5 0 0 1 6.5 3h5A2.5 2.5 0 0 1 14 5.5V21M2.5 21H15M6.5 7.5h5v3.5h-5zM17 8.5l3 2.5v5.5a1.6 1.6 0 0 0 1.5 1.5"/></svg>
+            </span>
             <h3>Casey&rsquo;s</h3>
-            <span class="tag">Pizza &amp; Gas</span>
           </div>
-          <div class="meta">24 Missouri Ave</div>
-          <div class="tel">(573)&nbsp;244-3124</div>
+          <div class="blurb">Pizza, coffee and gas</div>
+          <div class="where">24 Missouri Ave &nbsp;·&nbsp; <b>(573)&nbsp;244-3124</b></div>
           <div class="hours">Daily 4am &ndash; 11pm</div>
         </div>
       </div>
 
+      <!-- ============ STEELVILLE ============ -->
       <div class="col">
         <div class="town">
           <h2>Steelville</h2>
@@ -232,48 +292,62 @@
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--berry)">
+              <svg viewBox="0 0 24 24"><path d="M3.5 9.5c0-3 3.8-5.5 8.5-5.5s8.5 2.5 8.5 5.5zM3.2 12.8h17.6M4 16h16a4.2 4.2 0 0 1-4.2 4H8.2A4.2 4.2 0 0 1 4 16z"/></svg>
+            </span>
             <h3>Rich&rsquo;s Famous Burgers</h3>
           </div>
-          <div class="meta">112 Main St</div>
-          <div class="tel">(573)&nbsp;775-8888</div>
-          <div class="hours">Mon &ndash; Fri 6am &ndash; 8pm<br />Sat &ndash; Sun 7am &ndash; 8pm</div>
+          <div class="blurb">Burgers, and breakfast from 6am</div>
+          <div class="where">112 Main St &nbsp;·&nbsp; <b>(573)&nbsp;775-8888</b></div>
+          <div class="hours">Mon &ndash; Fri 6am &ndash; 8pm &nbsp;·&nbsp; Sat &ndash; Sun 7am &ndash; 8pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--gold)">
+              <svg viewBox="0 0 24 24"><path d="M4 16.5a8 8 0 0 1 16 0M2 16.5h20M12 8.5V6"/></svg>
+            </span>
             <h3>Spare Rib Inn</h3>
           </div>
-          <div class="meta">119 Main St</div>
-          <div class="tel">(573)&nbsp;775-2077</div>
+          <div class="blurb">Early diner &mdash; doors open 5:30am</div>
+          <div class="where">119 Main St &nbsp;·&nbsp; <b>(573)&nbsp;775-2077</b></div>
           <div class="hours">Daily 5:30am &ndash; 7pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--plum)">
+              <svg viewBox="0 0 24 24"><path d="M7.6 9.2h8.8l-1 11.3a1.4 1.4 0 0 1-1.4 1.3h-4a1.4 1.4 0 0 1-1.4-1.3z"/><path d="M6.9 9.2h10.2M14.9 9.2l2.7-5.6M8.7 9.2a3.3 3.3 0 0 1 6.6 0"/></svg>
+            </span>
             <h3>Dairy Isle &amp; Grill</h3>
           </div>
-          <div class="meta">502 W Main St</div>
-          <div class="tel">(573)&nbsp;775-5388</div>
-          <div class="hours">Mon &ndash; Thu 11am &ndash; 7pm<br />Fri &ndash; Sat 11am &ndash; 9pm &nbsp;·&nbsp; Sun 11am &ndash; 8pm</div>
+          <div class="blurb">Root Beer Float Capital of Missouri, since 1962</div>
+          <div class="where">502 W Main St &nbsp;·&nbsp; <b>(573)&nbsp;775-5388</b></div>
+          <div class="hours">Mon &ndash; Thu 11am &ndash; 7pm &nbsp;·&nbsp; Fri &ndash; Sat 11am &ndash; 9pm<br />Sun 11am &ndash; 8pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--olive)">
+              <svg viewBox="0 0 24 24"><path d="M3.5 5h17L12 13.5zM12 13.5V20M8 20h8"/></svg>
+            </span>
             <h3>Mr Tequila</h3>
           </div>
-          <div class="meta">501 Main St</div>
-          <div class="tel">(573)&nbsp;775-5262</div>
-          <div class="hours">Mon &ndash; Thu 11am &ndash; 9pm<br />Fri 11am &ndash; 9:30pm</div>
+          <div class="blurb">Mexican, on Main</div>
+          <div class="where">501 Main St &nbsp;·&nbsp; <b>(573)&nbsp;775-5262</b></div>
+          <div class="hours">Mon &ndash; Thu 11am &ndash; 9pm &nbsp;·&nbsp; Fri 11am &ndash; 9:30pm</div>
         </div>
 
         <div class="place">
           <div class="head">
+            <span class="badge" style="background:var(--teal)">
+              <svg viewBox="0 0 24 24"><path d="M4 9h13v6.5a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 4 15.5zM17 11h1.8a2.6 2.6 0 0 1 0 5.2H17M7.5 3v2.5M11 3v2.5M14.5 3v2.5"/></svg>
+            </span>
             <h3>Art &amp; Joe</h3>
-            <span class="tag">Coffee</span>
           </div>
-          <div class="meta">105 E Main St</div>
-          <div class="tel">(573)&nbsp;775-5959</div>
-          <div class="hours">Mon &ndash; Sat 8am &ndash; 2pm<br />Wed from 10am &nbsp;·&nbsp; Closed Sun</div>
+          <div class="blurb">Coffee and local art</div>
+          <div class="where">105 E Main St &nbsp;·&nbsp; <b>(573)&nbsp;775-5959</b></div>
+          <div class="hours">Mon &ndash; Sat 8am &ndash; 2pm &nbsp;·&nbsp; Wed from 10am<br />Closed Sunday</div>
         </div>
       </div>
 

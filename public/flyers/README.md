@@ -26,6 +26,15 @@ below ~980px and makes a correct page look broken. Inspect the PDF.
 Groceries and places to eat, scoped to Viburnum and Steelville only. Salem and
 Cuba are deliberately out of scope.
 
+Unlike the other two sheets it is deliberately playful: Pacifico script title,
+Fredoka for names, a scalloped awning edge under the band, and a colored icon
+badge per place. Fonts are vendored in `fonts/` — see the README there.
+
+Icons are hand-written inline SVG at 0.19in, which is small enough that
+silhouette matters more than detail. Two earlier attempts failed at that size: a
+scoop-on-a-cone read as a map pin, and a fried egg read as a target. Check any
+new icon at print scale, not in a browser.
+
 Hours print without a call-ahead caveat, by request. They do drift — three of
 six entries on the previous version of this flyer had changed by the time it was
 rebuilt — so re-check before each reprint.
