@@ -17,6 +17,16 @@ verbatim from the previous version of this flyer. They have not been
 re-verified against a routing service; check them if the roads or the clinic
 change.
 
+The GPS line comes from `PROPERTY_CENTER` in `src/lib/map/map-units.ts`, which
+exists to center the property map — it is not a surveyed point and has not been
+confirmed as the right spot to give an emergency responder. Verify it.
+
+The air ambulance card deliberately carries **no phone number**. Air Evac
+Lifeteam 18 is based at 35629 Hwy 72 in Salem, the same address as the hospital,
+and its listed number is an administrative line. A number on a guest safety
+sheet invites someone to call it instead of 911 during an emergency, which would
+delay dispatch. Keep the card pointing at 911.
+
 **The photo is a placeholder.** `bathhouse-first-aid.jpg` is a generated gray
 box, not the real courtyard photo. Drop the real image in at that filename and
 re-render — the frame is `object-fit: cover` at 3.55in × 3.0in, so a landscape
