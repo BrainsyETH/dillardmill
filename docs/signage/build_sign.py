@@ -138,7 +138,7 @@ def pine(x, base, h, w):
 
 def to_d(geom):
     """shapely geometry → SVG path data (lines)."""
-    if geom.is_empty:
+    if geom.is_empty or geom.geom_type == 'Point':
         return ''
     if geom.geom_type in ('Polygon',):
         return ' '.join(to_d(r) for r in [geom.exterior, *geom.interiors])
@@ -395,7 +395,9 @@ class Sign:
         else:
             out.append(f'<rect width="{W}" height="{H}" fill="#fff"/>') if not body_only else None
         sc = INK if colored else '#000'
-        d = ' '.join(to_d(g) for g in self.strokes if not g.is_empty)
+        # union the lines so edges shared by two shapes are engraved only once
+        merged = unary_union([g for g in self.strokes if not g.is_empty])
+        d = to_d(merged)
         out.append(f'<path d="{d}" fill="none" stroke="{sc}" stroke-width="{LW}" '
                    f'stroke-linecap="round" stroke-linejoin="round"/>')
         for d, c in self.texts:
@@ -410,15 +412,15 @@ class Sign:
         return f'<svg xmlns="http://www.w3.org/2000/svg" {size} viewBox="0 0 {W} {H}">{body}</svg>'
 
 
-def main():
+def export(s, stem):
+    """Write <stem>-engrave.svg, <stem>-colored.png and <stem>-tiles.pdf."""
     import cairosvg
     from pypdf import PdfReader, PdfWriter
 
-    s = Sign().build()
-    with open(os.path.join(HERE, 'sign-engrave.svg'), 'w') as f:
+    with open(os.path.join(HERE, f'{stem}-engrave.svg'), 'w') as f:
         f.write(s.svg())
     cairosvg.svg2png(bytestring=s.svg(colored=True, px_per_in=40).encode(),
-                     write_to=os.path.join(HERE, 'sign-colored.png'))
+                     write_to=os.path.join(HERE, f'{stem}-colored.png'))
 
     tw, th, ov = 7.5, 10.0, 0.25
     body = s.svg(body_only=True)
@@ -433,7 +435,7 @@ def main():
                     f'{body}</svg><rect x="0.5" y="0.5" width="{tw}" height="{th}" fill="none" '
                     f'stroke="#999" stroke-width="0.01" stroke-dasharray="0.1 0.1"/>'
                     f'<text x="0.5" y="10.85" font-family="sans-serif" font-size="0.18" fill="#666">'
-                    f'Row {r + 1} / Col {c + 1} (tile {r * cols + c + 1} of {rows * cols}) · '
+                    f'{stem} · Row {r + 1} / Col {c + 1} (tile {r * cols + c + 1} of {rows * cols}) · '
                     f'print at 100% · {ov}" overlap</text>'
                     f'<path d="M7,10.65 h1" stroke="#000" stroke-width="0.02"/>'
                     f'<text x="7" y="10.55" font-size="0.13" font-family="sans-serif">1 inch</text>'
@@ -442,8 +444,12 @@ def main():
             cairosvg.svg2pdf(bytestring=page.encode(), write_to=buf)
             buf.seek(0)
             writer.add_page(PdfReader(buf).pages[0])
-    with open(os.path.join(HERE, 'sign-tiles.pdf'), 'wb') as f:
+    with open(os.path.join(HERE, f'{stem}-tiles.pdf'), 'wb') as f:
         writer.write(f)
+
+
+def main():
+    export(Sign().build(), 'design1-signpost')
 
 
 if __name__ == '__main__':
