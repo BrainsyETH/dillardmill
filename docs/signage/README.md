@@ -1,14 +1,16 @@
-# Guest-hub directional sign (18" × 42", wood-burned)
+# Guest-hub directional sign (18" × 42", engraved + hand-colored)
 
 | File | Use |
 | --- | --- |
-| `sign-preview.png` | Mockup of the finished sign |
-| `sign-template.svg` | True-scale outline (inches). Letters are outlines: trace, then fill with the burner. Red text marks notes, not burn lines. |
-| `sign-tiles.pdf` | The template split across 15 US-Letter pages. Print at 100% (check the 1" bar), trim, tape together with the 0.25" overlaps, then transfer with graphite paper. |
-| `build_sign.py` | Regenerates all three (`pip install fonttools cairosvg pypdf`). |
+| `sign-engrave.svg` | True-scale vector, in inches. Load it into LightBurn, Glowforge, VCarve and similar programs. It's outlines only, all one line weight (0.06"), with hidden lines already removed so nothing engraves twice. Every area is a closed shape you can color in. |
+| `sign-colored.png` | An example of the colored-in sign, using an Ozark palette. |
+| `sign-tiles.pdf` | The same art split across 15 Letter pages, for hand transfer. Print at 100% (check the 1" bar), then tape the pages together using the overlaps. |
+| `build_sign.py` | Regenerates all three files (`pip install fonttools shapely cairosvg pypdf`). |
 
-**Mounting:** arrows are calculated from the map coordinates in `src/lib/map/map-units.ts`, measured from the Hippy Showers / courtyard. Mount the sign so a reader faces **north** (the sign face points south) and the compass "N" matches true north.
+**Engraving tips:** score or line-engrave the outlines; don't fill-engrave them. Seal the wood before coloring so paint or stain doesn't bleed along the grain.
 
-**Check on site before burning:** each arrow against the real path, the Mill (¼ mi) and creek (½ mi by trail) distances, and the direction for Ponds · Trails · Fire Rings, which the map doesn't record.
+**Mounting:** the arrows are calculated from the coordinates in `src/lib/map/map-units.ts`, measured from the Hippy Showers / courtyard. Mount the sign so a reader faces **north**.
 
-Fonts: Rye and Zilla Slab (SIL Open Font License), in `fonts/`.
+**Check on site:** walk each arrow before engraving. The *Ponds & Trails* plank has no arrow yet because the map doesn't record where they are.
+
+Fonts: Alfa Slab One and Zilla Slab (SIL Open Font License), in `fonts/`.
