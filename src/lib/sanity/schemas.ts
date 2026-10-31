@@ -78,6 +78,7 @@ export interface RentalUnit {
   airbnbUrl?: string;
   vrboUrl?: string;
   bookingUrl?: string;
+  directBookingEnabled?: boolean;
   seo?: SEO;
   available: boolean;
   featured?: boolean;

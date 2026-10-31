@@ -1,3 +1,5 @@
+> **Out of date.** See `docs/MIGRATION-AUDIT.md` for current status and `docs/BOOKING-ENGINE.md` for the booking system.
+
 # Square Booking System Setup Guide
 
 This guide will help you set up the complete booking system with Square payment processing for Pine Valley.

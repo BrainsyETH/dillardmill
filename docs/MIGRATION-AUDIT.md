@@ -128,7 +128,20 @@ counts, and listing content do not sync over iCal; the site keeps its own rates.
 
 ## 5. Migration plan
 
-**Phase A — Booking engine (unblocked now)**
+### Status (2026-10-31)
+
+Owner decisions: **request-to-book** (card authorized, owner approves within
+a set window), **Square**, **taxes collected at checkout**.
+
+**Phase A — done on branch `claude/quirky-albattani-69und3`.** Every defect in
+§3 is fixed; design and setup are in `BOOKING-ENGINE.md`. Not yet verified
+against real services: Square sandbox, a real Airbnb export feed, Resend
+delivery, Neon (the migration was tested on Postgres 16 via PGlite).
+
+**Phase B — blocked** on reading the live site (network access to
+dillardmill.com / Squarespace CDN, or a Squarespace export).
+
+**Phase A — Booking engine**
 Server-side pricing from Sanity (nightly/seasonal, cleaning, guests, pets,
 taxes, min stay); booking created as a `pending` hold under a Postgres
 exclusion constraint before charging; re-sync and re-check Airbnb before

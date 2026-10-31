@@ -57,7 +57,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <p className="text-gray-700 mb-4">
-              View all bookings, guest details, payment status, and confirmation codes.
+              Approve or decline booking requests, cancel and refund confirmed stays.
             </p>
             <div className="text-[#9C5A3C] font-semibold">
               View Bookings →
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <p className="text-gray-700 mb-4">
-              Sync calendars from Airbnb, Hipcamp, and VRBO. View all booked dates.
+              Airbnb / Hipcamp / VRBO sync status, links to paste into Airbnb, and date blocks.
             </p>
             <div className="text-[#6F8291] font-semibold">
               Manage Calendars →
@@ -139,30 +139,6 @@ export default function AdminDashboard() {
               Open Resend Dashboard ↗
             </div>
           </a>
-
-          {/* Database */}
-          <Link
-            href="/admin/database"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-[#3A2A1E]/10 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-[#3A2A1E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Database</h3>
-                <p className="text-sm text-gray-600">Direct Access</p>
-              </div>
-            </div>
-            <p className="text-gray-700 mb-4">
-              Advanced database queries and data export options.
-            </p>
-            <div className="text-[#3A2A1E] font-semibold">
-              Database Tools →
-            </div>
-          </Link>
 
           {/* Property Map */}
           <Link

@@ -3,7 +3,7 @@ import { getAllUnits } from '@/lib/sanity/queries';
 import { UnitCard } from '@/components/units/UnitCard';
 import AvailabilitySearch from '@/components/booking/AvailabilitySearch';
 import { generateLodgingBusinessSchema, generateJsonLdScript } from '@/lib/schema';
-import { checkAvailabilityWithExternal } from '@/lib/calendar/sync';
+import { isRangeFree } from '@/lib/db/availability';
 import type { RentalUnit } from '@/lib/sanity/schemas';
 
 export const metadata = {
@@ -104,7 +104,7 @@ async function loadAvailability(
   checkOut: string
 ): Promise<Map<string, boolean>> {
   const settled = await Promise.allSettled(
-    units.map((u) => checkAvailabilityWithExternal(u._id, checkIn, checkOut))
+    units.map((u) => isRangeFree(u._id, checkIn, checkOut))
   );
   const map = new Map<string, boolean>();
   settled.forEach((result, i) => {

@@ -1,29 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllBookedDates } from '@/lib/calendar/sync';
+import { getBookableUnit } from '@/lib/booking/units';
+import { getUnavailableRanges } from '@/lib/db/availability';
+import { syncUnitIfStale } from '@/lib/calendar/sync';
+import { addDays, isIsoDate, todayAtProperty } from '@/lib/booking/dates';
 
+export const dynamic = 'force-dynamic';
+
+// Unavailable date ranges for one unit, for the guest calendar. Returns only
+// start/end dates — never sources, names, or booking details.
 export async function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams;
+  const slug = params.get('unit');
+  const today = todayAtProperty();
+  const from = isIsoDate(params.get('from')) ? params.get('from')! : today;
+  const to = isIsoDate(params.get('to')) ? params.get('to')! : addDays(from, 366);
+  if (!slug) return NextResponse.json({ error: 'unit is required' }, { status: 400 });
+
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const unitId = searchParams.get('unitId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+    const unit = await getBookableUnit(slug);
+    if (!unit) return NextResponse.json({ error: 'Unknown unit' }, { status: 404 });
 
-    if (!unitId || !startDate || !endDate) {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      );
-    }
+    // Keep the calendar close to Airbnb even if the scheduled sync is slow.
+    await syncUnitIfStale(unit, 15).catch((e) => console.error('Lazy sync failed', e));
 
-    // Get all booked dates including external calendars
-    const bookedRanges = await getAllBookedDates(unitId, startDate, endDate);
-
-    return NextResponse.json({ bookedRanges });
-  } catch (error) {
-    console.error('Booked dates fetch error:', error);
+    const ranges = await getUnavailableRanges(unit._id, from, to);
     return NextResponse.json(
-      { error: 'Failed to fetch booked dates' },
-      { status: 500 }
+      {
+        minStay: unit.minStay ?? 1,
+        ranges: ranges.map(({ start, end }) => ({ start, end })),
+      },
+      { headers: { 'Cache-Control': 'private, max-age=60' } },
     );
+  } catch (error) {
+    console.error('Booked dates error:', error);
+    return NextResponse.json({ error: 'Failed to load availability' }, { status: 500 });
   }
 }

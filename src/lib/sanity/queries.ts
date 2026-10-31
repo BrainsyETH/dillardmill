@@ -59,7 +59,8 @@ export async function getUnitBySlug(slug: string): Promise<RentalUnit | null> {
       vrboUrl,
       bookingUrl,
       seo,
-      available
+      available,
+      "directBookingEnabled": coalesce(directBookingEnabled, true)
     }`,
     { slug }
   );

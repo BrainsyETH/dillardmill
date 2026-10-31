@@ -141,6 +141,57 @@ export default defineType({
       description: 'Message about how to book (shown on booking pages)',
     },
     {
+      name: 'taxRates',
+      title: 'Taxes Collected on Direct Bookings',
+      type: 'array',
+      description:
+        'Each tax is applied to the stay subtotal (nightly rate, guest and pet fees, cleaning). Leave empty to collect no tax.',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            { name: 'name', title: 'Name shown to guests', type: 'string', validation: (Rule) => Rule.required() },
+            {
+              name: 'ratePercent',
+              title: 'Rate (%)',
+              type: 'number',
+              description: 'e.g. 4.225 for 4.225%',
+              validation: (Rule) => Rule.required().min(0).max(30),
+            },
+          ],
+          preview: {
+            select: { name: 'name', rate: 'ratePercent' },
+            prepare: ({ name, rate }: { name?: string; rate?: number }) => ({ title: `${name ?? 'Tax'} — ${rate ?? 0}%` }),
+          },
+        },
+      ],
+    },
+    {
+      name: 'cancellationPolicy',
+      title: 'Cancellation Policy',
+      type: 'text',
+      rows: 5,
+      description: 'Shown at checkout; guests must accept it before requesting a booking.',
+    },
+    {
+      name: 'houseRules',
+      title: 'House Rules',
+      type: 'text',
+      rows: 6,
+      description: 'Shown at checkout; guests must accept them before requesting a booking.',
+    },
+    { name: 'checkInTime', title: 'Check-in Time', type: 'string', description: 'e.g. 3:00 PM' },
+    { name: 'checkOutTime', title: 'Check-out Time', type: 'string', description: 'e.g. 11:00 AM' },
+    {
+      name: 'requestResponseHours',
+      title: 'Hours to Respond to Booking Requests',
+      type: 'number',
+      description:
+        'Requests not approved within this window are declined automatically and the card hold is released. Maximum 144 (6 days; card holds expire after 7).',
+      initialValue: 24,
+      validation: (Rule) => Rule.min(1).max(144).integer(),
+    },
+    {
       name: 'airbnbProfileUrl',
       title: 'Airbnb Profile URL',
       type: 'url',

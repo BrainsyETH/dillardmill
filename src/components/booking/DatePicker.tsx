@@ -1,134 +1,129 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { DayPicker } from 'react-day-picker';
-import { addDays, parseISO } from 'date-fns';
-import 'react-day-picker/dist/style.css';
+import 'react-day-picker/style.css';
+import { bookedNights, canCheckIn, canCheckOut } from '@/lib/booking/calendar';
+import { addDays, todayAtProperty } from '@/lib/booking/dates';
 
-interface DatePickerProps {
-  unitId: string;
-  checkIn: Date | undefined;
-  checkOut: Date | undefined;
-  onCheckInChange: (date: Date | undefined) => void;
-  onCheckOutChange: (date: Date | undefined) => void;
+/** Local Date ↔ ISO calendar date, without UTC shifting. */
+export function toIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+export function fromIso(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
-export function DatePicker({
-  unitId,
-  checkIn,
-  checkOut,
-  onCheckInChange,
-  onCheckOutChange,
-}: DatePickerProps) {
-  const [bookedDates, setBookedDates] = useState<Date[]>([]);
-  const [loading, setLoading] = useState(false);
+interface DatePickerProps {
+  unitSlug: string;
+  minStay: number;
+  checkIn?: string;
+  checkOut?: string;
+  onChange: (checkIn: string | undefined, checkOut: string | undefined) => void;
+  /** Bump to force a reload of availability (e.g. after a conflict). */
+  refreshKey?: number;
+}
 
-  // Fetch booked dates
+export function DatePicker({ unitSlug, minStay, checkIn, checkOut, onChange, refreshKey = 0 }: DatePickerProps) {
+  const today = todayAtProperty();
+  const requestKey = `${unitSlug}|${today}|${refreshKey}`;
+  const [result, setResult] = useState<{ key: string; ranges: { start: string; end: string }[]; error: boolean }>({
+    key: '',
+    ranges: [],
+    error: false,
+  });
+  const loading = result.key !== requestKey;
+  const ranges = result.ranges;
+  const loadError = !loading && result.error;
+
+  const wide = useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia('(min-width: 768px)');
+      mq.addEventListener('change', cb);
+      return () => mq.removeEventListener('change', cb);
+    },
+    () => window.matchMedia('(min-width: 768px)').matches,
+    () => false,
+  );
+  const months = wide ? 2 : 1;
+
   useEffect(() => {
-    async function fetchBookedDates() {
-      setLoading(true);
-      try {
-        const startDate = new Date().toISOString().split('T')[0];
-        const endDate = addDays(new Date(), 365).toISOString().split('T')[0];
+    let cancelled = false;
+    fetch(`/api/booking/booked-dates?unit=${encodeURIComponent(unitSlug)}&from=${today}&to=${addDays(today, 548)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data) => !cancelled && setResult({ key: requestKey, ranges: data.ranges ?? [], error: false }))
+      .catch(() => !cancelled && setResult({ key: requestKey, ranges: [], error: true }));
+    return () => {
+      cancelled = true;
+    };
+  }, [unitSlug, today, requestKey]);
 
-        const response = await fetch(
-          `/api/booking/booked-dates?unitId=${unitId}&startDate=${startDate}&endDate=${endDate}`
-        );
-        const data = await response.json();
+  const booked = useMemo(() => bookedNights(ranges), [ranges]);
+  const choosingCheckOut = Boolean(checkIn && !checkOut);
 
-        // Convert booked ranges to array of dates
-        const dates: Date[] = [];
-        data.bookedRanges?.forEach((range: { check_in: string; check_out: string }) => {
-          const start = parseISO(range.check_in);
-          const end = parseISO(range.check_out);
-          let current = start;
-          while (current <= end) {
-            dates.push(new Date(current));
-            current = addDays(current, 1);
-          }
-        });
-
-        setBookedDates(dates);
-      } catch (error) {
-        console.error('Error fetching booked dates:', error);
-      } finally {
-        setLoading(false);
-      }
+  // If availability changed under an existing selection, clear it.
+  useEffect(() => {
+    if (!loading && checkIn && checkOut && !canCheckOut(checkOut, checkIn, booked, minStay)) {
+      onChange(undefined, undefined);
     }
+  }, [loading, booked, checkIn, checkOut, minStay, onChange]);
 
-    fetchBookedDates();
-  }, [unitId]);
+  const isDisabled = (date: Date) => {
+    const iso = toIso(date);
+    if (choosingCheckOut && checkIn) {
+      // Allow re-picking an earlier check-in while choosing check-out.
+      return !canCheckOut(iso, checkIn, booked, minStay) && !canCheckIn(iso, booked, minStay, today);
+    }
+    return !canCheckIn(iso, booked, minStay, today);
+  };
 
-  const handleDayClick = (day: Date) => {
-    if (!checkIn || (checkIn && checkOut)) {
-      // Start new selection
-      onCheckInChange(day);
-      onCheckOutChange(undefined);
-    } else {
-      // Set checkout date
-      if (day > checkIn) {
-        onCheckOutChange(day);
-      } else {
-        // If selected date is before check-in, reset
-        onCheckInChange(day);
-        onCheckOutChange(undefined);
-      }
+  const handleDayClick = (date: Date) => {
+    const iso = toIso(date);
+    if (choosingCheckOut && checkIn && canCheckOut(iso, checkIn, booked, minStay)) {
+      onChange(checkIn, iso);
+    } else if (canCheckIn(iso, booked, minStay, today)) {
+      onChange(iso, undefined);
     }
   };
 
+  const selected = checkIn ? { from: fromIso(checkIn), to: checkOut ? fromIso(checkOut) : undefined } : undefined;
+
   return (
     <div>
-      {loading && (
-        <div className="text-center py-4 text-gray-500">Loading availability...</div>
-      )}
-
+      <p className="text-sm text-brand-charcoal/70 mb-2" aria-live="polite">
+        {loading
+          ? 'Loading availability…'
+          : loadError
+            ? 'Could not load availability — dates will be checked when you continue.'
+            : choosingCheckOut
+              ? `Now choose your check-out date${minStay > 1 ? ` (minimum ${minStay} nights)` : ''}.`
+              : 'Choose your check-in date.'}
+      </p>
       <DayPicker
-        mode="single"
-        selected={checkIn}
-        onSelect={(date) => date && handleDayClick(date)}
-        disabled={[
-          ...bookedDates,
-          { before: new Date() }, // Disable past dates
-        ]}
-        modifiers={{
-          checkIn: checkIn ? [checkIn] : [],
-          checkOut: checkOut ? [checkOut] : [],
-          range: checkIn && checkOut
-            ? { from: checkIn, to: checkOut }
-            : undefined,
-        }}
-        modifiersClassNames={{
-          checkIn: 'bg-stone-800 text-white rounded-l-lg',
-          checkOut: 'bg-stone-800 text-white rounded-r-lg',
-          range: 'bg-stone-100',
-        }}
-        className="border border-gray-200 rounded-lg p-4"
+        mode="range"
+        selected={selected}
+        onDayClick={handleDayClick}
+        // Selection is fully controlled through onDayClick.
+        onSelect={() => {}}
+        disabled={isDisabled}
+        numberOfMonths={months}
+        startMonth={fromIso(today)}
+        endMonth={fromIso(addDays(today, 548))}
+        defaultMonth={checkIn ? fromIso(checkIn) : fromIso(today)}
+        excludeDisabled={false}
+        className="text-sm"
+        styles={{ root: { ['--rdp-accent-color' as string]: '#3A2A1E', ['--rdp-accent-background-color' as string]: '#F4F1EB' } }}
       />
-
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="p-3 border border-gray-200 rounded-lg">
-          <div className="text-xs text-gray-500 mb-1">Check-in</div>
-          <div className="font-semibold">
-            {checkIn ? checkIn.toLocaleDateString() : 'Select date'}
-          </div>
-        </div>
-        <div className="p-3 border border-gray-200 rounded-lg">
-          <div className="text-xs text-gray-500 mb-1">Check-out</div>
-          <div className="font-semibold">
-            {checkOut ? checkOut.toLocaleDateString() : 'Select date'}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-stone-800 rounded" />
-          <span>Selected</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-200 rounded" />
-          <span>Unavailable</span>
-        </div>
+      <div className="mt-3 flex items-center justify-between text-sm">
+        <span className="flex items-center gap-2 text-brand-charcoal/70">
+          <span className="inline-block w-4 h-4 rounded bg-gray-200 line-through" /> Unavailable
+        </span>
+        {(checkIn || checkOut) && (
+          <button type="button" onClick={() => onChange(undefined, undefined)} className="underline text-brand-charcoal/80">
+            Clear dates
+          </button>
+        )}
       </div>
     </div>
   );

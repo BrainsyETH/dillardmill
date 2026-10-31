@@ -1,3 +1,5 @@
+> **Out of date.** See `docs/MIGRATION-AUDIT.md` for current status and `docs/BOOKING-ENGINE.md` for the booking system.
+
 # Pine Valley Complete Booking System 🎉
 
 ## What We Built

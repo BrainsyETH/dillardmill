@@ -178,10 +178,19 @@ export default defineType({
       description: 'If using a third-party booking platform',
     },
     {
+      name: 'directBookingEnabled',
+      title: 'Accept Booking Requests on the Website',
+      type: 'boolean',
+      description:
+        'Guests can request dates and authorize a card on dillardmill.com. You approve each request in /admin. Turn off to show only the inquiry form.',
+      initialValue: true,
+    },
+    {
       name: 'airbnbIcalUrl',
       title: 'Airbnb iCal URL',
       type: 'url',
-      description: 'iCal export URL from Airbnb for calendar sync (prevent double bookings)',
+      description:
+        'Airbnb → Listing → Availability → Connect calendars → Export calendar. Imported every 15 minutes so Airbnb reservations block the website calendar.',
     },
     {
       name: 'hipcampIcalUrl',

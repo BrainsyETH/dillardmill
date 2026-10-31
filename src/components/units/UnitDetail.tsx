@@ -32,6 +32,7 @@ function BookingFormWithParams({ unit }: { unit: RentalUnit }) {
         petFee: unit.petFee,
         minStay: unit.minStay,
         maxGuests: unit.maxGuests || 1,
+        directBookingEnabled: unit.directBookingEnabled,
       }}
       initialCheckIn={checkIn}
       initialCheckOut={checkOut}
@@ -401,6 +402,7 @@ export function UnitDetail({ unit }: UnitDetailProps) {
                     petFee: unit.petFee,
                     minStay: unit.minStay,
                     maxGuests: unit.maxGuests || 1,
+                    directBookingEnabled: unit.directBookingEnabled,
                   }}
                 />
               }

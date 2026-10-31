@@ -36,7 +36,7 @@ export default function PropertyLayoutView({
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/admin/map-markers')
+    fetch('/api/map-markers')
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
