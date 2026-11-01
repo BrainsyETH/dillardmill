@@ -17,9 +17,14 @@ const links = [
     "Review sync status, copy export links, and block dates.",
   ],
   [
-    "/studio",
-    "Content Studio",
-    "Edit photographs, stay details, pricing, and guest policies.",
+    "/admin/stays",
+    "Stays & pricing",
+    "Nightly prices, seasons, fees, guest limits, and which stays take online requests.",
+  ],
+  [
+    "/admin/settings",
+    "Booking settings",
+    "Taxes, cancellation policy, house rules, check-in times, and response window.",
   ],
   ["/admin/map", "Property map", "Manage unit locations and landmarks."],
   [
