@@ -1,6 +1,6 @@
-import type { RentalUnit } from "./sanity/schemas";
+import type { RentalUnit } from "./stays/types";
 import { getUnitUrl } from "./utils/slugToUrl";
-import { urlFor } from "./sanity/client";
+import { unitPhotos } from "./content/property";
 
 /**
  * Common address information for Pine Valley at Dillard Mill
@@ -75,34 +75,10 @@ export function generateLodgingBusinessSchema(units?: RentalUnit[]) {
  * Generates VacationRental schema for individual unit pages
  */
 export function generateVacationRentalSchema(unit: RentalUnit) {
-  const images: string[] = [];
-
-  // Add featured image if available
-  if (unit.featuredImage?.image) {
-    try {
-      const imageUrl = urlFor(unit.featuredImage.image).width(1200).url();
-      images.push(imageUrl);
-    } catch (error) {
-      console.warn(
-        "Failed to generate featured image URL for schema.org",
-        error,
-      );
-    }
-  }
-
-  // Add additional images
-  if (unit.images && unit.images.length > 0) {
-    unit.images.forEach((img) => {
-      try {
-        const imageUrl = urlFor(img.image).width(1200).url();
-        if (!images.includes(imageUrl)) {
-          images.push(imageUrl);
-        }
-      } catch (error) {
-        console.warn("Failed to generate image URL for schema.org", error);
-      }
-    });
-  }
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://dillardmill.com";
+  const images = unitPhotos(unit)
+    .slice(0, 8)
+    .map((p) => new URL(p.src, site).toString());
 
   // Build amenity features from unit amenities
   const amenityFeatures =

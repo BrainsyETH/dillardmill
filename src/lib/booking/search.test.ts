@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { matchesStay, parseStaySearch } from "./search";
 import { addDays, todayAtProperty } from "./dates";
-import type { RentalUnit } from "@/lib/sanity/schemas";
+import type { RentalUnit } from "@/lib/stays/types";
 const unit = {
   slug: { current: "cozy-cottage" },
   maxGuests: 4,

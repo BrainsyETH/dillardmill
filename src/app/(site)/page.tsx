@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getAllUnits } from "@/lib/sanity/queries";
+import { getAllUnits } from "@/lib/stays/queries";
 import { UnitCard } from "@/components/units/UnitCard";
 import { photo } from "@/lib/content/property";
 
 export default async function Home() {
   const units = (await getAllUnits())
-    .filter((u) => u.slug.current !== "book-the-farm")
+    .filter((u) => !u.isWholeProperty)
     .slice(0, 3);
   const hero = photo("819922e5ba54");
   const creek = photo("bb46c51f3e11");

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getUnitBySlug } from "@/lib/sanity/queries";
+import { getUnitBySlug } from "@/lib/stays/queries";
 import { getBookingSettings } from "@/lib/booking/units";
 import { UnitDetail } from "./UnitDetail";
 import {

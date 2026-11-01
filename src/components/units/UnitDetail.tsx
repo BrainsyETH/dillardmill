@@ -2,8 +2,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { PortableText } from "@portabletext/react";
-import type { RentalUnit } from "@/lib/sanity/schemas";
+import type { RentalUnit } from "@/lib/stays/types";
 import {
   unitPhotos,
   stayDetails,
@@ -63,7 +62,7 @@ export function UnitDetail({
   const panel = useRef<HTMLElement>(null);
   const [panelVisible, setPanelVisible] = useState(false);
   const info = stayDetails(unit.slug.current);
-  const farm = unit.slug.current === "book-the-farm";
+  const farm = Boolean(unit.isWholeProperty);
   useEffect(() => {
     if (!panel.current) return;
     const observer = new IntersectionObserver(
@@ -112,11 +111,7 @@ export function UnitDetail({
             {farm ? "A weekend with everyone." : "Settle in."}
           </h2>
           <div className="prose-content text-lg">
-            {unit.description?.length ? (
-              <PortableText value={unit.description} />
-            ) : (
-              <p>{unit.shortDescription}</p>
-            )}
+            <p>{unit.shortDescription}</p>
           </div>
           {farm ? (
             <FarmDetails />

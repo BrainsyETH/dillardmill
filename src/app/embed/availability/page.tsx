@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getUnitBySlug } from "@/lib/sanity/queries";
+import { getUnitBySlug } from "@/lib/stays/queries";
 import { AvailabilityCalendar } from "@/components/booking/AvailabilityCalendar";
 import { getUnitUrl } from "@/lib/utils/slugToUrl";
 export const metadata = {

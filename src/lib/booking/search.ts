@@ -1,4 +1,4 @@
-import type { RentalUnit } from "@/lib/sanity/schemas";
+import type { RentalUnit } from "@/lib/stays/types";
 import { isIsoDate, nightsBetween, todayAtProperty } from "./dates";
 export function parseStaySearch(params: Record<string, string>) {
   const guests = params.guests ? Number(params.guests) : 2;
@@ -30,7 +30,7 @@ export function matchesStay(
   search: ReturnType<typeof parseStaySearch>,
 ) {
   return (
-    unit.slug.current !== "book-the-farm" &&
+    !unit.isWholeProperty &&
     unit.maxGuests >= search.guests &&
     (!search.pets ||
       (unit.petsAllowed &&

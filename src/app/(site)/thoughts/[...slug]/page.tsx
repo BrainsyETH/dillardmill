@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { PortableText } from "@portabletext/react";
 import { journalEntry } from "@/lib/content/journal";
 type Props = { params: Promise<{ slug: string[] }> };
 export async function generateMetadata({ params }: Props) {
@@ -32,16 +31,11 @@ export default async function Post({ params }: Props) {
           })}
         </p>
         <h1 className="page-title mb-10">{p.title}</h1>
-        {p.portableBody ? (
-          <div className="prose-content journal-body">
-            <PortableText value={p.portableBody} />
-          </div>
-        ) : (
-          <div
-            className="prose-content journal-body"
-            dangerouslySetInnerHTML={{ __html: p.body || "" }}
-          />
-        )}
+        {/* Bodies are sanitized at import (see docs/GUEST-EXPERIENCE.md). */}
+        <div
+          className="prose-content journal-body"
+          dangerouslySetInnerHTML={{ __html: p.body || "" }}
+        />
       </div>
     </article>
   );

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAllUnits } from "@/lib/sanity/queries";
+import { getAllUnits } from "@/lib/stays/queries";
 import { UnitCard } from "@/components/units/UnitCard";
 import AvailabilitySearch from "@/components/booking/AvailabilitySearch";
 import { getAllBookableUnits, getBookingSettings } from "@/lib/booking/units";

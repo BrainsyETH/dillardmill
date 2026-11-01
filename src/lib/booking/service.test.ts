@@ -1,5 +1,5 @@
 // End-to-end booking lifecycle against real Postgres (PGlite) with Square,
-// email, Sanity, and the Airbnb iCal feed mocked.
+// email, the stays loader, and the Airbnb iCal feed mocked.
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
@@ -26,6 +26,7 @@ vi.mock("@/lib/booking/units", () => {
     slug: "cozy-cottage",
     available: true,
     directBookingEnabled: true,
+    isWholeProperty: false,
     basePrice: 150,
     cleaningFee: 75,
     baseGuests: 2,
@@ -43,6 +44,7 @@ vi.mock("@/lib/booking/units", () => {
     _id: "unit-farm",
     slug: "book-the-farm",
     name: "The Farm",
+    isWholeProperty: true,
     maxGuests: 50,
     icalUrls: { airbnb: "https://www.airbnb.com/calendar/ical/farm.ics" },
   };
@@ -67,8 +69,6 @@ vi.mock("@/lib/booking/units", () => {
       checkInTime: "3:00 PM",
       checkOutTime: "11:00 AM",
       requestResponseHours: 24,
-      email: null,
-      phone: null,
     })),
   };
 });
@@ -159,6 +159,14 @@ beforeEach(async () => {
   await db.exec(
     "TRUNCATE bookings, external_bookings, calendar_blocks, calendar_sync_status",
   );
+  // The database identifies the whole-property listing by units.is_whole_property.
+  await db.exec(`
+    DELETE FROM units;
+    INSERT INTO units (id, slug, name, max_guests, is_whole_property) VALUES
+      ('unit-cottage', 'cozy-cottage', 'Cozy Cottage', 4, false),
+      ('unit-farm', 'book-the-farm', 'The Farm', 50, true),
+      ('unit-trailer', 'original-airstream', 'Airstream', 4, false);
+  `);
   state.airbnbFeed = airbnbFeed([]);
   state.farmFeed = airbnbFeed([]);
   state.airbnbStatus = 200;

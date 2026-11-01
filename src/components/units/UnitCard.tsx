@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { RentalUnit } from "@/lib/sanity/schemas";
+import type { RentalUnit } from "@/lib/stays/types";
 import {
   unitPhotos,
   stayDetails,

@@ -1,20 +1,18 @@
-// Server-only loaders for the booking engine. Reads Sanity without the CDN
-// so prices, policies and calendar URLs are never stale at checkout.
+// Booking-engine view of stays and settings, read fresh from Postgres on
+// every call so prices, policies and calendar links are never stale.
 
-import { createClient } from "next-sanity";
-import type { PricingUnit, TaxRate } from "./pricing";
+import type { PricingUnit, TaxRate } from './pricing';
+import {
+  getSettings,
+  getUnitById,
+  getUnitBySlug,
+  listTaxes,
+  listUnits,
+  type UnitRecord,
+} from '@/lib/stays/repository';
 
-const fresh = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "unconfigured",
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
-  apiVersion: "2024-01-01",
-  useCdn: false,
-  token: process.env.SANITY_API_TOKEN,
-  perspective: "published",
-});
-
-export type CalendarSource = "airbnb" | "hipcamp" | "vrbo";
-export const CALENDAR_SOURCES: CalendarSource[] = ["airbnb", "hipcamp", "vrbo"];
+export type CalendarSource = 'airbnb' | 'hipcamp' | 'vrbo';
+export const CALENDAR_SOURCES: CalendarSource[] = ['airbnb', 'hipcamp', 'vrbo'];
 
 export interface BookableUnit extends PricingUnit {
   _id: string;
@@ -22,32 +20,35 @@ export interface BookableUnit extends PricingUnit {
   slug: string;
   available: boolean;
   directBookingEnabled: boolean;
+  isWholeProperty: boolean;
   icalUrls: Partial<Record<CalendarSource, string>>;
 }
 
-const UNIT_PROJECTION = `{
-  _id, name, "slug": slug.current, available,
-  basePrice, seasonalPricing, cleaningFee, baseGuests, extraGuestFee,
-  petsAllowed, maxPets, petFee, minStay, maxGuests,
-  "directBookingEnabled": coalesce(directBookingEnabled, true),
-  airbnbIcalUrl, hipcampIcalUrl, vrboIcalUrl
-}`;
+const dollars = (cents: number) => cents / 100;
 
-interface RawUnit extends PricingUnit {
-  _id: string;
-  name: string;
-  slug: string;
-  available?: boolean;
-  directBookingEnabled: boolean;
-  airbnbIcalUrl?: string;
-  hipcampIcalUrl?: string;
-  vrboIcalUrl?: string;
-}
-
-function toBookable(u: RawUnit): BookableUnit {
+export function toBookable(u: UnitRecord): BookableUnit {
   return {
-    ...u,
-    available: u.available !== false,
+    _id: u.id,
+    name: u.name,
+    slug: u.slug,
+    available: u.listed,
+    directBookingEnabled: u.directBookingEnabled && u.basePriceCents > 0,
+    isWholeProperty: u.isWholeProperty,
+    basePrice: dollars(u.basePriceCents),
+    seasonalPricing: u.seasons.map((s) => ({
+      season: s.name,
+      startDate: s.startDate,
+      endDate: s.endDate,
+      pricePerNight: dollars(s.priceCents),
+    })),
+    cleaningFee: dollars(u.cleaningFeeCents),
+    baseGuests: u.baseGuests,
+    extraGuestFee: dollars(u.extraGuestFeeCents),
+    petsAllowed: u.petsAllowed,
+    maxPets: u.maxPets,
+    petFee: dollars(u.petFeeCents),
+    minStay: u.minStay,
+    maxGuests: u.maxGuests,
     icalUrls: {
       airbnb: u.airbnbIcalUrl || undefined,
       hipcamp: u.hipcampIcalUrl || undefined,
@@ -56,46 +57,18 @@ function toBookable(u: RawUnit): BookableUnit {
   };
 }
 
-export async function getBookableUnit(
-  slug: string,
-): Promise<BookableUnit | null> {
-  if (
-    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
-    !process.env.NEXT_PUBLIC_SANITY_DATASET
-  )
-    throw new Error("Booking content is not configured.");
-  const unit = await fresh.fetch<RawUnit | null>(
-    `*[_type == "rentalUnit" && slug.current == $slug][0] ${UNIT_PROJECTION}`,
-    { slug },
-  );
+export async function getBookableUnit(slug: string): Promise<BookableUnit | null> {
+  const unit = await getUnitBySlug(slug);
   return unit ? toBookable(unit) : null;
 }
 
-export async function getBookableUnitById(
-  id: string,
-): Promise<BookableUnit | null> {
-  if (
-    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
-    !process.env.NEXT_PUBLIC_SANITY_DATASET
-  )
-    throw new Error("Booking content is not configured.");
-  const unit = await fresh.fetch<RawUnit | null>(
-    `*[_type == "rentalUnit" && _id == $id][0] ${UNIT_PROJECTION}`,
-    { id },
-  );
+export async function getBookableUnitById(id: string): Promise<BookableUnit | null> {
+  const unit = await getUnitById(id);
   return unit ? toBookable(unit) : null;
 }
 
 export async function getAllBookableUnits(): Promise<BookableUnit[]> {
-  if (
-    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
-    !process.env.NEXT_PUBLIC_SANITY_DATASET
-  )
-    throw new Error("Booking content is not configured.");
-  const units = await fresh.fetch<RawUnit[]>(
-    `*[_type == "rentalUnit"] | order(sortOrder asc, name asc) ${UNIT_PROJECTION}`,
-  );
-  return units.map(toBookable);
+  return (await listUnits()).map(toBookable);
 }
 
 export interface BookingSettings {
@@ -105,36 +78,13 @@ export interface BookingSettings {
   checkInTime: string | null;
   checkOutTime: string | null;
   requestResponseHours: number;
-  email: string | null;
-  phone: string | null;
 }
 
 export async function getBookingSettings(): Promise<BookingSettings> {
-  if (
-    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
-    !process.env.NEXT_PUBLIC_SANITY_DATASET
-  )
-    throw new Error("Booking content is not configured.");
-  const s = await fresh.fetch<Partial<BookingSettings> | null>(
-    `*[_type == "siteSettings"][0] {
-      "taxRates": taxRates[]{ name, ratePercent },
-      cancellationPolicy, houseRules, checkInTime, checkOutTime,
-      requestResponseHours, email, phone
-    }`,
-  );
+  const [settings, taxes] = await Promise.all([getSettings(), listTaxes()]);
   return {
-    taxRates: (s?.taxRates ?? []).filter((t) => t?.name && t.ratePercent > 0),
-    cancellationPolicy: s?.cancellationPolicy ?? null,
-    houseRules: s?.houseRules ?? null,
-    checkInTime: s?.checkInTime ?? null,
-    checkOutTime: s?.checkOutTime ?? null,
-    requestResponseHours: Math.min(
-      144,
-      s?.requestResponseHours && s.requestResponseHours > 0
-        ? s.requestResponseHours
-        : 24,
-    ),
-    email: s?.email ?? null,
-    phone: s?.phone ?? null,
+    ...settings,
+    taxRates: taxes.map((t) => ({ name: t.name, ratePercent: t.ratePercent })),
+    requestResponseHours: Math.min(144, Math.max(1, settings.requestResponseHours)),
   };
 }

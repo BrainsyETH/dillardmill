@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { journalEntries } from "@/lib/content/journal";
-import { getAllUnits } from "@/lib/sanity/queries";
+import { getAllUnits } from "@/lib/stays/queries";
 import { getUnitUrl } from "@/lib/utils/slugToUrl";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (

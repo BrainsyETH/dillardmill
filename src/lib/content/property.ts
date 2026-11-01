@@ -1,6 +1,5 @@
 import photos from "./photos.json";
-import type { RentalUnit } from "@/lib/sanity/schemas";
-import { urlFor } from "@/lib/sanity/client";
+import type { RentalUnit } from "@/lib/stays/types";
 
 export interface PropertyPhoto {
   src: string;
@@ -110,16 +109,6 @@ export const propertyPhotos: PropertyPhoto[] = photos
           : undefined,
   }));
 export function unitPhotos(unit: RentalUnit): PropertyPhoto[] {
-  if (unit.images?.some((i) => i.image?.asset))
-    return unit.images
-      .filter((i) => i.image?.asset)
-      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
-      .map((i) => ({
-        src: urlFor(i.image).width(1600).quality(85).url(),
-        alt: i.alt || i.caption || unit.name,
-        caption: i.caption || "",
-        unitSlug: unit.slug.current,
-      }));
   const d = stayDetails(unit.slug.current);
   if (!d) return [];
   const list = photos.filter((p) => p.sourcePages.includes(d.page));
@@ -145,8 +134,8 @@ export function sleepingArrangement(unit: RentalUnit): string {
         .join(" · ")
     : `${unit.bedrooms || 1} bedroom${unit.bedrooms > 1 ? "s" : ""}`;
 }
-// Published property content, for display when the CMS is unavailable. These
-// records never enable checkout or supply a price to the booking engine.
+// Published property content, for display when the database is unavailable.
+// These records never enable checkout or supply a price to the booking engine.
 export const publishedUnits: RentalUnit[] = Object.entries(detail).map(
   ([slug, d]) => ({
     _id: `published-${slug}`,
@@ -159,6 +148,7 @@ export const publishedUnits: RentalUnit[] = Object.entries(detail).map(
     beds: d.beds.map((b) => ({ ...b })),
     basePrice: 0,
     directBookingEnabled: false,
+    isWholeProperty: slug === "book-the-farm",
     available: true,
     amenities: d.amenities.map((name, i) => ({
       _id: `${slug}-${i}`,

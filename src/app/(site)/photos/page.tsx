@@ -1,13 +1,8 @@
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
-import { propertyPhotos, unitPhotos } from "@/lib/content/property";
-import { getAllUnits } from "@/lib/sanity/queries";
+import { propertyPhotos } from "@/lib/content/property";
 export const metadata = { title: "Photographs | Pine Valley at Dillard Mill" };
 export default async function Photos() {
-  const units = await getAllUnits();
-  const cmsPhotos = units
-    .filter((u) => u.images?.length)
-    .flatMap((u) => unitPhotos(u).map((p) => ({ ...p, group: u.name })));
-  const images = [...propertyPhotos, ...cmsPhotos];
+  const images = propertyPhotos;
   return (
     <div className="page-shell section-space">
       <p className="eyebrow mb-4">A look around</p>

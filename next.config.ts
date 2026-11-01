@@ -11,15 +11,8 @@ const EMBED_FRAME_ANCESTORS = [
 ].join(" ");
 
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cdn.sanity.io",
-        pathname: "/**",
-      },
-    ],
-  },
+  // Photos are served from /public. When owner uploads move to Vercel Blob,
+  // add its hostname to images.remotePatterns.
   async redirects() {
     return [
       { source: "/cottage", destination: "/cozycottage", permanent: true },

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getReviews } from "@/lib/sanity/queries";
+import { getReviews } from "@/lib/stays/queries";
 export const metadata = { title: "Guest notes | Pine Valley" };
 export default async function Reviews() {
   const reviews = await getReviews();

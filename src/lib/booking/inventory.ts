@@ -1,14 +1,14 @@
 import { getAllBookableUnits, type BookableUnit } from "./units";
 
-/** The whole Farm and each of its stays share inventory, in both directions. */
+/** A whole-property listing (the Farm) and every other stay share inventory, in both directions. */
 export function conflictingUnits(
   unit: BookableUnit,
   all: BookableUnit[],
 ): BookableUnit[] {
   const related =
-    unit.slug === "book-the-farm"
+    unit.isWholeProperty
       ? all
-      : all.filter((u) => u._id === unit._id || u.slug === "book-the-farm");
+      : all.filter((u) => u._id === unit._id || u.isWholeProperty);
   return [...new Map([unit, ...related].map((u) => [u._id, u])).values()];
 }
 

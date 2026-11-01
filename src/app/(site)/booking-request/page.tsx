@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { GuestMessageForm } from "@/components/forms/GuestMessageForm";
-import { getAllUnits } from "@/lib/sanity/queries";
+import { getAllUnits } from "@/lib/stays/queries";
 export const metadata = { title: "Plan your stay | Pine Valley" };
 export default async function Inquiry({
   searchParams,
