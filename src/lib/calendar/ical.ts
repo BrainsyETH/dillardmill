@@ -97,3 +97,28 @@ export function buildICalFeed(calendarName: string, events: ExportEvent[], now =
   lines.push('END:VCALENDAR');
   return lines.join('\r\n') + '\r\n';
 }
+
+export type ImportedKind = "reservation" | "block";
+
+/**
+ * Real reservation, or a block? Platforms export both. Airbnb uses
+ * "Reserved" for bookings and "Airbnb (Not available)" for anything blocked —
+ * including dates it blocked because it imported *our* calendar. Blocks are
+ * never passed on to other platforms (that is how echo loops start).
+ * Unknown summaries count as reservations: safer to over-block here.
+ */
+export function classifyImportedEvent(summary: string | null | undefined): ImportedKind {
+  return /not available|unavailable|blocked|closed/i.test(summary ?? "") ? "block" : "reservation";
+}
+
+/**
+ * A block that sits entirely inside a pending website request's own dates is
+ * almost certainly that request coming back from a platform that imported
+ * our calendar. It must not stop the owner approving the request.
+ */
+export function isEchoOf(
+  block: { start: string; end: string; kind?: ImportedKind },
+  stay: { checkIn: string; checkOut: string },
+): boolean {
+  return block.kind === "block" && block.start >= stay.checkIn && block.end <= stay.checkOut;
+}

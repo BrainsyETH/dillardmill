@@ -13,13 +13,20 @@ export const dynamic = "force-dynamic";
 
 // Outbound calendar that Airbnb (or Hipcamp/VRBO) imports:
 //   /calendar/<unit-slug>.ics?token=<CALENDAR_FEED_TOKEN>&for=airbnb
-// Contains direct bookings (requested + confirmed), owner blocks, and
-// reservations from the *other* channels. `for=airbnb` leaves out Airbnb's
-// own reservations so they are not echoed back to Airbnb.
+// OFF unless CALENDAR_EXPORT_ENABLED=true (manual calendar management).
+//
+// Contains website bookings (requested + confirmed), owner blocks, and real
+// reservations imported from other platforms. Imported *blocks* ("Not
+// available") are never forwarded: they are usually echoes of our own
+// bookings, and forwarding them lets dates circulate between platforms
+// forever. `for=airbnb` also leaves out this unit's own Airbnb reservations.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ file: string }> },
 ) {
+  if (process.env.CALENDAR_EXPORT_ENABLED !== "true") {
+    return new NextResponse("Not found", { status: 404 });
+  }
   const { file } = await params;
   const match = /^([a-z0-9-]+)\.ics$/.exec(file);
   if (!match) return new NextResponse("Not found", { status: 404 });
@@ -50,6 +57,7 @@ export async function GET(
     inventory.map((u) => u._id),
   );
   const events = ranges
+    .filter((r) => r.kind !== "block")
     .filter((r) => r.source !== exclude || r.unitId !== unit._id)
     .map((r) => ({
       uid: `${r.unitId}-${r.source}-${r.ref}@dillardmill.com`,

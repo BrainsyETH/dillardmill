@@ -13,6 +13,8 @@ export function BookingActions({ id, status, refundableCents }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when approval stopped because another platform's calendar couldn't be refreshed.
+  const [calendarDown, setCalendarDown] = useState(false);
   const [mode, setMode] = useState<'idle' | 'decline' | 'cancel'>('idle');
   const [note, setNote] = useState('');
   const [refund, setRefund] = useState((refundableCents / 100).toFixed(2));
@@ -20,6 +22,7 @@ export function BookingActions({ id, status, refundableCents }: Props) {
   async function act(body: Record<string, unknown>) {
     setBusy(true);
     setError(null);
+    setCalendarDown(false);
     try {
       const res = await fetch(`/api/admin/bookings/${id}`, {
         method: 'POST',
@@ -27,7 +30,10 @@ export function BookingActions({ id, status, refundableCents }: Props) {
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Action failed');
+      if (!res.ok) {
+        if (data.code === 'calendar_unavailable') setCalendarDown(true);
+        throw new Error(data.error || 'Action failed');
+      }
       setMode('idle');
       router.refresh();
     } catch (e) {
@@ -77,6 +83,19 @@ export function BookingActions({ id, status, refundableCents }: Props) {
           </div>
         )}
         {error && <p className="text-sm text-red-700">{error}</p>}
+        {calendarDown && (
+          <button
+            disabled={busy}
+            onClick={() => {
+              if (confirm('Have you checked those dates on the other platform yourself? The card will be charged.')) {
+                act({ action: 'approve', calendarsCheckedManually: true });
+              }
+            }}
+            className={`${btn} border border-[#6B7A5A] text-[#6B7A5A]`}
+          >
+            Approve anyway — I checked the calendars
+          </button>
+        )}
       </div>
     );
   }

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 const schema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('approve') }),
+  z.object({ action: z.literal('approve'), calendarsCheckedManually: z.boolean().optional() }),
   z.object({ action: z.literal('decline'), note: z.string().max(1000).optional() }),
   z.object({
     action: z.literal('cancel'),
@@ -27,11 +27,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const result =
       body.action === 'approve'
-        ? await approveBooking(id)
+        ? await approveBooking(id, { calendarsCheckedManually: body.calendarsCheckedManually })
         : body.action === 'decline'
           ? await declineBooking(id, body.note)
           : await cancelBooking(id, body.refundCents, body.note);
-    if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+    if (!result.ok) return NextResponse.json({ error: result.error, code: result.code }, { status: result.status });
     return NextResponse.json({ ok: true, status: result.booking.booking_status });
   } catch (error) {
     console.error(`Admin ${body.action} failed:`, error);

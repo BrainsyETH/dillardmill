@@ -171,6 +171,7 @@ beforeEach(async () => {
   state.farmFeed = airbnbFeed([]);
   state.airbnbStatus = 200;
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
 });
 
 const status = async (code: string) =>
@@ -459,6 +460,7 @@ describe("calendar boundaries", () => {
     expect(square.capturePayment).not.toHaveBeenCalled();
   });
   it("exports individual bookings to the Farm feed without exposing guest details", async () => {
+    vi.stubEnv("CALENDAR_EXPORT_ENABLED", "true");
     await request();
     const { GET } = await import("@/app/calendar/[file]/route");
     const { NextRequest } = await import("next/server");
@@ -486,5 +488,104 @@ describe("calendar boundaries", () => {
     expect(
       (await db.query("SELECT id FROM external_bookings")).rows,
     ).toHaveLength(0);
+  });
+});
+
+
+describe("manual-first calendar handling", () => {
+  async function pending() {
+    const r = await request();
+    if (!r.ok) throw new Error(r.error);
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM bookings WHERE confirmation_code = $1",
+      [r.confirmationCode],
+    );
+    return { id: rows[0].id, code: r.confirmationCode };
+  }
+  const airbnbBlock = (from: string, to: string) =>
+    [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "BEGIN:VEVENT",
+      `DTSTART;VALUE=DATE:${compact(from)}`,
+      `DTEND;VALUE=DATE:${compact(to)}`,
+      // Airbnb does not keep imported UIDs.
+      "UID:7f2a91c0e3b4-blocked@airbnb.com",
+      "SUMMARY:Airbnb (Not available)",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+  it("approves after Airbnb re-exports the request itself as 'Not available'", async () => {
+    const { id } = await pending();
+    state.airbnbFeed = airbnbBlock(d(30), d(32));
+    expect(await service.approveBooking(id)).toMatchObject({ ok: true });
+    expect(square.capturePayment).toHaveBeenCalledTimes(1);
+  });
+
+  it("still refuses a real Airbnb reservation on those nights", async () => {
+    const { id } = await pending();
+    state.airbnbFeed = airbnbFeed([[d(31), d(33)]]);
+    expect(await service.approveBooking(id)).toMatchObject({ ok: false, code: "dates_taken" });
+    expect(square.capturePayment).not.toHaveBeenCalled();
+  });
+
+  it("still refuses a block that reaches beyond the request's dates", async () => {
+    const { id } = await pending();
+    state.airbnbFeed = airbnbBlock(d(29), d(32));
+    expect(await service.approveBooking(id)).toMatchObject({ ok: false, code: "dates_taken" });
+  });
+
+  it("lets the owner approve after checking by hand when a calendar link is down", async () => {
+    const { id } = await pending();
+    state.airbnbStatus = 503;
+    expect(await service.approveBooking(id)).toMatchObject({ ok: false, code: "calendar_unavailable" });
+    const r = await service.approveBooking(id, { calendarsCheckedManually: true });
+    expect(r).toMatchObject({ ok: true });
+    const { rows } = await db.query<{ decision_note: string }>("SELECT decision_note FROM bookings WHERE id = $1", [id]);
+    expect(rows[0].decision_note).toMatch(/checked by hand/);
+  });
+
+  it("publishes no outbound calendar unless export is switched on", async () => {
+    vi.stubEnv("CALENDAR_EXPORT_ENABLED", "");
+    await request();
+    const { GET } = await import("@/app/calendar/[file]/route");
+    const { NextRequest } = await import("next/server");
+    const res = await GET(new NextRequest("http://localhost/calendar/cozy-cottage.ics"), {
+      params: Promise.resolve({ file: "cozy-cottage.ics" }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("never forwards imported blocks to other platforms, only real reservations", async () => {
+    vi.stubEnv("CALENDAR_EXPORT_ENABLED", "true");
+    // Cottage: a real Airbnb reservation and an Airbnb block.
+    state.airbnbFeed = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "BEGIN:VEVENT",
+      `DTSTART;VALUE=DATE:${compact(d(40))}`,
+      `DTEND;VALUE=DATE:${compact(d(42))}`,
+      "UID:res-1@airbnb.com",
+      "SUMMARY:Reserved",
+      "END:VEVENT",
+      "BEGIN:VEVENT",
+      `DTSTART;VALUE=DATE:${compact(d(50))}`,
+      `DTEND;VALUE=DATE:${compact(d(52))}`,
+      "UID:blk-1@airbnb.com",
+      "SUMMARY:Airbnb (Not available)",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    await request(); // syncs the cottage's Airbnb feed
+    const { GET } = await import("@/app/calendar/[file]/route");
+    const { NextRequest } = await import("next/server");
+    // The Farm's Hipcamp feed must carry the cottage's real reservation but not its block.
+    const res = await GET(new NextRequest("http://localhost/calendar/book-the-farm.ics?for=hipcamp"), {
+      params: Promise.resolve({ file: "book-the-farm.ics" }),
+    });
+    const text = await res.text();
+    expect(text).toContain(`DTSTART;VALUE=DATE:${compact(d(40))}`);
+    expect(text).not.toContain(`DTSTART;VALUE=DATE:${compact(d(50))}`);
   });
 });

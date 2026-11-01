@@ -13,6 +13,8 @@ export type UnavailableSource =
 
 export interface UnavailableRange {
   unitId: string;
+  /** Imported events only: a real reservation or a block ("Not available"). */
+  kind?: "reservation" | "block";
   start: string; // first night
   end: string; // exclusive
   source: UnavailableSource;
@@ -29,24 +31,25 @@ export async function getUnavailableRanges(
 ): Promise<UnavailableRange[]> {
   const rows = await sql`
     SELECT check_in AS start, check_out AS "end", 'direct' AS source,
-           id::text AS ref, NULL AS label, unit_id
+           id::text AS ref, NULL AS label, unit_id, NULL AS kind
       FROM bookings
      WHERE unit_id = ANY(${relatedUnitIds}::text[])
        AND (${excludeBookingId}::uuid IS NULL OR id <> ${excludeBookingId}::uuid)
        AND booking_status IN ('pending_payment', 'requested', 'confirmed')
        AND check_in < ${to} AND check_out > ${from}
     UNION ALL
-    SELECT start_date, end_date, 'block', id::text, note, unit_id
+    SELECT start_date, end_date, 'block', id::text, note, unit_id, NULL
       FROM calendar_blocks
      WHERE unit_id = ANY(${relatedUnitIds}::text[]) AND start_date < ${to} AND end_date > ${from}
     UNION ALL
-    SELECT check_in, check_out, source, COALESCE(external_id, id::text), summary, unit_id
+    SELECT check_in, check_out, source, COALESCE(external_id, id::text), summary, unit_id, kind
       FROM external_bookings
      WHERE unit_id = ANY(${relatedUnitIds}::text[]) AND check_in < ${to} AND check_out > ${from}
     ORDER BY 1
   `;
   return rows.map((r) => ({
     unitId: String(r.unit_id),
+    kind: (r.kind as UnavailableRange["kind"]) ?? undefined,
     start: iso(r.start),
     end: iso(r.end),
     source: r.source as UnavailableSource,

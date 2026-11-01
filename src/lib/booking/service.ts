@@ -18,7 +18,8 @@ import {
   transitionBooking,
   type BookingRow,
 } from "@/lib/db/bookings";
-import { isRangeFree } from "@/lib/db/availability";
+import { getUnavailableRanges, isRangeFree } from "@/lib/db/availability";
+import { isEchoOf } from "@/lib/calendar/ical";
 import { syncUnit } from "@/lib/calendar/sync";
 import {
   authorizeCard,
@@ -245,7 +246,13 @@ const wrongState = (b: BookingRow): AdminResult => ({
   error: `This booking is ${b.booking_status}; refresh the page.`,
 });
 
-export async function approveBooking(id: string): Promise<AdminResult> {
+export async function approveBooking(
+  id: string,
+  options: {
+    /** Owner checked the other platforms by hand because a calendar link failed. */
+    calendarsCheckedManually?: boolean;
+  } = {},
+): Promise<AdminResult> {
   const booking = await getBookingById(id);
   if (!booking) return notFound;
   if (booking.booking_status !== "requested") return wrongState(booking);
@@ -269,28 +276,33 @@ export async function approveBooking(id: string): Promise<AdminResult> {
       status: 409,
       code: "missing_unit",
       error:
-        "The stay could not be checked. Restore it in Content Studio before approving.",
+        "The stay could not be checked. Restore it under Stays & pricing before approving.",
     };
   const inventory = await getInventoryUnits(unit);
   const synced = (await Promise.all(inventory.map(syncUnit))).flat();
-  if (synced.some((result) => !result.success)) {
+  const failed = synced.filter((result) => !result.success);
+  if (failed.length && !options.calendarsCheckedManually) {
     return {
       ok: false,
       status: 503,
       code: "calendar_unavailable",
-      error:
-        "An external calendar could not be refreshed. No charge was made. Retry when the calendar is reachable.",
+      error: `The ${[...new Set(failed.map((f) => f.source))].join(", ")} calendar could not be refreshed, so these dates couldn't be re-checked. No charge was made. Check that platform by hand, then choose "Approve anyway", or try again later.`,
     };
   }
-  if (
-    !(await isRangeFree(
+  const conflicts = (
+    await getUnavailableRanges(
       unit._id,
       booking.check_in,
       booking.check_out,
       inventory.map((u) => u._id),
       booking.id,
-    ))
-  ) {
+    )
+  ).filter(
+    // A platform that imported our calendar re-exports this very request as
+    // a block. That echo is not a conflict.
+    (r) => !isEchoOf(r, { checkIn: booking.check_in, checkOut: booking.check_out }),
+  );
+  if (conflicts.length) {
     return {
       ok: false,
       status: 409,
@@ -305,6 +317,9 @@ export async function approveBooking(id: string): Promise<AdminResult> {
     "requested",
     "confirmed",
     "authorized",
+    failed.length
+      ? `Approved with ${[...new Set(failed.map((f) => f.source))].join(", ")} checked by hand (calendar link unavailable).`
+      : null,
   );
   if (!claimed) return wrongState(booking);
   try {

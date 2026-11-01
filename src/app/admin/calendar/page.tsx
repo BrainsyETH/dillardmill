@@ -31,6 +31,7 @@ export default async function CalendarAdminPage() {
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const base = process.env.NEXT_PUBLIC_SITE_URL || `${proto}://${host}`;
   const token = process.env.CALENDAR_FEED_TOKEN;
+  const exportEnabled = process.env.CALENDAR_EXPORT_ENABLED === 'true';
 
   const today = todayAtProperty();
   const [units, status, blocks] = await Promise.all([getAllBookableUnits(), getSyncStatus(), listBlocks()]);
@@ -48,9 +49,11 @@ export default async function CalendarAdminPage() {
       <div className="bg-[#3A2A1E] text-white py-6 mb-6">
         <div className="container mx-auto px-4">
           <Link href="/admin" className="text-[#CBB8A3] hover:text-[#F4F1EB] text-sm">← Dashboard</Link>
-          <h1 className="text-3xl font-bold mt-1">Calendars &amp; Airbnb sync</h1>
+          <h1 className="text-3xl font-bold mt-1">Calendars &amp; blocked dates</h1>
           <p className="text-[#CBB8A3] mt-1">
-            Imports run every 15 minutes and whenever a guest opens a calendar or sends a request.
+            {exportEnabled
+              ? 'Two-way sync: the website reads each connected platform and publishes its own calendar for them.'
+              : 'Manual mode: block dates here for bookings taken elsewhere, and block approved website bookings on each platform yourself.'}
           </p>
         </div>
       </div>
@@ -58,25 +61,36 @@ export default async function CalendarAdminPage() {
       <div className="container mx-auto px-4 pb-12 space-y-6">
         <div className="bg-white rounded-xl shadow p-5 flex flex-wrap items-center justify-between gap-4">
           <SyncNowButton />
-          {!token && (
+          {exportEnabled && !token && (
             <p className="text-sm text-amber-800">
               Set CALENDAR_FEED_TOKEN so your outbound calendar links can&apos;t be guessed.
             </p>
           )}
         </div>
 
-        <details className="bg-white rounded-xl shadow p-5">
-          <summary className="font-semibold cursor-pointer">How to connect Airbnb (do this once per listing)</summary>
+        <details className="bg-white rounded-xl shadow p-5" open={!exportEnabled}>
+          <summary className="font-semibold cursor-pointer">How calendars work right now</summary>
           <ol className="list-decimal ml-5 mt-3 space-y-2 text-sm">
             <li>
-              <strong>Airbnb → website:</strong> In Airbnb, open the listing → Availability → Connect calendars →
-              <em> Export calendar</em>. Copy that link into the listing&apos;s <em>Airbnb iCal URL</em> field in the
-              Content Studio.
+              <strong>When you approve a website booking:</strong> block those dates on Airbnb, Hipcamp and any other
+              platform listing that stay (and on every listing, for the Farm).
             </li>
+            <li>
+              <strong>When a guest books on another platform:</strong> block the dates below, unless that stay has the
+              platform&apos;s calendar link connected — then the website picks it up on its own.
+            </li>
+            <li>
+              <strong>Optional, Airbnb → website:</strong> in Airbnb open the listing → Availability → Connect
+              calendars → <em>Export calendar</em>, and paste that link into the stay&apos;s{' '}
+              <Link className="underline" href="/admin/stays">Airbnb calendar link</Link>. Read-only; it can&apos;t
+              change anything on Airbnb.
+            </li>
+            {exportEnabled && (
             <li>
               <strong>Website → Airbnb:</strong> In the same Airbnb screen choose <em>Import calendar</em>, paste the
               &ldquo;for Airbnb&rdquo; link shown below for that stay, and name it &ldquo;Pine Valley website&rdquo;.
             </li>
+            )}
             <li>
               Airbnb refreshes imported calendars on its own schedule (usually every few hours). Because website
               bookings are requests, always glance at the Airbnb calendar before approving.
@@ -120,6 +134,7 @@ export default async function CalendarAdminPage() {
                 })}
               </div>
 
+              {exportEnabled && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold">Paste into Airbnb → Import calendar</div>
                 <CopyField value={feedUrl(unit.slug, 'airbnb')} />
@@ -131,6 +146,7 @@ export default async function CalendarAdminPage() {
                   </div>
                 </details>
               </div>
+              )}
 
               <div>
                 <div className="text-sm font-semibold mb-1">Next 120 days</div>

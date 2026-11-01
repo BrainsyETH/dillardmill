@@ -4,7 +4,7 @@
 // the dates here on the next sync. A failed fetch keeps the last good data.
 
 import { sql } from "../db/client";
-import { parseICalFeed } from "./ical";
+import { classifyImportedEvent, parseICalFeed } from "./ical";
 import {
   CALENDAR_SOURCES,
   getAllBookableUnits,
@@ -58,8 +58,8 @@ export async function syncUnitSource(
       sql`DELETE FROM external_bookings WHERE unit_id = ${unit._id} AND source = ${source}`,
       ...events.map(
         (e) => sql`
-          INSERT INTO external_bookings (unit_id, check_in, check_out, source, external_id, summary)
-          VALUES (${unit._id}, ${e.checkIn}, ${e.checkOut}, ${source}, ${e.uid}, ${e.summary})
+          INSERT INTO external_bookings (unit_id, check_in, check_out, source, external_id, summary, kind)
+          VALUES (${unit._id}, ${e.checkIn}, ${e.checkOut}, ${source}, ${e.uid}, ${e.summary}, ${classifyImportedEvent(e.summary)})
         `,
       ),
       sql`
