@@ -1,173 +1,136 @@
-import HomeClient, {
-  type HomeUnit,
-  type HomeReview,
-  type HomeImage,
-} from './HomeClient';
-import {
-  getAllUnits,
-  getFeaturedReviews,
-  getAllGalleryImages,
-} from '@/lib/sanity/queries';
-import { urlFor } from '@/lib/sanity/client';
-import { getUnitUrl } from '@/lib/utils/slugToUrl';
-import type { RentalUnit, SanityImage } from '@/lib/sanity/schemas';
+import Image from "next/image";
+import Link from "next/link";
+import { getAllUnits } from "@/lib/sanity/queries";
+import { UnitCard } from "@/components/units/UnitCard";
+import { photo } from "@/lib/content/property";
 
-// Fallback tiles used when Sanity returns no units (keeps the homepage
-// meaningful in dev / empty-dataset environments).
-const FALLBACK_UNITS: HomeUnit[] = [
-  {
-    name: 'Cozy Cottage',
-    description:
-      'Full kitchen, washer/dryer, perfect for couples or small families seeking comfort in nature',
-    href: '/cozycottage',
-    features: ['Full Kitchen', 'Washer/Dryer', 'Sleeps 4'],
-    gradient: 'from-brand-sage/30 to-brand-sage/10',
-  },
-  {
-    name: 'The Original Airstream',
-    description:
-      'Vintage glamping at its finest with outdoor soaking tub and private deck under the stars',
-    href: '/airstream',
-    features: ['Outdoor Tub', 'Private Deck', 'Vintage Charm'],
-    gradient: 'from-brand-copper/20 to-brand-copper/5',
-  },
-  {
-    name: 'The Sebastian',
-    description:
-      'Rustic charm meets modern comfort with outdoor clawfoot tubs and room for the family',
-    href: '/sebastian',
-    features: ['Clawfoot Tubs', 'Sleeps 4', 'Forest Views'],
-    gradient: 'from-brand-sky/20 to-brand-sky/5',
-  },
-];
-
-const CARD_GRADIENTS = [
-  'from-brand-sage/30 to-brand-sage/10',
-  'from-brand-copper/20 to-brand-copper/5',
-  'from-brand-sky/20 to-brand-sky/5',
-];
-
-function unitToTile(unit: RentalUnit, index: number): HomeUnit {
-  const image = unit.featuredImage?.image ?? unit.images?.[0]?.image;
-  const imageUrl = image ? urlFor(image).width(800).height(600).url() : undefined;
-  const imageAlt =
-    unit.featuredImage?.alt ?? unit.images?.[0]?.alt ?? unit.name;
-
-  const features: string[] = [];
-  if (unit.maxGuests) features.push(`Sleeps ${unit.maxGuests}`);
-  if (unit.bedrooms) {
-    features.push(`${unit.bedrooms} ${unit.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}`);
-  }
-  const topAmenity = unit.amenities?.[0]?.name;
-  if (topAmenity && features.length < 3) features.push(topAmenity);
-
-  return {
-    name: unit.name,
-    href: getUnitUrl(unit.slug.current),
-    description: unit.shortDescription ?? '',
-    features: features.slice(0, 3),
-    imageUrl,
-    imageAlt,
-    gradient: CARD_GRADIENTS[index % CARD_GRADIENTS.length],
-  };
-}
-
-async function loadUnits(): Promise<HomeUnit[]> {
-  try {
-    const all = await getAllUnits();
-    const picked = all
-      .filter((u) => u.slug.current !== 'book-the-farm')
-      .sort((a, b) => {
-        if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
-        return 0;
-      })
-      .slice(0, 3);
-    if (picked.length === 0) return FALLBACK_UNITS;
-    return picked.map(unitToTile);
-  } catch {
-    return FALLBACK_UNITS;
-  }
-}
-
-async function loadReview(): Promise<HomeReview | null> {
-  try {
-    const reviews = await getFeaturedReviews();
-    const first = reviews[0];
-    if (!first) return null;
-    return {
-      text: first.reviewText,
-      guestName: first.guestName,
-      rating: first.rating,
-    };
-  } catch {
-    return null;
-  }
-}
-
-interface GalleryEntry {
-  unitName: string;
-  unitSlug: string;
-  images: Array<{
-    image: SanityImage;
-    caption?: string;
-    alt?: string;
-    featured?: boolean;
-  }> | null;
-}
-
-async function loadImagery(): Promise<{
-  heroImage: HomeImage | null;
-  experienceImages: HomeImage[];
-}> {
-  try {
-    const gallery = (await getAllGalleryImages()) as GalleryEntry[];
-    const flat = gallery.flatMap((g) =>
-      (g.images ?? []).map((img) => ({
-        image: img.image,
-        alt: img.alt ?? g.unitName,
-        featured: !!img.featured,
-      }))
-    );
-
-    // Hero: first featured image, else the first image overall.
-    const heroSource = flat.find((i) => i.featured) ?? flat[0];
-    const heroImage: HomeImage | null = heroSource
-      ? {
-          url: urlFor(heroSource.image).width(2000).height(1200).fit('crop').url(),
-          alt: heroSource.alt,
-        }
-      : null;
-
-    // Experience grid: up to 4 distinct images, featured first.
-    const ordered = [...flat].sort(
-      (a, b) => Number(b.featured) - Number(a.featured)
-    );
-    const picks = ordered
-      .filter((i) => i !== heroSource) // avoid reusing the hero shot
-      .slice(0, 4);
-    const experienceImages: HomeImage[] = picks.map((i) => ({
-      url: urlFor(i.image).width(800).height(800).fit('crop').url(),
-      alt: i.alt,
-    }));
-
-    return { heroImage, experienceImages };
-  } catch {
-    return { heroImage: null, experienceImages: [] };
-  }
-}
-
-export default async function Page() {
-  const [units, review, imagery] = await Promise.all([
-    loadUnits(),
-    loadReview(),
-    loadImagery(),
-  ]);
+export default async function Home() {
+  const units = (await getAllUnits())
+    .filter((u) => u.slug.current !== "book-the-farm")
+    .slice(0, 3);
+  const hero = photo("819922e5ba54");
+  const creek = photo("bb46c51f3e11");
+  const mill = photo("6d2bebefce59");
   return (
-    <HomeClient
-      units={units}
-      review={review}
-      heroImage={imagery.heroImage}
-      experienceImages={imagery.experienceImages}
-    />
+    <>
+      <section className="page-shell pt-10 md:pt-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
+          <div>
+            <p className="eyebrow mb-4">Pine Valley · Davisville, Missouri</p>
+            <h1 className="page-title">
+              Come down to
+              <br />
+              Pine Valley.
+            </h1>
+          </div>
+          <div className="max-w-sm md:pb-2">
+            <p className="text-lg leading-relaxed mb-5">
+              Vintage trailers, a cozy cottage, and room to gather. Come stay
+              beside Dillard Mill, in the Missouri Ozarks.
+            </p>
+            <Link href="/lodging" className="text-link">
+              Find your stay <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+        </div>
+        <figure>
+          <div className="relative aspect-[5/4] sm:aspect-[2.15/1]">
+            <Image
+              src={hero.src}
+              alt="The Pine Valley courtyard at dusk, with string lights between the café and barn"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
+          <figcaption className="flex justify-between gap-4 text-xs text-brand-stone py-3">
+            <span>Evening in the courtyard</span>
+            <Link href="/photos" className="underline underline-offset-4">
+              See Pine Valley in photographs
+            </Link>
+          </figcaption>
+        </figure>
+      </section>
+      <section className="page-shell section-space">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-end mb-9">
+          <div>
+            <p className="eyebrow mb-3">Make yourself at home</p>
+            <h2 className="section-title">Three ways to stay.</h2>
+          </div>
+          <Link href="/lodging" className="text-link">
+            All stays ↗
+          </Link>
+        </div>
+        <div className="grid md:grid-cols-3 gap-x-7 gap-y-12">
+          {units.map((u) => (
+            <UnitCard key={u._id} unit={u} />
+          ))}
+        </div>
+      </section>
+      <section className="bg-brand-forest text-brand-cream">
+        <div className="page-shell grid md:grid-cols-2 gap-10 lg:gap-20 items-center section-space">
+          <div className="relative aspect-[4/3]">
+            <Image
+              src={creek.src}
+              alt="Friends and their dog spending an afternoon at Pine Valley’s private creek access"
+              fill
+              sizes="(max-width: 767px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <p className="eyebrow text-brand-sand mb-5">
+              The whole place, together
+            </p>
+            <h2 className="section-title mb-6">
+              Bring your people.
+              <br />
+              Book the Farm.
+            </h2>
+            <p className="leading-relaxed text-lg mb-7 max-w-md">
+              Eight stays, a communal kitchen, and a courtyard for long
+              evenings. For family reunions, celebrations, or simply a weekend
+              with everyone in one place.
+            </p>
+            <Link href="/book-the-farm" className="text-link">
+              Explore the Farm ↗
+            </Link>
+          </div>
+        </div>
+      </section>
+      <section className="page-shell section-space grid md:grid-cols-[.9fr_1.1fr] gap-10 lg:gap-24 items-center">
+        <div>
+          <p className="eyebrow mb-4">Just beyond your door</p>
+          <h2 className="section-title mb-6">Take the slow way.</h2>
+          <p className="text-lg leading-relaxed mb-7">
+            Walk over to Dillard Mill. Follow the trail down to Huzzah Creek. Or
+            make another cup of coffee and stay put.
+          </p>
+          <div className="flex flex-wrap gap-7">
+            <Link className="text-link" href="/our-place">
+              Around Pine Valley ↗
+            </Link>
+            <Link className="text-link" href="/the-area">
+              A little farther afield ↗
+            </Link>
+          </div>
+        </div>
+        <figure>
+          <div className="relative aspect-[4/3]">
+            <Image
+              src={mill.src}
+              alt={mill.alt}
+              fill
+              sizes="(max-width: 767px) 100vw, 55vw"
+              className="object-cover"
+            />
+          </div>
+          <figcaption className="text-xs text-brand-stone pt-3">
+            Dillard Mill, our neighbor
+          </figcaption>
+        </figure>
+      </section>
+    </>
   );
 }

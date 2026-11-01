@@ -1,100 +1,50 @@
-export default function AboutPage() {
+import Link from "next/link";
+import { PlaceStory } from "@/components/editorial/PlaceStory";
+export const metadata = { title: "Our place | Pine Valley at Dillard Mill" };
+export default function OurPlace() {
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-6">About Pine Valley</h1>
-
-      <div className="prose prose-lg max-w-none">
-        <p className="text-xl text-gray-600 mb-8">
-          43 acres in Missouri's Mark Twain National Forest, near historic Dillard Mill
+    <PlaceStory
+      eyebrow="Around Pine Valley"
+      title="Room to wander."
+      intro="Trailers tucked among the trees. Ponds, paths, and the courtyard. A creek to spend an afternoon beside, and a red mill just down the road."
+      image="2bb68e46fdd0"
+    >
+      <section>
+        <h2 className="text-3xl mb-5">Make a day of doing very little.</h2>
+        <p>
+          Our grounds have about 1½ to 2 miles of walking trails and two ponds.
+          Across from the entrance, a roughly half-mile path leads to our
+          private access on Huzzah Creek.
         </p>
-
-        <h2 className="text-2xl font-semibold mt-8 mb-4">Our Property</h2>
-        <p className="text-gray-700 mb-6">
-          Pine Valley occupies 43 private acres in Missouri's Mark Twain National Forest,
-          situated near the historic Dillard Mill. Located in Davisville, Missouri, our
-          property offers a unique blend of rustic charm and modern comfort.
+        <p>
+          Ask us about the route and current conditions before heading down.
+          There’s also the walk to neighboring Dillard Mill State Historic Site.
         </p>
-
-        <h2 className="text-2xl font-semibold mt-8 mb-4">What We Offer</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-stone-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-lg mb-3">Lodging</h3>
-            <ul className="space-y-2 text-gray-700">
-              <li>• Unique vintage Airstreams</li>
-              <li>• Cozy cottage with full kitchen</li>
-              <li>• Group lodging options</li>
-              <li>• Indoor plumbing and electric in all units</li>
-            </ul>
-          </div>
-
-          <div className="bg-stone-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-lg mb-3">Activities</h3>
-            <ul className="space-y-2 text-gray-700">
-              <li>• Private hiking trails (1.5-2 miles)</li>
-              <li>• Two fishing ponds</li>
-              <li>• Huzzah Creek swimming</li>
-              <li>• Campfire areas</li>
-            </ul>
-          </div>
-
-          <div className="bg-stone-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-lg mb-3">Amenities</h3>
-            <ul className="space-y-2 text-gray-700">
-              <li>• WiFi connectivity</li>
-              <li>• RV hookups available</li>
-              <li>• Outdoor bathhouse facilities</li>
-              <li>• Pet-friendly options</li>
-            </ul>
-          </div>
-
-          <div className="bg-stone-50 p-6 rounded-lg">
-            <h3 className="font-semibold text-lg mb-3">Events</h3>
-            <ul className="space-y-2 text-gray-700">
-              <li>• Multi-purpose café (seats 30)</li>
-              <li>• Event hosting capabilities</li>
-              <li>• Group camping for 50+</li>
-              <li>• Farm rental available</li>
-            </ul>
-          </div>
+        <Link href="/map" className="text-link">
+          See the property map ↗
+        </Link>
+      </section>
+      <section>
+        <h2 className="text-3xl mb-5">Your own stay. Shared places.</h2>
+        <p>
+          The cottage and trailers have different sleeping and bathroom
+          arrangements. Some have outdoor tubs; some of the Farm’s
+          accommodations share the bathhouse. Each stay’s page explains the
+          essentials.
+        </p>
+        <p>
+          For a reunion or celebration, the whole Farm brings the accommodations
+          and gathering spaces together in one reservation.
+        </p>
+        <div className="flex flex-wrap gap-6">
+          <Link href="/lodging" className="text-link">
+            Choose a stay ↗
+          </Link>
+          <Link href="/book-the-farm" className="text-link">
+            Book the Farm ↗
+          </Link>
         </div>
-
-        <h2 className="text-2xl font-semibold mt-8 mb-4">Location</h2>
-        <p className="text-gray-700 mb-4">
-          We're located at 126 Dillard Mill Road in Davisville, Missouri, within walking
-          distance of the historic Dillard Mill State Historic Site. Our property sits in
-          the heart of Mark Twain National Forest, providing access to over 750 miles of
-          trails for hiking, horseback riding, and outdoor recreation.
-        </p>
-
-        <h2 className="text-2xl font-semibold mt-8 mb-4">What Makes Us Special</h2>
-        <p className="text-gray-700 mb-4">
-          Pine Valley distinguishes itself through its natural setting and outdoor recreation
-          focus. Whether you're looking for a romantic getaway in a vintage Airstream, a
-          family retreat in our cozy cottage, or planning a group event, we provide a unique
-          base camp for exploring Missouri's beautiful Ozarks.
-        </p>
-
-        <div className="bg-stone-800 text-white p-8 rounded-lg mt-8">
-          <h3 className="text-2xl font-semibold mb-4">Ready to Visit?</h3>
-          <p className="mb-6">
-            Book your stay at Pine Valley and experience the beauty of the Missouri Ozarks.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <a
-              href="/lodging"
-              className="inline-block bg-white text-stone-800 px-6 py-3 rounded-lg font-semibold hover:bg-stone-100 transition-colors text-center"
-            >
-              View Accommodations
-            </a>
-            <a
-              href="/contact"
-              className="inline-block border-2 border-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors text-center"
-            >
-              Contact Us
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+      </section>
+    </PlaceStory>
   );
 }

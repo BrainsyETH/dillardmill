@@ -1,43 +1,22 @@
 @import "tailwindcss";
 
-/* 
- * Pine Valley at Dillard Mill - Fresh Nature Theme
- * Lighter, airier design with natural forest & water tones
- * Less heavy brown, more fresh greens and soft neutrals
- */
-
 :root {
-  /* Primary Colors - Hunter, outdoorsy */
-  --color-forest: #2F4A34;        /* Deep hunter green - primary brand */
-  --color-sage: #8FA888;          /* Muted olive-sage - secondary */
-  --color-cream: #FAFAF8;         /* Clean off-white - backgrounds */
-  --color-charcoal: #374151;      /* Soft charcoal - body text */
-
-  /* Accent Colors */
-  --color-copper: #C68A4E;        /* Warm tan - CTAs, accents */
-  --color-copper-dark: #A06F3A;   /* Lighter brown for hovers */
-  --color-sky: #6B9AC4;           /* Soft blue - water, calm */
-  --color-stone: #9CA3AF;         /* Neutral stone gray */
-  --color-sand: #E5E1D8;          /* Light warm neutral - borders */
-  --color-bark: #6B4E35;          /* Lighter bark brown - used sparingly */
-  --color-seafoam: #26A085;       /* Deep seafoam - landmark markers (WCAG 3:1 w/ white) */
-  --color-blurple: #5865F2;       /* Blurple - unit markers */
-  
-  /* Semantic Mapping */
-  --color-primary: var(--color-forest);
-  --color-secondary: var(--color-copper);
-  --color-accent: var(--color-sage);
-  --color-background: var(--color-cream);
-  --color-text: var(--color-charcoal);
-  --color-text-muted: var(--color-stone);
-  
-  /* Background & Foreground */
+  --color-forest: #2f4a34;
+  --color-sage: #8b9b82;
+  --color-cream: #f8f6f1;
+  --color-charcoal: #29392e;
+  --color-copper: #855438;
+  --color-copper-dark: #68412b;
+  --color-sky: #48768d;
+  --color-stone: #636b63;
+  --color-sand: #dddcd2;
+  --color-bark: #594a3e;
+  --color-seafoam: #227e69;
+  --color-blurple: #5865f2;
   --background: var(--color-cream);
   --foreground: var(--color-charcoal);
 }
-
 @theme inline {
-  /* Tailwind v4 Theme Extension */
   --color-brand-forest: var(--color-forest);
   --color-brand-sage: var(--color-sage);
   --color-brand-cream: var(--color-cream);
@@ -50,280 +29,337 @@
   --color-brand-bark: var(--color-bark);
   --color-brand-seafoam: var(--color-seafoam);
   --color-brand-blurple: var(--color-blurple);
-  
-  /* Semantic aliases */
+  --color-brand-parchment: var(--color-cream);
+  --color-brand-olive: var(--color-sage);
   --color-primary: var(--color-forest);
   --color-secondary: var(--color-copper);
-  --color-accent: var(--color-sage);
   --color-background: var(--color-cream);
   --color-foreground: var(--color-charcoal);
-  
-  /* Typography */
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: var(--font-body), Arial, sans-serif;
+  --font-serif: var(--font-heading), Georgia, serif;
+}
+@layer base {
+  html {
+    scroll-padding-top: 7rem;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-copper);
+    outline-offset: 4px;
+  }
+  input,
+  textarea,
+  select {
+    accent-color: var(--color-forest);
+  }
+  ::selection {
+    background: var(--color-forest);
+    color: white;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+@layer components {
+  .page-shell {
+    width: min(100% - 3rem, 1280px);
+    margin-inline: auto;
+  }
+  .section-space {
+    padding-block: clamp(3rem, 7vw, 6rem);
+  }
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .page-title {
+    font-size: clamp(2.8rem, 5.5vw, 5rem);
+    max-width: 18ch;
+  }
+  .section-title {
+    font-size: clamp(2.2rem, 3.4vw, 3.4rem);
+  }
+  .text-link {
+    text-decoration: underline;
+    text-underline-offset: 0.3em;
+    text-decoration-thickness: 1px;
+  }
+  .text-link:hover {
+    color: var(--color-copper);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.35rem;
+    min-height: 48px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    font: 600 0.95rem var(--font-sans);
+    text-align: center;
+    text-decoration: none;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-primary,
+  .btn-secondary {
+    background: var(--color-forest);
+    color: white;
+  }
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    background: #203825;
+  }
+  .btn-outline {
+    border-color: var(--color-forest);
+    color: var(--color-forest);
+  }
+  .btn-outline:hover {
+    background: #eaece3;
+  }
+  .btn-outline-light {
+    border-color: currentColor;
+    color: white;
+  }
+  .field {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.75rem;
+    border: 1px solid #9a9f94;
+    border-radius: 2px;
+    background: white;
+    color: var(--color-charcoal);
+    font-size: 1rem;
+  }
+  .field-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .photo-frame {
+    position: relative;
+    overflow: hidden;
+    background: #e5e5db;
+  }
+  .photo-frame img {
+    object-fit: cover;
+  }
+  .prose-content {
+    font-size: 1.1rem;
+    line-height: 1.75;
+  }
+  .prose-content p {
+    margin-bottom: 1.25rem;
+  }
+  .prose-content h2 {
+    font-size: 2.25rem;
+    margin: 2.5rem 0 1rem;
+  }
+  .prose-content h3 {
+    font-size: 1.65rem;
+    margin: 2rem 0 1rem;
+  }
+  .prose-content ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .prose-content a {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .card,
+  .card-featured {
+    background: white;
+    border: 1px solid var(--color-sand);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .booking-panel {
+    background: white;
+    border: 1px solid var(--color-sand);
+  }
+  .booking-panel .rdp-root {
+    --rdp-accent-color: var(--color-forest);
+    --rdp-accent-background-color: #e9ede4;
+    --rdp-day-height: 40px;
+    --rdp-day-width: 40px;
+    --rdp-day_button-width: 38px;
+    --rdp-day_button-height: 38px;
+    margin: 0;
+  }
+  .booking-panel .rdp-months {
+    max-width: none;
+  }
+  .booking-panel .rdp-month {
+    width: 100%;
+  }
+  .booking-panel .rdp-month_grid {
+    width: 100%;
+    table-layout: fixed;
+  }
+  .booking-panel .rdp-day_button {
+    margin-inline: auto;
+    max-width: 100%;
+  }
+  .booking-panel .rdp-caption_label {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 500;
+  }
+  .booking-panel .rdp-disabled {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+  .booking-panel .rdp-selected {
+    font-weight: 600;
+    font-size: inherit;
+  }
+  .booking-panel .rdp-nav button {
+    width: 44px;
+    height: 44px;
+  }
+  .skip-link {
+    position: fixed;
+    top: -100px;
+    left: 1rem;
+    z-index: 100;
+    background: white;
+    padding: 1rem;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+  @media (max-width: 639px) {
+    .page-shell {
+      width: calc(100% - 2rem);
+    }
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.stay-gallery {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  grid-template-rows: repeat(2, 240px);
+  gap: 12px;
 }
-
-/* ========================================
-   TYPOGRAPHY SYSTEM
-   ======================================== */
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif);
-  color: var(--color-forest);
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+.stay-gallery-main {
+  grid-row: span 2;
 }
-
-.font-serif {
-  font-family: var(--font-serif);
-}
-
-.font-sans {
-  font-family: var(--font-sans);
-}
-
-/* ========================================
-   BUTTON STYLES
-   ======================================== */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.75rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  font-family: var(--font-sans);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn-primary {
-  background-color: var(--color-copper);
+.photo-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: #152219;
   color: white;
 }
-
-.btn-primary:hover {
-  background-color: var(--color-copper-dark);
-}
-
-.btn-secondary {
-  background-color: var(--color-forest);
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: #233826;
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 2px solid var(--color-forest);
-  color: var(--color-forest);
-}
-
-.btn-outline:hover {
-  background-color: var(--color-forest);
-  color: white;
-}
-
-.btn-outline-light {
-  background-color: transparent;
-  border: 2px solid white;
-  color: white;
-}
-
-.btn-outline-light:hover {
-  background-color: white;
-  color: var(--color-forest);
-}
-
-/* ========================================
-   CARD STYLES
-   ======================================== */
-
-.card {
-  background-color: white;
-  border-radius: 1rem;
-  border: 1px solid var(--color-sand);
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card:hover {
-  box-shadow: 0 6px 16px -8px rgba(47, 74, 52, 0.12);
-}
-
-.card-featured {
-  background-color: white;
-  border: 2px solid var(--color-sand);
-  border-radius: 1.5rem;
-}
-
-/* ========================================
-   DECORATIVE ELEMENTS
-   ======================================== */
-
-.divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--color-sand) 50%, transparent 100%);
-}
-
-.section-header {
+.photo-dialog[open] {
   display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+  flex-direction: column;
 }
-
-.section-header::before,
-.section-header::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-sand), transparent);
+.photo-dialog::backdrop {
+  background: #152219;
 }
-
-/* ========================================
-   HERO GRADIENTS
-   ======================================== */
-
-.gradient-hero {
-  background-color: var(--color-forest);
-}
-
-.gradient-hero-light {
-  background-color: var(--color-sage);
-}
-
-/* ========================================
-   ANIMATIONS
-   ======================================== */
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+@media (max-width: 767px) {
+  .stay-gallery {
+    grid-template-columns: 1fr;
+    grid-template-rows: min(75vw, 420px);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .stay-gallery-main {
+    grid-row: auto;
   }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out forwards;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.5s ease-out forwards;
-}
-
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
-
-/* ========================================
-   FORM ELEMENTS
-   ======================================== */
-
-input, textarea, select {
-  font-family: var(--font-sans);
-}
-
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--color-forest);
-  box-shadow: 0 0 0 3px rgba(47, 74, 52, 0.15);
-}
-
-/* ========================================
-   FOOTER ACCORDION (mobile)
-   ======================================== */
-
-/* On desktop, footer <details> groups are always expanded and non-interactive */
-@media (min-width: 768px) {
-  .footer-accordion > *:not(summary) {
-    display: block !important;
-  }
-  .footer-accordion > summary {
-    list-style: none;
-    pointer-events: none;
-  }
-  .footer-accordion > summary::-webkit-details-marker,
-  .footer-accordion > summary::marker {
+  .stay-gallery > :not(:first-child) {
     display: none;
   }
 }
-
-/* Hide default marker on mobile too (we render our own chevron) */
-.footer-accordion > summary {
-  list-style: none;
+.journal-body {
+  font-size: 1.1rem;
+  line-height: 1.85;
 }
-.footer-accordion > summary::-webkit-details-marker,
-.footer-accordion > summary::marker {
-  display: none;
+.journal-body img {
+  width: 100%;
+  height: auto;
+  margin: 2rem 0;
+}
+.journal-body h2 {
+  font-size: 2rem;
+  margin: 2.5rem 0 1rem;
+}
+.journal-body h3 {
+  font-size: 1.5rem;
+  margin: 2rem 0 1rem;
+}
+.journal-body a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.journal-body ul,
+.journal-body ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+.journal-body ul {
+  list-style: disc;
+}
+.journal-body ol {
+  list-style: decimal;
 }
 
-/* ========================================
-   SCROLLBAR STYLING
-   ======================================== */
-
-::-webkit-scrollbar {
-  width: 10px;
+.photo-dialog :focus-visible {
+  outline-color: white;
 }
-
-::-webkit-scrollbar-track {
-  background: var(--color-cream);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-sage);
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-forest);
-}
-
-/* ========================================
-   SELECTION STYLING
-   ======================================== */
-
-::selection {
-  background-color: var(--color-forest);
-  color: white;
+.bg-brand-forest .text-link:hover {
+  color: var(--color-cream);
+  text-decoration-thickness: 2px;
 }

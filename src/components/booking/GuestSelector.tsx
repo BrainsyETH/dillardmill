@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 interface GuestSelectorProps {
   value: number;
@@ -14,16 +14,17 @@ export function GuestSelector({
   onChange,
   max,
   min = 1,
-  singularLabel = 'guest',
-  pluralLabel = 'guests',
+  singularLabel = "guest",
+  pluralLabel = "guests",
 }: GuestSelectorProps) {
   return (
     <div className="flex items-center gap-4">
       <button
         type="button"
+        aria-label={`Fewer ${pluralLabel}`}
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
-        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         −
       </button>
@@ -37,18 +38,15 @@ export function GuestSelector({
 
       <button
         type="button"
+        aria-label={`More ${pluralLabel}`}
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
-        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         +
       </button>
 
-      {max > 0 && (
-        <div className="text-sm text-gray-500">
-          Max: {max}
-        </div>
-      )}
+      {max > 0 && <div className="text-sm text-gray-500">Max: {max}</div>}
     </div>
   );
 }

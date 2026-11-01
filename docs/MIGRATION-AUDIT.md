@@ -1,5 +1,8 @@
 # Squarespace → Next.js Migration Audit
 
+> **31 October 2026 follow-up:** The guest experience implementation, restored content, inquiry inbox, Farm inventory constraint, Turnstile setup, and validation are documented in [GUEST-EXPERIENCE.md](GUEST-EXPERIENCE.md). Apply migration 002 as well as the original booking migration. Real account validation remains required.
+
+
 **Audited:** 2026-10-31, against `main` @ `26db600`
 **Goal:** replace dillardmill.com (Squarespace) with this Next.js site with full
 content and image parity, plus a direct-booking calendar and checkout that stays

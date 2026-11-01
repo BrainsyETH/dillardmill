@@ -1,14 +1,19 @@
-import { MetadataRoute } from 'next';
-
+import type { MetadataRoute } from "next";
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        userAgent: '*',
-        allow: '/',
-        disallow: ['/admin/', '/api/', '/studio/'],
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/admin",
+          "/api/",
+          "/studio",
+          "/embed/",
+          "/booking/confirmation/",
+        ],
       },
     ],
-    sitemap: 'https://pinevalleylodging.com/sitemap.xml',
+    sitemap: `${(process.env.NEXT_PUBLIC_SITE_URL || "https://dillardmill.com").replace(/\/$/, "")}/sitemap.xml`,
   };
 }

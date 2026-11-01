@@ -1,74 +1,54 @@
-import { client } from './client';
-import type { RentalUnit, Review, Attraction, BlogPost, SiteSettings } from './schemas';
+import { client, sanityConfigured } from "./client";
+import type {
+  RentalUnit,
+  Review,
+  Attraction,
+  BlogPost,
+  SiteSettings,
+} from "./schemas";
+
+import { publishedUnits } from "@/lib/content/property";
+
+async function displayFetch<T>(
+  query: string,
+  params: Record<string, string> = {},
+  fallback: T,
+): Promise<T> {
+  if (!sanityConfigured) return fallback;
+  try {
+    return await client.fetch<T>(query, params);
+  } catch (error) {
+    console.error("Content unavailable", error);
+    return fallback;
+  }
+}
 
 // Rental Units
 export async function getAllUnits(): Promise<RentalUnit[]> {
-  return client.fetch(
-    `*[_type == "rentalUnit" && available == true] | order(featured desc, sortOrder asc, _createdAt desc) {
-      _id,
-      name,
-      slug,
-      shortDescription,
-      basePrice,
-      cleaningFee,
-      bedrooms,
-      bathrooms,
-      maxGuests,
-      "featuredImage": images[featured == true][0],
-      amenities[]->{
-        name,
-        icon
-      },
-      featured
-    }`
+  return displayFetch(
+    `*[_type == "rentalUnit" && available == true] | order(featured desc, sortOrder asc) {
+  ..., amenities[]->{_id, name, icon, category, description},
+  "featuredImage": coalesce(images[featured == true][0], images[0]),
+  "directBookingEnabled": coalesce(directBookingEnabled, true)
+ }`,
+    {},
+    publishedUnits,
   );
 }
-
 export async function getUnitBySlug(slug: string): Promise<RentalUnit | null> {
-  return client.fetch(
-    `*[_type == "rentalUnit" && slug.current == $slug][0] {
-      _id,
-      name,
-      slug,
-      description,
-      shortDescription,
-      basePrice,
-      seasonalPricing,
-      cleaningFee,
-      baseGuests,
-      extraGuestFee,
-      petsAllowed,
-      maxPets,
-      petFee,
-      minStay,
-      maxGuests,
-      bedrooms,
-      bathrooms,
-      beds,
-      amenities[]->{
-        _id,
-        name,
-        icon,
-        category,
-        description
-      },
-      images,
-      virtualTourUrl,
-      videoUrl,
-      airbnbUrl,
-      vrboUrl,
-      bookingUrl,
-      seo,
-      available,
-      "directBookingEnabled": coalesce(directBookingEnabled, true)
-    }`,
-    { slug }
+  return displayFetch(
+    `*[_type == "rentalUnit" && slug.current == $slug && available == true][0] {
+  ..., amenities[]->{_id, name, icon, category, description},
+  "directBookingEnabled": coalesce(directBookingEnabled, true)
+ }`,
+    { slug },
+    publishedUnits.find((u) => u.slug.current === slug) || null,
   );
 }
 
 // Gallery
 export async function getAllGalleryImages() {
-  return client.fetch(
+  return displayFetch(
     `*[_type == "rentalUnit"] {
       "unitName": name,
       "unitSlug": slug.current,
@@ -78,14 +58,16 @@ export async function getAllGalleryImages() {
         alt,
         featured
       }
-    }`
+    }`,
+    {},
+    [],
   );
 }
 
 // Reviews
 export async function getReviews(limit?: number): Promise<Review[]> {
-  const limitClause = limit ? `[0...${limit}]` : '';
-  return client.fetch(
+  const limitClause = limit ? `[0...${limit}]` : "";
+  return displayFetch(
     `*[_type == "review" && verified == true] | order(reviewDate desc) ${limitClause} {
       _id,
       guestName,
@@ -99,12 +81,14 @@ export async function getReviews(limit?: number): Promise<Review[]> {
       },
       featured,
       source
-    }`
+    }`,
+    {},
+    [],
   );
 }
 
 export async function getFeaturedReviews(): Promise<Review[]> {
-  return client.fetch(
+  return displayFetch(
     `*[_type == "review" && featured == true && verified == true] | order(reviewDate desc) [0...6] {
       _id,
       guestName,
@@ -117,13 +101,15 @@ export async function getFeaturedReviews(): Promise<Review[]> {
         slug
       },
       source
-    }`
+    }`,
+    {},
+    [],
   );
 }
 
 // Attractions
 export async function getAttractions(): Promise<Attraction[]> {
-  return client.fetch(
+  return displayFetch(
     `*[_type == "attraction"] | order(distance asc) {
       _id,
       name,
@@ -138,12 +124,16 @@ export async function getAttractions(): Promise<Attraction[]> {
       phone,
       images,
       location
-    }`
+    }`,
+    {},
+    [],
   );
 }
 
-export async function getAttractionBySlug(slug: string): Promise<Attraction | null> {
-  return client.fetch(
+export async function getAttractionBySlug(
+  slug: string,
+): Promise<Attraction | null> {
+  return displayFetch(
     `*[_type == "attraction" && slug.current == $slug][0] {
       _id,
       name,
@@ -159,14 +149,15 @@ export async function getAttractionBySlug(slug: string): Promise<Attraction | nu
       images,
       location
     }`,
-    { slug }
+    { slug },
+    null,
   );
 }
 
 // Blog
 export async function getBlogPosts(limit?: number): Promise<BlogPost[]> {
-  const limitClause = limit ? `[0...${limit}]` : '';
-  return client.fetch(
+  const limitClause = limit ? `[0...${limit}]` : "";
+  return displayFetch(
     `*[_type == "blogPost"] | order(publishedAt desc) ${limitClause} {
       _id,
       title,
@@ -182,12 +173,16 @@ export async function getBlogPosts(limit?: number): Promise<BlogPost[]> {
       publishedAt,
       excerpt,
       coverImage
-    }`
+    }`,
+    {},
+    [],
   );
 }
 
-export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
-  return client.fetch(
+export async function getBlogPostBySlug(
+  slug: string,
+): Promise<BlogPost | null> {
+  return displayFetch(
     `*[_type == "blogPost" && slug.current == $slug][0] {
       _id,
       title,
@@ -207,13 +202,14 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
       body,
       seo
     }`,
-    { slug }
+    { slug },
+    null,
   );
 }
 
 // Site Settings
 export async function getSiteSettings(): Promise<SiteSettings> {
-  return client.fetch(
+  return displayFetch(
     `*[_type == "siteSettings"][0] {
       siteName,
       tagline,
@@ -227,6 +223,12 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       airbnbProfileUrl,
       vrboProfileUrl,
       seo
-    }`
+    }`,
+    {},
+    {
+      siteName: "Pine Valley at Dillard Mill",
+      email: "pinevalley@dillardmill.com",
+      phone: "(314) 843-4321",
+    },
   );
 }

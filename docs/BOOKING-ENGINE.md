@@ -1,5 +1,8 @@
 # Direct Booking & Airbnb Sync
 
+> **31 October 2026 follow-up:** The guest experience implementation, restored content, inquiry inbox, Farm inventory constraint, Turnstile setup, and validation are documented in [GUEST-EXPERIENCE.md](GUEST-EXPERIENCE.md). Apply migration 002 as well as the original booking migration. Real account validation remains required.
+
+
 How guests book on dillardmill.com, how the calendar stays in step with
 Airbnb, and how to set it up. Supersedes `BOOKING-SETUP.md` and
 `BOOKING-SYSTEM-COMPLETE.md`.

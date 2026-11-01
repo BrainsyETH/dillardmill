@@ -1,121 +1,90 @@
-'use client';
-
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Navigation from './Navigation';
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import Navigation from "./Navigation";
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const path = usePathname();
+  const open = menuPath === path;
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+    if (!open) return;
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuPath(null);
+        toggle.current?.focus();
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [open]);
   return (
-    <header 
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-brand-sand' 
-          : 'bg-white border-b border-brand-sand'
-      }`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center group">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <span className="font-serif text-2xl md:text-3xl font-semibold text-brand-forest group-hover:text-brand-copper transition-colors">
-                Pine Valley
-              </span>
-              <span className="hidden sm:block text-xs text-brand-stone mt-0.5 tracking-wide">
-                at Dillard Mill
-              </span>
-            </motion.div>
+    <header className="sticky top-0 z-40 border-b border-brand-sand bg-brand-cream">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <div className="page-shell flex h-20 items-center justify-between gap-3">
+        <Link
+          href="/"
+          aria-label="Pine Valley at Dillard Mill home"
+          className="shrink-0"
+        >
+          <Image
+            src="/images/pine-valley-logo.png"
+            alt="Pine Valley at Dillard Mill"
+            width={164}
+            height={65}
+            priority
+            className="h-14 w-28 sm:w-36 object-contain object-left"
+          />
+        </Link>
+        <div className="hidden lg:block">
+          <Navigation />
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/lodging"
+            onClick={() => setMenuPath(null)}
+            className="btn btn-primary text-sm px-4"
+          >
+            Find a stay
           </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:block">
-            <Navigation />
-          </div>
-
-          {/* CTA Button - Desktop */}
-          <div className="hidden lg:block">
-            <Link
-              href="/lodging"
-              className="btn btn-primary text-sm"
-            >
-              Find a Stay
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <motion.button
+          <button
+            ref={toggle}
             type="button"
-            className="lg:hidden inline-flex items-center justify-center p-2.5 rounded-lg text-brand-forest hover:text-brand-copper hover:bg-brand-sand/30 transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-            whileTap={{ scale: 0.95 }}
+            className="lg:hidden h-11 w-11 flex items-center justify-center"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            onClick={() => setMenuPath(open ? null : path)}
           >
             <svg
-              className="h-6 w-6"
-              fill="none"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
+              fill="none"
               stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
             >
-              {mobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
+              <path
+                d={open ? "M6 6l12 12M18 6L6 18" : "M3 7h18M3 12h18M3 17h18"}
+              />
             </svg>
-          </motion.button>
+          </button>
         </div>
-
-        {/* Mobile Navigation */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="lg:hidden overflow-hidden"
-            >
-              <div className="pb-6 pt-2">
-                <Navigation mobile onNavigate={() => setMobileMenuOpen(false)} />
-                <div className="mt-6 pt-6 border-t border-brand-sand">
-                  <Link
-                    href="/lodging"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="btn btn-primary w-full justify-center"
-                  >
-                    Find a Stay
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+      {open && (
+        <div
+          id="mobile-navigation"
+          className="lg:hidden page-shell pb-6 max-h-[calc(100dvh-80px)] overflow-y-auto"
+        >
+          <Navigation mobile onNavigate={() => setMenuPath(null)} />
+        </div>
+      )}
     </header>
   );
 }

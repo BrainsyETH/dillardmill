@@ -3,14 +3,14 @@
 // set for (unit, source), so cancellations and date changes on Airbnb free
 // the dates here on the next sync. A failed fetch keeps the last good data.
 
-import { sql } from '../db/client';
-import { parseICalFeed } from './ical';
+import { sql } from "../db/client";
+import { parseICalFeed } from "./ical";
 import {
   CALENDAR_SOURCES,
   getAllBookableUnits,
   type BookableUnit,
   type CalendarSource,
-} from '@/lib/booking/units';
+} from "@/lib/booking/units";
 
 const FETCH_TIMEOUT_MS = 8000;
 
@@ -24,18 +24,22 @@ export interface SyncResult {
 
 async function fetchFeed(url: string): Promise<string> {
   const response = await fetch(url, {
-    headers: { 'User-Agent': 'PineValley-CalendarSync/1.0 (+https://dillardmill.com)' },
+    headers: {
+      "User-Agent": "PineValley-CalendarSync/1.0 (+https://dillardmill.com)",
+    },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    cache: 'no-store',
+    cache: "no-store",
   });
-  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  if (!response.ok)
+    throw new Error(`HTTP ${response.status} ${response.statusText}`);
   const body = await response.text();
-  if (!body.includes('BEGIN:VCALENDAR')) throw new Error('Response is not an iCalendar feed');
+  if (!body.includes("BEGIN:VCALENDAR"))
+    throw new Error("Response is not an iCalendar feed");
   return body;
 }
 
 export async function syncUnitSource(
-  unit: Pick<BookableUnit, '_id' | 'name'>,
+  unit: Pick<BookableUnit, "_id" | "name">,
   source: CalendarSource,
   url: string,
 ): Promise<SyncResult> {
@@ -45,7 +49,11 @@ export async function syncUnitSource(
     ON CONFLICT (unit_id, source) DO UPDATE SET last_attempt_at = now()
   `;
   try {
-    const events = parseICalFeed(await fetchFeed(url));
+    // A channel may re-export an imported website block. Do not make it a
+    // new external reservation that would survive the original cancellation.
+    const events = parseICalFeed(await fetchFeed(url)).filter(
+      (e) => !e.uid?.endsWith("@dillardmill.com"),
+    );
     await sql.transaction([
       sql`DELETE FROM external_bookings WHERE unit_id = ${unit._id} AND source = ${source}`,
       ...events.map(
@@ -86,7 +94,10 @@ export async function syncUnit(unit: BookableUnit): Promise<SyncResult[]> {
  * Used when a guest opens the calendar so availability is never far behind
  * Airbnb even if the scheduled job runs rarely.
  */
-export async function syncUnitIfStale(unit: BookableUnit, maxAgeMinutes: number) {
+export async function syncUnitIfStale(
+  unit: BookableUnit,
+  maxAgeMinutes: number,
+) {
   const configured = CALENDAR_SOURCES.filter((s) => unit.icalUrls[s]);
   if (configured.length === 0) return [];
   const rows = await sql`
@@ -96,7 +107,9 @@ export async function syncUnitIfStale(unit: BookableUnit, maxAgeMinutes: number)
   `;
   const freshSources = new Set(rows.map((r) => r.source as string));
   const stale = configured.filter((s) => !freshSources.has(s));
-  return Promise.all(stale.map((s) => syncUnitSource(unit, s, unit.icalUrls[s]!)));
+  return Promise.all(
+    stale.map((s) => syncUnitSource(unit, s, unit.icalUrls[s]!)),
+  );
 }
 
 export async function syncAllExternalCalendars(): Promise<SyncResult[]> {

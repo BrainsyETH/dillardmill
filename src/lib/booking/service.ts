@@ -1,10 +1,11 @@
 // Request-to-book orchestration. Every path that changes a booking's status
 // goes through here so payment and calendar state cannot drift apart.
 
-import { z } from 'zod';
-import { quoteStay, type Quote } from './pricing';
-import { todayAtProperty } from './dates';
-import { getBookableUnit, getBookingSettings } from './units';
+import { z } from "zod";
+import { quoteStay, type Quote } from "./pricing";
+import { todayAtProperty } from "./dates";
+import { getBookableUnit, getBookingSettings } from "./units";
+import { getInventoryUnits } from "./inventory";
 import {
   getBookingById,
   holdBooking,
@@ -16,18 +17,23 @@ import {
   setPaymentStatus,
   transitionBooking,
   type BookingRow,
-} from '@/lib/db/bookings';
-import { isRangeFree } from '@/lib/db/availability';
-import { syncUnit } from '@/lib/calendar/sync';
-import { authorizeCard, capturePayment, refundPayment, voidPayment } from '@/lib/square/payments';
-import { squareErrorMessage } from '@/lib/square/client';
+} from "@/lib/db/bookings";
+import { isRangeFree } from "@/lib/db/availability";
+import { syncUnit } from "@/lib/calendar/sync";
+import {
+  authorizeCard,
+  capturePayment,
+  refundPayment,
+  voidPayment,
+} from "@/lib/square/payments";
+import { squareErrorMessage } from "@/lib/square/client";
 import {
   sendBookingCancelled,
   sendBookingConfirmed,
   sendOwnerNewRequest,
   sendRequestDeclined,
   sendRequestReceived,
-} from '@/lib/email/resend';
+} from "@/lib/email/resend";
 
 export const bookingRequestSchema = z.object({
   unitSlug: z.string().min(1).max(100),
@@ -62,13 +68,28 @@ export type ServiceResult<T> =
 export async function getQuote(
   unitSlug: string,
   req: { checkIn: string; checkOut: string; guests: number; pets: number },
-): Promise<ServiceResult<{ quote: Quote; available: boolean; policies: GuestPolicies }>> {
+): Promise<
+  ServiceResult<{ quote: Quote; available: boolean; policies: GuestPolicies }>
+> {
   const unit = await getBookableUnit(unitSlug);
-  if (!unit || !unit.available) return { ok: false, status: 404, code: 'not_found', error: 'Stay not found.' };
+  if (!unit || !unit.available)
+    return {
+      ok: false,
+      status: 404,
+      code: "not_found",
+      error: "Stay not found.",
+    };
   const settings = await getBookingSettings();
   const result = quoteStay(unit, req, settings.taxRates, todayAtProperty());
-  if (!result.ok) return { ok: false, status: 422, code: result.code, error: result.error };
-  const available = await isRangeFree(unit._id, req.checkIn, req.checkOut);
+  if (!result.ok)
+    return { ok: false, status: 422, code: result.code, error: result.error };
+  const inventory = await getInventoryUnits(unit);
+  const available = await isRangeFree(
+    unit._id,
+    req.checkIn,
+    req.checkOut,
+    inventory.map((u) => u._id),
+  );
   return {
     ok: true,
     quote: result.quote,
@@ -88,35 +109,58 @@ export async function requestBooking(
 ): Promise<ServiceResult<{ confirmationCode: string }>> {
   const unit = await getBookableUnit(input.unitSlug);
   if (!unit || !unit.available || !unit.directBookingEnabled) {
-    return { ok: false, status: 404, code: 'not_bookable', error: 'This stay is not accepting online requests.' };
+    return {
+      ok: false,
+      status: 404,
+      code: "not_bookable",
+      error: "This stay is not accepting online requests.",
+    };
   }
   const settings = await getBookingSettings();
   const priced = quoteStay(unit, input, settings.taxRates, todayAtProperty());
-  if (!priced.ok) return { ok: false, status: 422, code: priced.code, error: priced.error };
+  if (!priced.ok)
+    return { ok: false, status: 422, code: priced.code, error: priced.error };
   const quote = priced.quote;
   if (quote.totalCents !== input.expectedTotalCents) {
     return {
       ok: false,
       status: 409,
-      code: 'price_changed',
-      error: 'The price for these dates has changed. Please review the new total.',
+      code: "price_changed",
+      error:
+        "The price for these dates has changed. Please review the new total.",
       quote,
     };
   }
 
   // Pull the latest Airbnb/Hipcamp/VRBO calendars before holding the dates.
   await releaseStaleHolds();
-  const syncResults = await syncUnit(unit);
-  const failedSyncs = syncResults.filter((r) => !r.success).map((r) => r.source);
+  const inventory = await getInventoryUnits(unit);
+  const syncResults = (await Promise.all(inventory.map(syncUnit))).flat();
+  const failedSyncs = syncResults
+    .filter((r) => !r.success)
+    .map((r) => r.source);
   const syncNote =
     syncResults.length === 0
-      ? 'No external calendars are configured for this unit — check Airbnb manually.'
+      ? "No external calendars are configured for this unit — check Airbnb manually."
       : failedSyncs.length
-        ? `Warning: could not refresh ${failedSyncs.join(', ')} calendar just now — check it manually before approving.`
-        : `Calendars (${syncResults.map((r) => r.source).join(', ')}) were refreshed at request time and showed these dates open.`;
+        ? `Warning: could not refresh ${failedSyncs.join(", ")} calendar just now — check it manually before approving.`
+        : `Calendars (${syncResults.map((r) => r.source).join(", ")}) were refreshed at request time and showed these dates open.`;
 
-  if (!(await isRangeFree(unit._id, quote.checkIn, quote.checkOut))) {
-    return { ok: false, status: 409, code: 'dates_taken', error: 'Sorry — those dates were just booked. Please choose different dates.' };
+  if (
+    !(await isRangeFree(
+      unit._id,
+      quote.checkIn,
+      quote.checkOut,
+      inventory.map((u) => u._id),
+    ))
+  ) {
+    return {
+      ok: false,
+      status: 409,
+      code: "dates_taken",
+      error:
+        "Sorry — those dates were just booked. Please choose different dates.",
+    };
   }
 
   const hold = await holdBooking({
@@ -130,7 +174,13 @@ export async function requestBooking(
     specialRequests: input.specialRequests,
   });
   if (!hold.ok) {
-    return { ok: false, status: 409, code: 'dates_taken', error: 'Sorry — those dates were just booked. Please choose different dates.' };
+    return {
+      ok: false,
+      status: 409,
+      code: "dates_taken",
+      error:
+        "Sorry — those dates were just booked. Please choose different dates.",
+    };
   }
   const booking = hold.booking;
 
@@ -149,14 +199,29 @@ export async function requestBooking(
   } catch (error) {
     const message = squareErrorMessage(error);
     await markFailed(booking.id, message);
-    return { ok: false, status: 402, code: 'payment_failed', error: `Your card could not be authorized: ${message}` };
+    return {
+      ok: false,
+      status: 402,
+      code: "payment_failed",
+      error: `Your card could not be authorized: ${message}`,
+    };
   }
 
-  const expiresAt = new Date(Date.now() + settings.requestResponseHours * 3600_000);
+  const expiresAt = new Date(
+    Date.now() + settings.requestResponseHours * 3600_000,
+  );
   const requested = await markRequested(booking.id, paymentId, expiresAt);
   if (!requested) {
-    await voidPayment(paymentId).catch((e) => console.error('Void after lost hold failed', e));
-    return { ok: false, status: 409, code: 'hold_lost', error: 'Your request timed out. Your card was not charged; please try again.' };
+    await voidPayment(paymentId).catch((e) =>
+      console.error("Void after lost hold failed", e),
+    );
+    return {
+      ok: false,
+      status: 409,
+      code: "hold_lost",
+      error:
+        "Your request timed out. Your card was not charged; please try again.",
+    };
   }
 
   await Promise.all([
@@ -167,67 +232,170 @@ export async function requestBooking(
 }
 
 type AdminResult = ServiceResult<{ booking: BookingRow }>;
-const notFound: AdminResult = { ok: false, status: 404, code: 'not_found', error: 'Booking not found.' };
+const notFound: AdminResult = {
+  ok: false,
+  status: 404,
+  code: "not_found",
+  error: "Booking not found.",
+};
 const wrongState = (b: BookingRow): AdminResult => ({
   ok: false,
   status: 409,
-  code: 'wrong_state',
+  code: "wrong_state",
   error: `This booking is ${b.booking_status}; refresh the page.`,
 });
 
 export async function approveBooking(id: string): Promise<AdminResult> {
   const booking = await getBookingById(id);
   if (!booking) return notFound;
+  if (booking.booking_status !== "requested") return wrongState(booking);
+  if (
+    booking.expires_at &&
+    new Date(booking.expires_at).getTime() <= Date.now()
+  ) {
+    return {
+      ok: false,
+      status: 409,
+      code: "expired",
+      error: "This request has expired. Refresh the page.",
+    };
+  }
+  const unit = booking.unit_slug
+    ? await getBookableUnit(booking.unit_slug)
+    : null;
+  if (!unit)
+    return {
+      ok: false,
+      status: 409,
+      code: "missing_unit",
+      error:
+        "The stay could not be checked. Restore it in Content Studio before approving.",
+    };
+  const inventory = await getInventoryUnits(unit);
+  const synced = (await Promise.all(inventory.map(syncUnit))).flat();
+  if (synced.some((result) => !result.success)) {
+    return {
+      ok: false,
+      status: 503,
+      code: "calendar_unavailable",
+      error:
+        "An external calendar could not be refreshed. No charge was made. Retry when the calendar is reachable.",
+    };
+  }
+  if (
+    !(await isRangeFree(
+      unit._id,
+      booking.check_in,
+      booking.check_out,
+      inventory.map((u) => u._id),
+      booking.id,
+    ))
+  ) {
+    return {
+      ok: false,
+      status: 409,
+      code: "dates_taken",
+      error:
+        "These dates now conflict with another stay or owner block. The card has not been charged. Review the calendars before declining this request.",
+    };
+  }
   // Claim first so the expiry job cannot void the hold mid-capture.
-  const claimed = await transitionBooking(id, 'requested', 'confirmed', 'authorized');
+  const claimed = await transitionBooking(
+    id,
+    "requested",
+    "confirmed",
+    "authorized",
+  );
   if (!claimed) return wrongState(booking);
   try {
     await capturePayment(claimed.payment_id!);
   } catch (error) {
-    await transitionBooking(id, 'confirmed', 'requested', 'authorized', `Capture failed: ${squareErrorMessage(error)}`);
-    return { ok: false, status: 402, code: 'capture_failed', error: `Square could not capture the payment: ${squareErrorMessage(error)}` };
+    await transitionBooking(
+      id,
+      "confirmed",
+      "requested",
+      "authorized",
+      `Capture failed: ${squareErrorMessage(error)}`,
+    );
+    return {
+      ok: false,
+      status: 402,
+      code: "capture_failed",
+      error: `Square could not capture the payment: ${squareErrorMessage(error)}`,
+    };
   }
-  await setPaymentStatus(id, 'paid');
-  const confirmed = { ...claimed, payment_status: 'paid' as const };
+  await setPaymentStatus(id, "paid");
+  const confirmed = { ...claimed, payment_status: "paid" as const };
   const settings = await getBookingSettings();
-  await sendBookingConfirmed(confirmed, settings.checkInTime, settings.checkOutTime);
+  await sendBookingConfirmed(
+    confirmed,
+    settings.checkInTime,
+    settings.checkOutTime,
+  );
   return { ok: true, booking: confirmed };
 }
 
-async function releaseRequest(id: string, to: 'declined' | 'expired', note?: string | null): Promise<AdminResult> {
+async function releaseRequest(
+  id: string,
+  to: "declined" | "expired",
+  note?: string | null,
+): Promise<AdminResult> {
   const booking = await getBookingById(id);
   if (!booking) return notFound;
-  const claimed = await transitionBooking(id, 'requested', to, 'voided', note ?? null);
+  const claimed = await transitionBooking(
+    id,
+    "requested",
+    to,
+    "voided",
+    note ?? null,
+  );
   if (!claimed) return wrongState(booking);
   if (claimed.payment_id) {
     try {
       await voidPayment(claimed.payment_id);
     } catch (error) {
       // Square voids the hold automatically at its delay deadline anyway.
-      console.error(`Void failed for ${claimed.confirmation_code}:`, squareErrorMessage(error));
+      console.error(
+        `Void failed for ${claimed.confirmation_code}:`,
+        squareErrorMessage(error),
+      );
     }
   }
   await sendRequestDeclined(claimed, to, note);
   return { ok: true, booking: claimed };
 }
 
-export const declineBooking = (id: string, note?: string | null) => releaseRequest(id, 'declined', note);
+export const declineBooking = (id: string, note?: string | null) =>
+  releaseRequest(id, "declined", note);
 
 export async function expireRequests() {
   const expired = await listExpiredRequests();
   const results = [];
-  for (const b of expired) results.push(await releaseRequest(b.id, 'expired'));
+  for (const b of expired) results.push(await releaseRequest(b.id, "expired"));
   await releaseStaleHolds();
   return { expired: results.filter((r) => r.ok).length };
 }
 
-export async function cancelBooking(id: string, refundCents: number, note?: string | null): Promise<AdminResult> {
+export async function cancelBooking(
+  id: string,
+  refundCents: number,
+  note?: string | null,
+): Promise<AdminResult> {
   const booking = await getBookingById(id);
   if (!booking) return notFound;
-  if (booking.booking_status !== 'confirmed') return wrongState(booking);
+  if (booking.booking_status !== "confirmed") return wrongState(booking);
   const refundable = booking.total_amount - booking.refunded_amount;
-  if (!Number.isInteger(refundCents) || refundCents < 0 || refundCents > refundable) {
-    return { ok: false, status: 422, code: 'bad_amount', error: `Refund must be between $0 and ${(refundable / 100).toFixed(2)}.` };
+  if (
+    !Number.isInteger(refundCents) ||
+    refundCents < 0 ||
+    refundCents > refundable
+  ) {
+    return {
+      ok: false,
+      status: 422,
+      code: "bad_amount",
+      error: `Refund must be between $0 and ${(refundable / 100).toFixed(2)}.`,
+    };
   }
   if (refundCents > 0) {
     try {
@@ -239,13 +407,28 @@ export async function cancelBooking(id: string, refundCents: number, note?: stri
       });
       await recordRefund(id, refundId, refundCents);
     } catch (error) {
-      return { ok: false, status: 402, code: 'refund_failed', error: `Refund failed, booking not cancelled: ${squareErrorMessage(error)}` };
+      return {
+        ok: false,
+        status: 402,
+        code: "refund_failed",
+        error: `Refund failed, booking not cancelled: ${squareErrorMessage(error)}`,
+      };
     }
   }
   const totalRefunded = booking.refunded_amount + refundCents;
   const paymentStatus =
-    totalRefunded === 0 ? booking.payment_status : totalRefunded >= booking.total_amount ? 'refunded' : 'partially_refunded';
-  const cancelled = await transitionBooking(id, 'confirmed', 'cancelled', paymentStatus, note ?? null);
+    totalRefunded === 0
+      ? booking.payment_status
+      : totalRefunded >= booking.total_amount
+        ? "refunded"
+        : "partially_refunded";
+  const cancelled = await transitionBooking(
+    id,
+    "confirmed",
+    "cancelled",
+    paymentStatus,
+    note ?? null,
+  );
   if (!cancelled) return wrongState(booking);
   await sendBookingCancelled(cancelled, refundCents, note);
   return { ok: true, booking: cancelled };

@@ -1,20 +1,20 @@
 // Server-only loaders for the booking engine. Reads Sanity without the CDN
 // so prices, policies and calendar URLs are never stale at checkout.
 
-import { createClient } from 'next-sanity';
-import type { PricingUnit, TaxRate } from './pricing';
+import { createClient } from "next-sanity";
+import type { PricingUnit, TaxRate } from "./pricing";
 
 const fresh = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
-  apiVersion: '2024-01-01',
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "unconfigured",
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || "production",
+  apiVersion: "2024-01-01",
   useCdn: false,
   token: process.env.SANITY_API_TOKEN,
-  perspective: 'published',
+  perspective: "published",
 });
 
-export type CalendarSource = 'airbnb' | 'hipcamp' | 'vrbo';
-export const CALENDAR_SOURCES: CalendarSource[] = ['airbnb', 'hipcamp', 'vrbo'];
+export type CalendarSource = "airbnb" | "hipcamp" | "vrbo";
+export const CALENDAR_SOURCES: CalendarSource[] = ["airbnb", "hipcamp", "vrbo"];
 
 export interface BookableUnit extends PricingUnit {
   _id: string;
@@ -56,7 +56,14 @@ function toBookable(u: RawUnit): BookableUnit {
   };
 }
 
-export async function getBookableUnit(slug: string): Promise<BookableUnit | null> {
+export async function getBookableUnit(
+  slug: string,
+): Promise<BookableUnit | null> {
+  if (
+    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
+    !process.env.NEXT_PUBLIC_SANITY_DATASET
+  )
+    throw new Error("Booking content is not configured.");
   const unit = await fresh.fetch<RawUnit | null>(
     `*[_type == "rentalUnit" && slug.current == $slug][0] ${UNIT_PROJECTION}`,
     { slug },
@@ -64,7 +71,14 @@ export async function getBookableUnit(slug: string): Promise<BookableUnit | null
   return unit ? toBookable(unit) : null;
 }
 
-export async function getBookableUnitById(id: string): Promise<BookableUnit | null> {
+export async function getBookableUnitById(
+  id: string,
+): Promise<BookableUnit | null> {
+  if (
+    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
+    !process.env.NEXT_PUBLIC_SANITY_DATASET
+  )
+    throw new Error("Booking content is not configured.");
   const unit = await fresh.fetch<RawUnit | null>(
     `*[_type == "rentalUnit" && _id == $id][0] ${UNIT_PROJECTION}`,
     { id },
@@ -73,6 +87,11 @@ export async function getBookableUnitById(id: string): Promise<BookableUnit | nu
 }
 
 export async function getAllBookableUnits(): Promise<BookableUnit[]> {
+  if (
+    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
+    !process.env.NEXT_PUBLIC_SANITY_DATASET
+  )
+    throw new Error("Booking content is not configured.");
   const units = await fresh.fetch<RawUnit[]>(
     `*[_type == "rentalUnit"] | order(sortOrder asc, name asc) ${UNIT_PROJECTION}`,
   );
@@ -91,6 +110,11 @@ export interface BookingSettings {
 }
 
 export async function getBookingSettings(): Promise<BookingSettings> {
+  if (
+    !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ||
+    !process.env.NEXT_PUBLIC_SANITY_DATASET
+  )
+    throw new Error("Booking content is not configured.");
   const s = await fresh.fetch<Partial<BookingSettings> | null>(
     `*[_type == "siteSettings"][0] {
       "taxRates": taxRates[]{ name, ratePercent },
@@ -104,7 +128,12 @@ export async function getBookingSettings(): Promise<BookingSettings> {
     houseRules: s?.houseRules ?? null,
     checkInTime: s?.checkInTime ?? null,
     checkOutTime: s?.checkOutTime ?? null,
-    requestResponseHours: Math.min(144, s?.requestResponseHours && s.requestResponseHours > 0 ? s.requestResponseHours : 24),
+    requestResponseHours: Math.min(
+      144,
+      s?.requestResponseHours && s.requestResponseHours > 0
+        ? s.requestResponseHours
+        : 24,
+    ),
     email: s?.email ?? null,
     phone: s?.phone ?? null,
   };
