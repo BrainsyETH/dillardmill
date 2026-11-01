@@ -5,7 +5,10 @@ function getConnection(): Database {
   if (!process.env.DATABASE_URL) throw new Error("Database is not configured.");
   // Local development only: send queries to a local Neon-compatible HTTP
   // proxy (e.g. local-neon-http-proxy) instead of Neon's hosted endpoint.
-  if (process.env.NEON_FETCH_ENDPOINT && process.env.NODE_ENV !== "production") {
+  if (
+    process.env.NEON_FETCH_ENDPOINT &&
+    process.env.NODE_ENV !== "production"
+  ) {
     neonConfig.fetchEndpoint = process.env.NEON_FETCH_ENDPOINT;
   }
   return (connection ??= neon(process.env.DATABASE_URL));

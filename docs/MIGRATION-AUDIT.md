@@ -1,15 +1,16 @@
 # Squarespace → Next.js Migration Audit
 
-> **31 October 2026 follow-up:** The guest experience implementation, restored content, inquiry inbox, Farm inventory constraint, Turnstile setup, and validation are documented in [GUEST-EXPERIENCE.md](GUEST-EXPERIENCE.md). Apply migration 002 as well as the original booking migration. Real account validation remains required.
-
+> **Current state lives elsewhere.** Sections 1–4 record the audit of
+> 31 October 2026 and are kept for history; some findings (Sanity, the
+> original booking flow) no longer apply. For how the site works now see
+> [BOOKING-ENGINE.md](BOOKING-ENGINE.md) and
+> [GUEST-EXPERIENCE.md](GUEST-EXPERIENCE.md); decisions are in §5.
 
 **Audited:** 2026-10-31, against `main` @ `26db600`
 **Goal:** replace dillardmill.com (Squarespace) with this Next.js site with full
 content and image parity, plus a direct-booking calendar and checkout that stays
 in sync with Airbnb.
 
-This document replaces the phase/status claims in `PROJECT-STATUS.md`,
-`PROGRESS.md`, and `BOOKING-SYSTEM-COMPLETE.md`, which are out of date.
 
 ## 1. What could and could not be verified
 
@@ -131,18 +132,27 @@ counts, and listing content do not sync over iCal; the site keeps its own rates.
 
 ## 5. Migration plan
 
-### Status (2026-10-31)
+### Decisions
 
-Owner decisions: **request-to-book** (card authorized, owner approves within
-a set window), **Square**, **taxes collected at checkout**.
+| Date | Decision |
+| --- | --- |
+| 2026-10-31 | Request-to-book (card authorized; owner approves within a set window), Square, taxes collected at checkout. |
+| 2026-11-01 | Calendars: iCal hub-and-spoke ("Option A"), **managed by hand first**. Outbound feed off; optional read-only import per stay. Two-way sync can be switched on later (checklist in BOOKING-ENGINE.md); a channel manager is the next step if lag or price parity becomes a burden. |
+| 2026-11-01 | **No CMS.** Sanity removed. Stays, prices, seasons, taxes and policies in Postgres, edited in `/admin`; descriptions, photos and journal as repo files. Owner photo uploads (Vercel Blob) later if wanted. |
+| 2026-11-01 | Hosting on **Vercel Pro** (Hobby is non-commercial), **Neon** Postgres. |
+| 2026-11-01 | Keep **Google Workspace** for email; `/admin` uses Google sign-in for `ADMIN_EMAILS`. DNS cutover must preserve Workspace mail records. |
 
-**Phase A — done on branch `claude/quirky-albattani-69und3`.** Every defect in
-§3 is fixed; design and setup are in `BOOKING-ENGINE.md`. Not yet verified
-against real services: Square sandbox, a real Airbnb export feed, Resend
-delivery, Neon (the migration was tested on Postgres 16 via PGlite).
+### Status (2026-11-01)
 
-**Phase B — blocked** on reading the live site (network access to
-dillardmill.com / Squarespace CDN, or a Squarespace export).
+- **Booking engine:** implemented; every §3 defect fixed. Not yet run against
+  real Square, Neon, Resend, Turnstile, Google or platform calendar accounts.
+- **Content parity:** 68 property photographs and 8 journal posts imported
+  from the live site with source URLs (PR #32). Completeness against the live
+  site still needs an owner check.
+- **Remaining before launch:** the setup and end-to-end test in
+  BOOKING-ENGINE.md, then the domain cutover.
+
+### Original plan (31 October)
 
 **Phase A — Booking engine**
 Server-side pricing from Sanity (nightly/seasonal, cleaning, guests, pets,

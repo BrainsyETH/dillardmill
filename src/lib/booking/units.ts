@@ -1,7 +1,7 @@
 // Booking-engine view of stays and settings, read fresh from Postgres on
 // every call so prices, policies and calendar links are never stale.
 
-import type { PricingUnit, TaxRate } from './pricing';
+import type { PricingUnit, TaxRate } from "./pricing";
 import {
   getSettings,
   getUnitById,
@@ -9,10 +9,10 @@ import {
   listTaxes,
   listUnits,
   type UnitRecord,
-} from '@/lib/stays/repository';
+} from "@/lib/stays/repository";
 
-export type CalendarSource = 'airbnb' | 'hipcamp' | 'vrbo';
-export const CALENDAR_SOURCES: CalendarSource[] = ['airbnb', 'hipcamp', 'vrbo'];
+export type CalendarSource = "airbnb" | "hipcamp" | "vrbo";
+export const CALENDAR_SOURCES: CalendarSource[] = ["airbnb", "hipcamp", "vrbo"];
 
 export interface BookableUnit extends PricingUnit {
   _id: string;
@@ -57,12 +57,16 @@ export function toBookable(u: UnitRecord): BookableUnit {
   };
 }
 
-export async function getBookableUnit(slug: string): Promise<BookableUnit | null> {
+export async function getBookableUnit(
+  slug: string,
+): Promise<BookableUnit | null> {
   const unit = await getUnitBySlug(slug);
   return unit ? toBookable(unit) : null;
 }
 
-export async function getBookableUnitById(id: string): Promise<BookableUnit | null> {
+export async function getBookableUnitById(
+  id: string,
+): Promise<BookableUnit | null> {
   const unit = await getUnitById(id);
   return unit ? toBookable(unit) : null;
 }
@@ -85,6 +89,9 @@ export async function getBookingSettings(): Promise<BookingSettings> {
   return {
     ...settings,
     taxRates: taxes.map((t) => ({ name: t.name, ratePercent: t.ratePercent })),
-    requestResponseHours: Math.min(144, Math.max(1, settings.requestResponseHours)),
+    requestResponseHours: Math.min(
+      144,
+      Math.max(1, settings.requestResponseHours),
+    ),
   };
 }

@@ -48,10 +48,17 @@ export default async function Admin() {
         <Link href="/" className="text-link">
           ← Website
         </Link>
-        <form method="post" action="/api/admin/logout" className="text-sm text-brand-stone">
+        <form
+          method="post"
+          action="/api/admin/logout"
+          className="text-sm text-brand-stone"
+        >
           {admin && (
             <span className="mr-3">
-              Signed in{admin.identity === "password" ? " with the shared password" : ` as ${admin.identity}`}
+              Signed in
+              {admin.identity === "password"
+                ? " with the shared password"
+                : ` as ${admin.identity}`}
             </span>
           )}
           <button className="text-link">Sign out</button>

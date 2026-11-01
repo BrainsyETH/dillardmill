@@ -1,89 +1,191 @@
-# Direct Booking & Airbnb Sync
+# Running Pine Valley: booking, calendars and admin
 
-> **31 October 2026 follow-up:** The guest experience implementation, restored content, inquiry inbox, Farm inventory constraint, Turnstile setup, and validation are documented in [GUEST-EXPERIENCE.md](GUEST-EXPERIENCE.md). Apply migration 002 as well as the original booking migration. Real account validation remains required.
+How guests book on dillardmill.com, how the owner manages stays, prices and
+calendars, and how to set everything up. The guest-facing design and the
+content imported from the old site are described in
+[GUEST-EXPERIENCE.md](GUEST-EXPERIENCE.md).
 
+## Architecture
 
-How guests book on dillardmill.com, how the calendar stays in step with
-Airbnb, and how to set it up. Supersedes `BOOKING-SETUP.md` and
-`BOOKING-SYSTEM-COMPLETE.md`.
+| Piece | Service | Notes |
+| --- | --- | --- |
+| Website, API, scheduled jobs | **Vercel (Pro plan)** | Hobby is non-commercial only. Pro also allows the 15-minute calendar job. |
+| Stays, prices, taxes, policies, bookings, calendars, messages | **Neon Postgres** | Schema in `db/migrations/`; edited in `/admin`. |
+| Descriptions, photos, journal posts | **Files in this repo** | `src/lib/content/` and `public/images/`. Changes ship with a deploy. |
+| Card holds, charges, refunds | **Square** | |
+| Booking emails | **Resend**, from `bookings@dillardmill.com` | Replies go to the Google Workspace inbox. |
+| Owner email and admin sign-in | **Google Workspace** | `/admin` accepts "Sign in with Google" for `ADMIN_EMAILS`. |
+| Bot protection | **Cloudflare Turnstile** | On booking requests and inquiries. |
 
-## How it works
+There is no CMS. Business data the booking engine depends on lives in the
+same database as the bookings, so a price quote is one query and no
+third-party service can be stale or down at checkout.
 
-**Request to book.** A guest picks dates on a unit page, sees a price
-computed by the server, enters their details, accepts the cancellation
-policy and house rules, and enters a card. The card is **authorized, not
-charged**, and the dates are held. The owner gets an email and approves or
-declines in `/admin/bookings`:
+## Owner admin (`/admin`)
+
+| Screen | What it does |
+| --- | --- |
+| **Booking requests** | Approve (charges the card), decline (releases the hold), cancel a confirmed stay with any refund. |
+| **Guest messages** | Contact-form messages and stay inquiries, saved even if the email notification failed. |
+| **Stays & pricing** | Per stay: nightly price, seasonal prices, cleaning fee, minimum nights, guest and pet limits and fees, shown/hidden, online requests on/off, whole-property flag (the Farm), other-platform links. |
+| **Booking settings** | Taxes, cancellation policy, house rules, check-in/out times, hours to respond to a request. |
+| **Calendars and blocked dates** | Block dates, see what is booked, see calendar-link status. |
+
+Changes to stays and settings appear on the website within a minute.
+
+A stay's **web address** (e.g. `cozy-cottage`) is fixed when it is created:
+its photos, description and page route are keyed to it. New stays start
+hidden with online requests off; add their photos and description to
+`src/lib/content/property.ts` and `photos.json`.
+
+Online requests can only be switched on once a stay has a nightly price
+(enforced by the database too).
+
+## How a booking works (request to book)
+
+A guest picks dates, sees a price computed by the server, enters details,
+accepts the cancellation policy and house rules, passes the Turnstile check,
+and enters a card. The card is **authorized, not charged**, and the dates are
+held. The owner gets an email and decides in **Booking requests**:
 
 | Owner action | Card | Dates | Guest email |
 | --- | --- | --- | --- |
-| Approve | Captured (charged) | Booked | Confirmation |
+| Approve | Charged | Booked | Confirmation |
 | Decline | Hold released | Freed | "Couldn't confirm" |
-| No response within *Hours to Respond* (default 24) | Hold released automatically | Freed | "Request expired" |
+| No response within *Hours to respond* (default 24) | Hold released automatically | Freed | "Request expired" |
 | Cancel a confirmed stay | Refund any amount you choose | Freed | Cancellation + refund amount |
 
-Square's own deadline releases the hold 24 hours after the response window as
-a backstop. Card holds cannot exceed 7 days, so the response window is capped
-at 144 hours.
+Square also releases the hold on its own 24 hours after the response window.
+Card holds last at most 7 days, so the window is capped at 144 hours.
 
 **Price.** Only `src/lib/booking/pricing.ts` computes money: seasonal nightly
-rates (most specific season wins), extra-guest fee per night above *Base
-Guests*, pet fee per pet per stay, cleaning fee, then each tax in Site
-Settings → *Taxes* applied to that subtotal. The browser shows the server's
-quote; the request is rejected if the total changed in between.
+prices (the season that starts later wins where they overlap), extra-guest
+fee per night above *Guests included in price*, pet fee per pet per stay,
+cleaning fee, then each tax applied to that subtotal. The browser shows the
+server's quote; a request is rejected if the total changed in between.
 
-**No double bookings.** Every night is held by at most one active booking —
-enforced by a Postgres exclusion constraint (`bookings_no_overlap`), not just
-application checks. Before holding dates, the request refreshes the unit's
-Airbnb/Hipcamp/VRBO calendars and rejects dates taken there.
+**No double bookings on the website.** Two active bookings can never share a
+night of the same stay, and the whole-property listing can never overlap any
+other stay. Both are Postgres exclusion constraints, not just app checks.
 
-### Airbnb sync (iCal, both directions)
+## Calendars: manual first
 
-Airbnb offers its API only to approved software partners, so sync uses the
-calendar links every host has:
+**Today the owner manages other platforms by hand.** The website never sends
+its calendar anywhere (`CALENDAR_EXPORT_ENABLED` is off).
 
-- **Airbnb → website.** Each unit's *Airbnb iCal URL* (Content Studio) is
-  imported every 15 minutes, whenever a guest opens that unit's calendar
-  (if the last import is >15 min old), and immediately before every booking
-  request. Each import replaces the stored set, so Airbnb cancellations and
-  date changes free the dates. If Airbnb is unreachable the last good data is
-  kept and the owner's request email says so.
-- **Website → Airbnb.** Each unit publishes
-  `/calendar/<unit-slug>.ics?token=…&for=airbnb` containing website requests
-  and bookings, owner blocks, and Hipcamp/VRBO reservations (Airbnb's own are
-  left out so they aren't echoed back). Paste it into Airbnb → Availability →
-  Connect calendars → Import calendar. `/admin/calendar` shows the exact link.
+**Daily routine**
 
-**Remaining risk:** Airbnb refreshes imported calendars on its own schedule
-(typically every few hours), so for a short window after a website request
-the dates may still look open on Airbnb. Request-to-book contains this: check
-the Airbnb calendar before approving (the request email reminds you).
+1. **You approve a website booking** → block those dates on Airbnb, Hipcamp
+   and any other listing of that stay. For the Farm, block every listing.
+2. **A guest books on Airbnb/Hipcamp** → block the dates in **Calendars**,
+   unless that stay's calendar link is connected (below).
+3. **Before approving any request**, glance at the other platforms.
+   Request-to-book means a conflict never becomes a double booking: decline
+   the website request and the Airbnb guest keeps their stay.
 
-## Setup checklist
+**Optional read-only import (recommended).** Paste a platform's *export*
+calendar link into a stay's **Airbnb / Hipcamp / VRBO calendar link** (Airbnb:
+listing → Availability → Connect calendars → Export calendar). The website
+then reads that platform's bookings — every 15 minutes, when a guest opens
+the calendar, before every request, and again before approval — so guests
+can't request dates already taken there. It cannot change anything on the
+platform and cannot cause sync loops. Leave a link blank to keep that
+platform fully manual.
 
-1. **Environment variables** — see `.env.example`. Required for booking:
-   `DATABASE_URL`, Sanity vars, all Square vars (`SQUARE_ENVIRONMENT` and
-   `NEXT_PUBLIC_SQUARE_ENVIRONMENT` = `production` for live cards),
-   `RESEND_API_KEY`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CRON_SECRET`,
-   `CALENDAR_FEED_TOKEN`, `NEXT_PUBLIC_SITE_URL`.
-2. **Database** — `DATABASE_URL=… npm run db:migrate` (idempotent; records
-   applied files in `schema_migrations`).
-3. **Content Studio → Site Settings** — Taxes, Cancellation Policy, House
-   Rules, Check-in/out times, Hours to Respond.
-4. **Content Studio → each Rental Unit** — base price, seasons, cleaning fee,
-   base guests / extra-guest fee, pets, minimum stay, *Accept Booking Requests
-   on the Website*, and the Airbnb (and Hipcamp/VRBO) iCal export URLs.
-5. **Airbnb** — for each listing, import the "for Airbnb" link from
-   `/admin/calendar`.
-6. **Square** — create the application, copy the application ID, location ID
-   and access token. Test in sandbox first (card `4111 1111 1111 1111`).
-7. **Resend** — verify the `dillardmill.com` sending domain.
-8. **15-minute sync** — Vercel's cron in `vercel.json` runs daily (the Hobby
-   plan allows no more). For 15-minute sync add repository secrets
-   `SITE_URL` and `CRON_SECRET` so `.github/workflows/calendar-sync.yml`
-   runs, or on Vercel Pro change the schedule to `*/15 * * * *`.
-9. **End-to-end test** in sandbox: request → approve → cancel with refund;
-   request → decline; confirm the Airbnb import shows the website booking.
+When a link can't be refreshed at approval time, the owner sees why and can
+choose **Approve anyway — I checked the calendars**; the decision is recorded
+on the booking.
+
+### Turning on two-way sync later
+
+The website can also publish a calendar per stay for platforms to import
+(`/calendar/<stay>.ics?token=…&for=airbnb`). Built and tested, off by default.
+Before switching it on:
+
+1. Capture a real export from each connected platform and confirm how it
+   labels reservations versus blocks. The importer treats summaries containing
+   "not available", "unavailable", "blocked" or "closed" as **blocks** and
+   everything else as **reservations** (`src/lib/calendar/ical.ts`).
+2. Use hub-and-spoke only: each platform imports the website's link; never
+   link platforms directly to each other.
+3. Block dates in `/admin` only, not on platforms (a platform-side block is
+   never passed on to other platforms).
+4. Set `CALENDAR_FEED_TOKEN`, then `CALENDAR_EXPORT_ENABLED=true`, redeploy,
+   and paste each stay's "for Airbnb" / "for Hipcamp" link from **Calendars**
+   into that platform's *Import calendar*.
+
+Rules the code already enforces so this is safe:
+
+- Only website bookings, owner blocks and **real reservations** are ever
+  published. Imported blocks are never forwarded — they are usually echoes of
+  our own bookings, and forwarding them lets dates circulate between
+  platforms indefinitely.
+- A stay's own platform reservations are left out of that platform's feed.
+- At approval, a block that falls entirely within the request's own dates is
+  treated as the request echoing back, not as a conflict.
+
+Platforms re-read imported calendars on their own schedule (Airbnb: roughly
+every 1.5–3 hours). If that lag or keeping prices in sync becomes a burden, the
+next step is a channel manager with an Airbnb API connection; see the
+decision notes in `MIGRATION-AUDIT.md`.
+
+## Setup
+
+1. **Vercel Pro**, with the environment variables in `.env.example`.
+2. **Database:** `DATABASE_URL=… npm run db:migrate`. Migrations are
+   idempotent and recorded in `schema_migrations`. Migration 003 seeds the
+   four published stays with no price and online requests off.
+3. **Admin sign-in:** set `ADMIN_SESSION_SECRET` and `ADMIN_EMAILS`. For
+   Google sign-in create an OAuth client (Google Cloud console → APIs &
+   Services → Credentials → OAuth client ID → Web application, in the
+   Workspace's Google Cloud organization, consent screen *Internal*) with
+   redirect URI `https://dillardmill.com/api/admin/google/callback`, and set
+   `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. `ADMIN_PASSWORD` is an optional
+   fallback; remove it once Google sign-in works.
+4. **In `/admin`:** taxes and policies (**Booking settings**), then each
+   stay's prices and limits (**Stays & pricing**), then switch on online
+   requests stay by stay. Leave the Farm on inquiries unless its online price
+   and policies are set.
+5. **Square:** application ID, location ID, access token; set both
+   `SQUARE_ENVIRONMENT` and `NEXT_PUBLIC_SQUARE_ENVIRONMENT` to `production`
+   only after a full sandbox test (sandbox card `4111 1111 1111 1111`).
+6. **Resend:** verify `dillardmill.com` (see DNS below).
+7. **Turnstile:** site and secret keys, `TURNSTILE_ALLOWED_HOSTNAMES`.
+8. **Scheduled job:** set `CRON_SECRET`; on Vercel Pro change the schedule in
+   `vercel.json` to `*/15 * * * *` (or keep the daily Vercel job and add
+   repository secrets `SITE_URL` and `CRON_SECRET` for the GitHub Actions
+   schedule). It imports connected calendars and expires unanswered requests.
+9. **Backups:** booking and payment records live in Neon; confirm the plan's
+   restore window or add a scheduled `pg_dump` to storage you control.
+10. **End-to-end test in sandbox:** request → approve → cancel with refund;
+    request → decline; request → let it expire; an inquiry; email delivery to
+    guest and owner.
+
+## Domain cutover and Google Workspace email
+
+dillardmill.com email runs on Google Workspace and must keep working when the
+website moves from Squarespace to Vercel.
+
+- Change **only the website records** (the apex `A` record and `www`
+  `CNAME`, as Vercel's domain screen specifies). **Do not touch** the Google
+  `MX` records, the SPF `TXT` record, the `google._domainkey` DKIM record, or
+  `_dmarc`.
+- Before switching, copy the full DNS zone from Squarespace so it can be
+  restored. If you move the nameservers to Vercel instead, recreate every
+  Google record there first.
+- **Resend** adds its own records (a DKIM `TXT` at `resend._domainkey` and
+  `MX`/SPF records on a `send.` subdomain). These sit alongside Google's and
+  don't affect Workspace mail. If you have a root SPF record, don't merge
+  Resend into it; the subdomain handles it.
+- After cutover, send a test email to and from a Workspace address and make a
+  sandbox booking request to confirm both mail paths.
+
+## Local development
+
+`npm run dev` with a `.env.local`. Without `DATABASE_URL` the public pages
+render from the published content (no prices, inquiries only). For a local
+database, run a Neon-compatible HTTP proxy and set `NEON_FETCH_ENDPOINT`
+(ignored in production).
 
 ## Code map
 
@@ -91,15 +193,20 @@ the Airbnb calendar before approving (the request email reminds you).
 | --- | --- |
 | Pricing (pure) | `src/lib/booking/pricing.ts` |
 | Calendar selection rules (pure) | `src/lib/booking/calendar.ts` |
-| Lifecycle: request / approve / decline / expire / cancel | `src/lib/booking/service.ts` |
+| Request / approve / decline / expire / cancel | `src/lib/booking/service.ts` |
+| Stays, seasons, taxes, settings (Postgres) | `src/lib/stays/repository.ts` |
+| Booking-engine and page views of stays | `src/lib/booking/units.ts`, `src/lib/stays/queries.ts` |
+| Admin form validation | `src/lib/stays/admin-input.ts` |
+| Whole-property inventory | `src/lib/booking/inventory.ts` + trigger in migrations 002/003 |
 | Booking rows & holds | `src/lib/db/bookings.ts` |
 | Availability & owner blocks | `src/lib/db/availability.ts` |
-| iCal parse / generate (pure) | `src/lib/calendar/ical.ts` |
-| Inbound sync | `src/lib/calendar/sync.ts` |
-| Outbound feed | `src/app/calendar/[file]/route.ts` |
-| Square authorize / capture / void / refund | `src/lib/square/payments.ts` |
-| Admin auth (signed cookie, `src/proxy.ts`) | `src/lib/admin/session.ts` |
-| Schema | `db/migrations/001_booking_engine.sql` |
+| iCal parse / generate / classify (pure) | `src/lib/calendar/ical.ts` |
+| Calendar import | `src/lib/calendar/sync.ts` |
+| Calendar export (off by default) | `src/app/calendar/[file]/route.ts` |
+| Square | `src/lib/square/payments.ts` |
+| Admin sessions, Google sign-in | `src/lib/admin/session.ts`, `src/lib/admin/google.ts`, `src/proxy.ts` |
 
-Tests: `npm test` — pricing, calendar rules, iCal round-trip, and the full
-booking lifecycle against real Postgres (PGlite) with Square/email mocked.
+Tests: `npm test` covers pricing, calendar rules, iCal parsing and
+classification, admin input validation, sessions and Google token checks, and
+the full booking lifecycle against real Postgres (PGlite) with Square and
+email mocked.

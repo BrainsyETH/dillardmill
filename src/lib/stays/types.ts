@@ -24,7 +24,7 @@ export interface Amenity {
 export interface RentalUnit {
   _id: string;
   name: string;
-  slug: { _type: 'slug'; current: string };
+  slug: { _type: "slug"; current: string };
   shortDescription?: string;
   basePrice: number; // dollars; 0 = not priced online
   seasonalPricing?: SeasonalPricing[];

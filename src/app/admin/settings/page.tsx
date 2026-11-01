@@ -1,28 +1,33 @@
-import { AdminShell, Field, Section } from '@/components/admin/AdminShell';
-import { getSettings, listTaxes } from '@/lib/stays/repository';
-import { addTaxAction, deleteTaxAction, saveSettingsAction } from './actions';
+import { AdminShell, Field, Section } from "@/components/admin/AdminShell";
+import { getSettings, listTaxes } from "@/lib/stays/repository";
+import { addTaxAction, deleteTaxAction, saveSettingsAction } from "./actions";
 
-export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Settings | Admin', robots: { index: false } };
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Settings | Admin", robots: { index: false } };
 
 export default async function SettingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  const [q, settings, taxes] = await Promise.all([searchParams, getSettings(), listTaxes()]);
+  const [q, settings, taxes] = await Promise.all([
+    searchParams,
+    getSettings(),
+    listTaxes(),
+  ]);
   return (
     <AdminShell
       title="Booking settings"
       intro="Taxes and policies apply to every online booking request. Guests must accept the policies before sending a request."
       error={q.error}
-      notice={q.saved ? 'Saved.' : null}
+      notice={q.saved ? "Saved." : null}
     >
       <section>
         <h2 className="section-title text-2xl">Taxes collected</h2>
         <p className="text-sm text-brand-stone mt-2 max-w-2xl">
-          Each tax is applied to the stay subtotal (nights, guest and pet fees, cleaning) and shown as its own line at
-          checkout. Leave empty to collect no tax.
+          Each tax is applied to the stay subtotal (nights, guest and pet fees,
+          cleaning) and shown as its own line at checkout. Leave empty to
+          collect no tax.
         </p>
         {taxes.length > 0 && (
           <ul className="mt-4 divide-y divide-brand-sand max-w-xl">
@@ -38,9 +43,24 @@ export default async function SettingsPage({
             ))}
           </ul>
         )}
-        <form action={addTaxAction} className="mt-5 grid gap-4 sm:grid-cols-3 items-end max-w-2xl">
-          <Field label="Name shown to guests" name="name" required maxLength={80} placeholder="Lodging tax" />
-          <Field label="Rate (%)" name="ratePercent" inputMode="decimal" required placeholder="4.225" />
+        <form
+          action={addTaxAction}
+          className="mt-5 grid gap-4 sm:grid-cols-3 items-end max-w-2xl"
+        >
+          <Field
+            label="Name shown to guests"
+            name="name"
+            required
+            maxLength={80}
+            placeholder="Lodging tax"
+          />
+          <Field
+            label="Rate (%)"
+            name="ratePercent"
+            inputMode="decimal"
+            required
+            placeholder="4.225"
+          />
           <button className="btn btn-outline">Add tax</button>
         </form>
       </section>
@@ -49,14 +69,38 @@ export default async function SettingsPage({
         <Section title="Policies & times">
           <label className="block sm:col-span-2">
             <span className="field-label">Cancellation policy</span>
-            <textarea className="field" name="cancellationPolicy" rows={5} maxLength={5000} defaultValue={settings.cancellationPolicy ?? ''} />
+            <textarea
+              className="field"
+              name="cancellationPolicy"
+              rows={5}
+              maxLength={5000}
+              defaultValue={settings.cancellationPolicy ?? ""}
+            />
           </label>
           <label className="block sm:col-span-2">
             <span className="field-label">House rules</span>
-            <textarea className="field" name="houseRules" rows={6} maxLength={5000} defaultValue={settings.houseRules ?? ''} />
+            <textarea
+              className="field"
+              name="houseRules"
+              rows={6}
+              maxLength={5000}
+              defaultValue={settings.houseRules ?? ""}
+            />
           </label>
-          <Field label="Check-in time" name="checkInTime" defaultValue={settings.checkInTime} placeholder="3:00 PM" maxLength={40} />
-          <Field label="Check-out time" name="checkOutTime" defaultValue={settings.checkOutTime} placeholder="11:00 AM" maxLength={40} />
+          <Field
+            label="Check-in time"
+            name="checkInTime"
+            defaultValue={settings.checkInTime}
+            placeholder="3:00 PM"
+            maxLength={40}
+          />
+          <Field
+            label="Check-out time"
+            name="checkOutTime"
+            defaultValue={settings.checkOutTime}
+            placeholder="11:00 AM"
+            maxLength={40}
+          />
           <Field
             label="Hours to respond to a request"
             name="requestResponseHours"

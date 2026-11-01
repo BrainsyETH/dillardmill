@@ -1,8 +1,8 @@
 // Postgres access for property data edited in /admin: stays, seasonal rates,
 // taxes, and booking settings. All money is integer cents here.
 
-import { sql } from '@/lib/db/client';
-import { dbDate } from '@/lib/booking/dates';
+import { sql } from "@/lib/db/client";
+import { dbDate } from "@/lib/booking/dates";
 
 export interface UnitRecord {
   id: string;
@@ -102,10 +102,7 @@ async function withSeasons(rows: Row[]): Promise<UnitRecord[]> {
     SELECT * FROM seasonal_rates WHERE unit_id = ANY(${ids}::text[]) ORDER BY start_date
   `;
   return rows.map((r) =>
-    toUnit(
-      r,
-      seasonRows.filter((s) => s.unit_id === r.id).map(toSeason),
-    ),
+    toUnit(r, seasonRows.filter((s) => s.unit_id === r.id).map(toSeason)),
   );
 }
 
@@ -114,16 +111,20 @@ export async function listUnits(): Promise<UnitRecord[]> {
 }
 
 export async function getUnitBySlug(slug: string): Promise<UnitRecord | null> {
-  const [unit] = await withSeasons(await sql`SELECT * FROM units WHERE slug = ${slug}`);
+  const [unit] = await withSeasons(
+    await sql`SELECT * FROM units WHERE slug = ${slug}`,
+  );
   return unit ?? null;
 }
 
 export async function getUnitById(id: string): Promise<UnitRecord | null> {
-  const [unit] = await withSeasons(await sql`SELECT * FROM units WHERE id = ${id}`);
+  const [unit] = await withSeasons(
+    await sql`SELECT * FROM units WHERE id = ${id}`,
+  );
   return unit ?? null;
 }
 
-export type UnitInput = Omit<UnitRecord, 'id' | 'seasons'>;
+export type UnitInput = Omit<UnitRecord, "id" | "seasons">;
 
 export async function createUnit(input: UnitInput): Promise<string> {
   const rows = await sql`
@@ -163,7 +164,7 @@ export async function updateUnit(id: string, input: UnitInput) {
   `;
 }
 
-export async function addSeason(unitId: string, s: Omit<SeasonRecord, 'id'>) {
+export async function addSeason(unitId: string, s: Omit<SeasonRecord, "id">) {
   await sql`
     INSERT INTO seasonal_rates (unit_id, name, start_date, end_date, price_cents)
     VALUES (${unitId}, ${s.name}, ${s.startDate}, ${s.endDate}, ${s.priceCents})
@@ -176,7 +177,11 @@ export async function deleteSeason(unitId: string, seasonId: string) {
 
 export async function listTaxes(): Promise<TaxRecord[]> {
   const rows = await sql`SELECT * FROM tax_rates ORDER BY sort_order, name`;
-  return rows.map((r) => ({ id: String(r.id), name: String(r.name), ratePercent: Number(r.rate_percent) }));
+  return rows.map((r) => ({
+    id: String(r.id),
+    name: String(r.name),
+    ratePercent: Number(r.rate_percent),
+  }));
 }
 
 export async function addTax(name: string, ratePercent: number) {

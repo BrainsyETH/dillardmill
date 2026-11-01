@@ -4,10 +4,10 @@
  */
 export function getUnitUrl(slug: string): string {
   const slugMap: Record<string, string> = {
-    'book-the-farm': '/book-the-farm',
-    'original-airstream': '/airstream',
-    'the-sebastian': '/sebastian',
-    'cozy-cottage': '/cozycottage',
+    "book-the-farm": "/book-the-farm",
+    "original-airstream": "/airstream",
+    "the-sebastian": "/sebastian",
+    "cozy-cottage": "/cozycottage",
   };
 
   return slugMap[slug] || `/lodging/${slug}`;

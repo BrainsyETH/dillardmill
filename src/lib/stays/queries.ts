@@ -5,9 +5,9 @@
 // the published content, with no prices and online requests off. Checkout
 // itself always reads the database directly (src/lib/booking/units.ts).
 
-import { listUnits, type UnitRecord } from './repository';
-import type { RentalUnit, Review } from './types';
-import { publishedUnits, stayDetails } from '@/lib/content/property';
+import { listUnits, type UnitRecord } from "./repository";
+import type { RentalUnit, Review } from "./types";
+import { publishedUnits, stayDetails } from "@/lib/content/property";
 
 const dollars = (cents: number) => cents / 100;
 
@@ -17,7 +17,7 @@ function toDisplay(u: UnitRecord): RentalUnit {
   return {
     _id: u.id,
     name: u.name,
-    slug: { _type: 'slug', current: u.slug },
+    slug: { _type: "slug", current: u.slug },
     shortDescription: u.shortDescription || content?.description,
     basePrice: dollars(u.basePriceCents),
     seasonalPricing: u.seasons.map((s) => ({
@@ -53,7 +53,10 @@ async function loadUnits(): Promise<RentalUnit[]> {
   try {
     return (await listUnits()).map(toDisplay);
   } catch (error) {
-    console.error('Stays unavailable; showing published content', error instanceof Error ? error.message : error);
+    console.error(
+      "Stays unavailable; showing published content",
+      error instanceof Error ? error.message : error,
+    );
     return publishedUnits;
   }
 }

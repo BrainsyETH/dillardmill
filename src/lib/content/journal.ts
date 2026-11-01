@@ -13,7 +13,9 @@ export interface JournalEntry {
 }
 
 export async function journalEntries(): Promise<JournalEntry[]> {
-  return [...imported].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  return [...imported].sort((a, b) =>
+    b.publishedAt.localeCompare(a.publishedAt),
+  );
 }
 
 export async function journalEntry(slug: string): Promise<JournalEntry | null> {

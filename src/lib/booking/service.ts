@@ -300,7 +300,8 @@ export async function approveBooking(
   ).filter(
     // A platform that imported our calendar re-exports this very request as
     // a block. That echo is not a conflict.
-    (r) => !isEchoOf(r, { checkIn: booking.check_in, checkOut: booking.check_out }),
+    (r) =>
+      !isEchoOf(r, { checkIn: booking.check_in, checkOut: booking.check_out }),
   );
   if (conflicts.length) {
     return {

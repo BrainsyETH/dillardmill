@@ -491,7 +491,6 @@ describe("calendar boundaries", () => {
   });
 });
 
-
 describe("manual-first calendar handling", () => {
   async function pending() {
     const r = await request();
@@ -526,23 +525,37 @@ describe("manual-first calendar handling", () => {
   it("still refuses a real Airbnb reservation on those nights", async () => {
     const { id } = await pending();
     state.airbnbFeed = airbnbFeed([[d(31), d(33)]]);
-    expect(await service.approveBooking(id)).toMatchObject({ ok: false, code: "dates_taken" });
+    expect(await service.approveBooking(id)).toMatchObject({
+      ok: false,
+      code: "dates_taken",
+    });
     expect(square.capturePayment).not.toHaveBeenCalled();
   });
 
   it("still refuses a block that reaches beyond the request's dates", async () => {
     const { id } = await pending();
     state.airbnbFeed = airbnbBlock(d(29), d(32));
-    expect(await service.approveBooking(id)).toMatchObject({ ok: false, code: "dates_taken" });
+    expect(await service.approveBooking(id)).toMatchObject({
+      ok: false,
+      code: "dates_taken",
+    });
   });
 
   it("lets the owner approve after checking by hand when a calendar link is down", async () => {
     const { id } = await pending();
     state.airbnbStatus = 503;
-    expect(await service.approveBooking(id)).toMatchObject({ ok: false, code: "calendar_unavailable" });
-    const r = await service.approveBooking(id, { calendarsCheckedManually: true });
+    expect(await service.approveBooking(id)).toMatchObject({
+      ok: false,
+      code: "calendar_unavailable",
+    });
+    const r = await service.approveBooking(id, {
+      calendarsCheckedManually: true,
+    });
     expect(r).toMatchObject({ ok: true });
-    const { rows } = await db.query<{ decision_note: string }>("SELECT decision_note FROM bookings WHERE id = $1", [id]);
+    const { rows } = await db.query<{ decision_note: string }>(
+      "SELECT decision_note FROM bookings WHERE id = $1",
+      [id],
+    );
     expect(rows[0].decision_note).toMatch(/checked by hand/);
   });
 
@@ -551,9 +564,12 @@ describe("manual-first calendar handling", () => {
     await request();
     const { GET } = await import("@/app/calendar/[file]/route");
     const { NextRequest } = await import("next/server");
-    const res = await GET(new NextRequest("http://localhost/calendar/cozy-cottage.ics"), {
-      params: Promise.resolve({ file: "cozy-cottage.ics" }),
-    });
+    const res = await GET(
+      new NextRequest("http://localhost/calendar/cozy-cottage.ics"),
+      {
+        params: Promise.resolve({ file: "cozy-cottage.ics" }),
+      },
+    );
     expect(res.status).toBe(404);
   });
 
@@ -581,9 +597,14 @@ describe("manual-first calendar handling", () => {
     const { GET } = await import("@/app/calendar/[file]/route");
     const { NextRequest } = await import("next/server");
     // The Farm's Hipcamp feed must carry the cottage's real reservation but not its block.
-    const res = await GET(new NextRequest("http://localhost/calendar/book-the-farm.ics?for=hipcamp"), {
-      params: Promise.resolve({ file: "book-the-farm.ics" }),
-    });
+    const res = await GET(
+      new NextRequest(
+        "http://localhost/calendar/book-the-farm.ics?for=hipcamp",
+      ),
+      {
+        params: Promise.resolve({ file: "book-the-farm.ics" }),
+      },
+    );
     const text = await res.text();
     expect(text).toContain(`DTSTART;VALUE=DATE:${compact(d(40))}`);
     expect(text).not.toContain(`DTSTART;VALUE=DATE:${compact(d(50))}`);

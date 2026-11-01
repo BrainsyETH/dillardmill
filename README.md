@@ -8,24 +8,29 @@ A modern Next.js website for Pine Valley Airbnb vacation rentals near Dillard Mi
 - **React 19** - UI library
 - **TypeScript 5** - Type safety
 - **Tailwind CSS v4** - Styling
-- **Sanity.io** - Headless CMS
-- **Neon** - Serverless Postgres database (schema in `db/migrations/`, apply with `npm run db:migrate`)
+- **Neon** - Postgres for stays, prices, bookings and calendars (schema in `db/migrations/`, apply with `npm run db:migrate`); edited in `/admin`
+- **Square** - Card holds and payments
+- **Resend** - Booking email; owner mail stays on Google Workspace
 - **Framer Motion** - Animations
-- **Vercel** - Hosting
+- **Vercel (Pro)** - Hosting
 
 ## Project Status
 
-Replacing the Squarespace site at dillardmill.com. Current status and the
-migration plan: [`docs/MIGRATION-AUDIT.md`](docs/MIGRATION-AUDIT.md).
-Direct booking (request-to-book, Square, Airbnb iCal sync):
-[`docs/BOOKING-ENGINE.md`](docs/BOOKING-ENGINE.md).
+Replacing the Squarespace site at dillardmill.com.
+
+- How booking, calendars, admin and setup work: [`docs/BOOKING-ENGINE.md`](docs/BOOKING-ENGINE.md)
+- Guest-facing design and imported content: [`docs/GUEST-EXPERIENCE.md`](docs/GUEST-EXPERIENCE.md)
+- Decisions and launch status: [`docs/MIGRATION-AUDIT.md`](docs/MIGRATION-AUDIT.md)
+
+Content (descriptions, photos, journal posts) lives in `src/lib/content/` and
+`public/images/`. Business data (stays, prices, taxes, policies) is edited in
+`/admin`.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed
-- A Sanity.io account (free tier)
+- Node.js 20+ installed
 - A Neon Postgres database
 - A Square account (sandbox for testing)
 
@@ -46,12 +51,6 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the site.
-
-## Sanity Setup
-
-1. Go to [sanity.io](https://www.sanity.io/) and create a project
-2. Add credentials to `.env.local`
-3. Visit [http://localhost:3000/studio](http://localhost:3000/studio) to manage content
 
 ## Database Setup
 

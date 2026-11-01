@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Props {
   id: string;
@@ -15,8 +15,8 @@ export function BookingActions({ id, status, refundableCents }: Props) {
   const [error, setError] = useState<string | null>(null);
   // Set when approval stopped because another platform's calendar couldn't be refreshed.
   const [calendarDown, setCalendarDown] = useState(false);
-  const [mode, setMode] = useState<'idle' | 'decline' | 'cancel'>('idle');
-  const [note, setNote] = useState('');
+  const [mode, setMode] = useState<"idle" | "decline" | "cancel">("idle");
+  const [note, setNote] = useState("");
   const [refund, setRefund] = useState((refundableCents / 100).toFixed(2));
 
   async function act(body: Record<string, unknown>) {
@@ -25,41 +25,46 @@ export function BookingActions({ id, status, refundableCents }: Props) {
     setCalendarDown(false);
     try {
       const res = await fetch(`/api/admin/bookings/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (data.code === 'calendar_unavailable') setCalendarDown(true);
-        throw new Error(data.error || 'Action failed');
+        if (data.code === "calendar_unavailable") setCalendarDown(true);
+        throw new Error(data.error || "Action failed");
       }
-      setMode('idle');
+      setMode("idle");
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Action failed');
+      setError(e instanceof Error ? e.message : "Action failed");
     } finally {
       setBusy(false);
     }
   }
 
-  const btn = 'px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50';
+  const btn = "px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50";
 
-  if (status === 'requested') {
+  if (status === "requested") {
     return (
       <div className="space-y-2">
-        {mode === 'idle' ? (
+        {mode === "idle" ? (
           <div className="flex flex-wrap gap-2">
             <button
               disabled={busy}
               onClick={() => {
-                if (confirm('Approve this request and charge the card?')) act({ action: 'approve' });
+                if (confirm("Approve this request and charge the card?"))
+                  act({ action: "approve" });
               }}
               className={`${btn} bg-[#6B7A5A] text-white hover:bg-[#59664a]`}
             >
-              {busy ? 'Working…' : 'Approve & charge'}
+              {busy ? "Working…" : "Approve & charge"}
             </button>
-            <button disabled={busy} onClick={() => setMode('decline')} className={`${btn} border border-[#9C5A3C] text-[#9C5A3C]`}>
+            <button
+              disabled={busy}
+              onClick={() => setMode("decline")}
+              className={`${btn} border border-[#9C5A3C] text-[#9C5A3C]`}
+            >
               Decline
             </button>
           </div>
@@ -73,10 +78,20 @@ export function BookingActions({ id, status, refundableCents }: Props) {
               rows={2}
             />
             <div className="flex gap-2">
-              <button disabled={busy} onClick={() => act({ action: 'decline', note: note || undefined })} className={`${btn} bg-[#9C5A3C] text-white`}>
-                {busy ? 'Working…' : 'Decline & release hold'}
+              <button
+                disabled={busy}
+                onClick={() =>
+                  act({ action: "decline", note: note || undefined })
+                }
+                className={`${btn} bg-[#9C5A3C] text-white`}
+              >
+                {busy ? "Working…" : "Decline & release hold"}
               </button>
-              <button disabled={busy} onClick={() => setMode('idle')} className={`${btn} text-[#6F8291]`}>
+              <button
+                disabled={busy}
+                onClick={() => setMode("idle")}
+                className={`${btn} text-[#6F8291]`}
+              >
                 Back
               </button>
             </div>
@@ -87,8 +102,12 @@ export function BookingActions({ id, status, refundableCents }: Props) {
           <button
             disabled={busy}
             onClick={() => {
-              if (confirm('Have you checked those dates on the other platform yourself? The card will be charged.')) {
-                act({ action: 'approve', calendarsCheckedManually: true });
+              if (
+                confirm(
+                  "Have you checked those dates on the other platform yourself? The card will be charged.",
+                )
+              ) {
+                act({ action: "approve", calendarsCheckedManually: true });
               }
             }}
             className={`${btn} border border-[#6B7A5A] text-[#6B7A5A]`}
@@ -100,11 +119,14 @@ export function BookingActions({ id, status, refundableCents }: Props) {
     );
   }
 
-  if (status === 'confirmed') {
+  if (status === "confirmed") {
     return (
       <div className="space-y-2">
-        {mode === 'idle' ? (
-          <button onClick={() => setMode('cancel')} className={`${btn} border border-[#9C5A3C] text-[#9C5A3C]`}>
+        {mode === "idle" ? (
+          <button
+            onClick={() => setMode("cancel")}
+            className={`${btn} border border-[#9C5A3C] text-[#9C5A3C]`}
+          >
             Cancel booking…
           </button>
         ) : (
@@ -120,7 +142,9 @@ export function BookingActions({ id, status, refundableCents }: Props) {
                 onChange={(e) => setRefund(e.target.value)}
                 className="ml-2 w-28 rounded border border-[#CBB8A3] p-1"
               />
-              <span className="ml-2 text-[#6F8291]">of ${(refundableCents / 100).toFixed(2)}</span>
+              <span className="ml-2 text-[#6F8291]">
+                of ${(refundableCents / 100).toFixed(2)}
+              </span>
             </label>
             <textarea
               value={note}
@@ -134,15 +158,27 @@ export function BookingActions({ id, status, refundableCents }: Props) {
                 disabled={busy}
                 onClick={() => {
                   const cents = Math.round(Number(refund) * 100);
-                  if (confirm(`Cancel and refund $${(cents / 100).toFixed(2)}? This frees the dates.`)) {
-                    act({ action: 'cancel', refundCents: cents, note: note || undefined });
+                  if (
+                    confirm(
+                      `Cancel and refund $${(cents / 100).toFixed(2)}? This frees the dates.`,
+                    )
+                  ) {
+                    act({
+                      action: "cancel",
+                      refundCents: cents,
+                      note: note || undefined,
+                    });
                   }
                 }}
                 className={`${btn} bg-[#9C5A3C] text-white`}
               >
-                {busy ? 'Working…' : 'Cancel & refund'}
+                {busy ? "Working…" : "Cancel & refund"}
               </button>
-              <button disabled={busy} onClick={() => setMode('idle')} className={`${btn} text-[#6F8291]`}>
+              <button
+                disabled={busy}
+                onClick={() => setMode("idle")}
+                className={`${btn} text-[#6F8291]`}
+              >
                 Back
               </button>
             </div>
