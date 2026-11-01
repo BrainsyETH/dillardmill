@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { currentAdmin } from "@/lib/admin/require";
 export const metadata = { title: "Manage Pine Valley" };
 const links = [
   [
@@ -38,12 +39,24 @@ const links = [
     "Check whether booking notifications were delivered.",
   ],
 ];
-export default function Admin() {
+export const dynamic = "force-dynamic";
+export default async function Admin() {
+  const admin = await currentAdmin();
   return (
     <div className="page-shell section-space">
-      <Link href="/" className="text-link">
-        ← Website
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Link href="/" className="text-link">
+          ← Website
+        </Link>
+        <form method="post" action="/api/admin/logout" className="text-sm text-brand-stone">
+          {admin && (
+            <span className="mr-3">
+              Signed in{admin.identity === "password" ? " with the shared password" : ` as ${admin.identity}`}
+            </span>
+          )}
+          <button className="text-link">Sign out</button>
+        </form>
+      </div>
       <h1 className="page-title mt-8 mb-10">Manage Pine Valley</h1>
       <div className="grid md:grid-cols-2 gap-x-12">
         {links.map(([href, title, description]) => (
