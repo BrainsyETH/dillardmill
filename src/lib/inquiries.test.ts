@@ -19,7 +19,7 @@ beforeAll(async () => {
   state.sql = test.sql;
 });
 beforeEach(async () => {
-  await db.exec("TRUNCATE guest_messages");
+  await db.exec("TRUNCATE guest_messages CASCADE");
   state.notified = true;
   vi.clearAllMocks();
 });

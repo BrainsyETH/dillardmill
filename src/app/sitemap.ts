@@ -1,3 +1,4 @@
+import { eventsPublished } from "@/lib/events/config";
 import type { MetadataRoute } from "next";
 import { journalEntries } from "@/lib/content/journal";
 import { getAllUnits } from "@/lib/stays/queries";
@@ -22,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/contact",
     "/thoughts",
     "/tiny-cabins",
+    ...(eventsPublished() ? ["/weddings", "/events"] : []),
     ...units.map((u) => getUnitUrl(u.slug.current)),
   ];
   return [...new Set(routes)]

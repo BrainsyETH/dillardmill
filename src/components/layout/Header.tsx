@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Navigation from "./Navigation";
 
-export default function Header() {
+export default function Header({
+  eventsEnabled = false,
+}: {
+  eventsEnabled?: boolean;
+}) {
   const [menuPath, setMenuPath] = useState<string | null>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const path = usePathname();
@@ -42,7 +46,7 @@ export default function Header() {
           />
         </Link>
         <div className="hidden lg:block">
-          <Navigation />
+          <Navigation eventsEnabled={eventsEnabled} />
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -82,7 +86,11 @@ export default function Header() {
           id="mobile-navigation"
           className="lg:hidden page-shell pb-6 max-h-[calc(100dvh-80px)] overflow-y-auto"
         >
-          <Navigation mobile onNavigate={() => setMenuPath(null)} />
+          <Navigation
+            eventsEnabled={eventsEnabled}
+            mobile
+            onNavigate={() => setMenuPath(null)}
+          />
         </div>
       )}
     </header>

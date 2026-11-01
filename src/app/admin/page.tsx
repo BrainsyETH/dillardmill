@@ -3,6 +3,11 @@ import { currentAdmin } from "@/lib/admin/require";
 export const metadata = { title: "Manage Pine Valley" };
 const links = [
   [
+    "/admin/events",
+    "Events",
+    "Inquiries, follow-ups, date holds and a private preview.",
+  ],
+  [
     "/admin/bookings",
     "Booking requests",
     "Approve, decline, cancel, and refund stays.",

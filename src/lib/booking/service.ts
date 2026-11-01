@@ -88,6 +88,7 @@ const PLATFORM: Record<string, string> = {
   hipcamp: "Hipcamp",
   vrbo: "VRBO",
   direct: "Website booking",
+  event: "Whole-property event",
   block: "Blocked in admin",
 };
 

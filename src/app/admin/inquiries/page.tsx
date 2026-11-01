@@ -22,7 +22,21 @@ export default async function InquiriesPage() {
           messages.map((m) => (
             <article key={String(m.id)} className="py-6 space-y-3">
               <div className="flex flex-wrap justify-between gap-2">
-                <h2 className="text-2xl">{String(m.name)}</h2>
+                <h2 className="text-2xl">
+                  {String(m.name)}
+                  {m.kind === "event" && (
+                    <>
+                      {" "}
+                      ·{" "}
+                      <Link
+                        className="text-link text-base"
+                        href={`/admin/events/${m.id}`}
+                      >
+                        Event inquiry ↗
+                      </Link>
+                    </>
+                  )}
+                </h2>
                 <time className="text-sm text-brand-stone">
                   {new Date(String(m.created_at)).toLocaleString("en-US", {
                     timeZone: "America/Chicago",
@@ -54,7 +68,7 @@ export default async function InquiriesPage() {
                 </p>
               ) : null}
               <p className="whitespace-pre-wrap">{String(m.message)}</p>
-              {!m.owner_notified && (
+              {!m.owner_notified && m.event_origin !== "owner" && (
                 <p className="text-sm text-amber-900">
                   Email notification was not delivered. This message is saved
                   here.
