@@ -28,7 +28,7 @@ export default async function EditStay({
       back={{ href: '/admin/stays', label: 'Stays & pricing' }}
       intro={
         <>
-          Web address: <code>{unit.slug}</code>. All prices are per stay in US dollars before tax; taxes are set
+          Web address: <code>{unit.slug}</code>. Amounts are in US dollars before tax; taxes are set
           in <a className="text-link" href="/admin/settings">Settings</a>.
         </>
       }
@@ -97,7 +97,7 @@ export default async function EditStay({
         <Section title="Other platforms">
           <p className="sm:col-span-2 text-sm text-brand-stone">
             <strong>Calendar links (optional).</strong> Paste a platform&apos;s <em>export</em> calendar link and the
-            website reads its bookings every 15 minutes, so guests can&apos;t request dates already taken there. Leave
+            website reads its bookings automatically, so guests can&apos;t request dates already taken there. Leave
             blank to manage that platform by hand: when you approve a website booking, block the dates on the
             platform yourself, and block platform bookings here under Calendars.
           </p>
