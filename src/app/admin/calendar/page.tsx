@@ -1,189 +1,260 @@
-import Link from 'next/link';
-import { sql } from '@/lib/db/client';
+import Link from "next/link";
+import { headers } from "next/headers";
+import { getAllBookableUnits, CALENDAR_SOURCES } from "@/lib/booking/units";
+import { getSyncStatus, type SyncStatusRow } from "@/lib/calendar/sync";
+import { getUnavailableRanges, listBlocks } from "@/lib/db/availability";
+import { addDays, todayAtProperty } from "@/lib/booking/dates";
+import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  BlockForm,
+  CopyField,
+  DeleteBlockButton,
+  SyncNowButton,
+} from "@/components/admin/CalendarTools";
 
 export const metadata = {
-  title: 'Calendar Sync | Admin Dashboard',
+  title: "Calendars | Admin",
+  robots: { index: false },
+};
+export const dynamic = "force-dynamic";
+
+const PLATFORM: Record<string, string> = {
+  airbnb: "Airbnb",
+  hipcamp: "Hipcamp",
+  vrbo: "VRBO",
 };
 
-export const dynamic = 'force-dynamic';
-
-async function getExternalBookings() {
-  const bookings = await sql`
-    SELECT
-      unit_id,
-      source,
-      COUNT(*) as count,
-      MAX(updated_at) as last_sync
-    FROM external_bookings
-    WHERE check_out >= CURRENT_DATE
-    GROUP BY unit_id, source
-    ORDER BY unit_id, source
-  `;
-  return bookings;
+function ago(ts: string | null) {
+  if (!ts) return "";
+  const mins = Math.round((Date.now() - new Date(ts).getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 120) return `${mins} min ago`;
+  if (mins < 48 * 60) return `${Math.round(mins / 60)} h ago`;
+  return `${Math.round(mins / 1440)} days ago`;
 }
 
-async function getSyncStatus() {
-  try {
-    const bookings = await getExternalBookings();
-    return { success: true, bookings };
-  } catch (error) {
-    return { success: false, error: 'Table not created yet' };
+/** Honest status for one connected calendar link. */
+function ImportStatus({ s }: { s?: SyncStatusRow }) {
+  if (!s?.last_success_at) {
+    return s?.last_error ? (
+      <span className="text-red-800">
+        Never imported — failing: {s.last_error}
+      </span>
+    ) : (
+      <span className="text-amber-800">Not synced yet</span>
+    );
   }
+  if (s.last_error) {
+    return (
+      <span className="text-red-800">
+        Failing: {s.last_error}. Last good import {ago(s.last_success_at)}.
+      </span>
+    );
+  }
+  return (
+    <span className="text-green-900">
+      Imported {ago(s.last_success_at)} · {s.event_count ?? 0} entries
+    </span>
+  );
 }
 
-export default async function CalendarSyncPage() {
-  const status = await getSyncStatus();
+function rangeLabel(r: { source: string; kind?: string }) {
+  if (r.source === "direct") return "Website booking";
+  if (r.source === "block") return "Blocked here";
+  return `${PLATFORM[r.source] ?? r.source} ${r.kind === "block" ? "block" : "reservation"}`;
+}
+
+export default async function CalendarAdminPage() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || `${proto}://${host}`;
+  const token = process.env.CALENDAR_FEED_TOKEN;
+  const exportEnabled = process.env.CALENDAR_EXPORT_ENABLED === "true";
+
+  const today = todayAtProperty();
+  const [units, status, blocks] = await Promise.all([
+    getAllBookableUnits(),
+    getSyncStatus(),
+    listBlocks(),
+  ]);
+  const ranges = await Promise.all(
+    units.map((u) => getUnavailableRanges(u._id, today, addDays(today, 120))),
+  );
+  const anyConnected = units.some((u) =>
+    CALENDAR_SOURCES.some((p) => u.icalUrls[p]),
+  );
+
+  const feedUrl = (slug: string, channel: string) => {
+    const params = new URLSearchParams();
+    if (token) params.set("token", token);
+    params.set("for", channel);
+    return `${base}/calendar/${slug}.ics?${params}`;
+  };
 
   return (
-    <div className="min-h-screen bg-[#F4F1EB]">
-      {/* Header */}
-      <div className="bg-[#3A2A1E] text-white py-6 mb-8">
-        <div className="container mx-auto px-4">
-          <Link href="/admin" className="text-[#CBB8A3] hover:text-[#F4F1EB] text-sm mb-2 inline-block">
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-3xl font-bold">Calendar Sync</h1>
-          <p className="text-[#CBB8A3] mt-2">Manage external platform calendars</p>
+    <AdminShell
+      title="Calendars & blocked dates"
+      intro={
+        exportEnabled ? (
+          "Two-way sync is on: the website imports each connected platform and publishes its own calendar for them to import."
+        ) : (
+          <>
+            Calendars are managed by hand. Block dates here for bookings taken
+            elsewhere; after approving a website booking, block those dates on
+            each platform yourself. Nothing here is sent to Airbnb or any other
+            platform.
+          </>
+        )
+      }
+    >
+      <section>
+        <h2 className="section-title text-2xl">Block dates</h2>
+        <p className="text-sm text-brand-stone mt-2 max-w-2xl">
+          For bookings taken on other platforms or by phone, maintenance, or
+          personal use. Blocked dates can&apos;t be requested on the website.
+          {exportEnabled
+            ? " They are also included in the calendar links other platforms import."
+            : " They are not sent to other platforms."}
+        </p>
+        <div className="mt-5">
+          <BlockForm units={units.map((u) => ({ id: u._id, name: u.name }))} />
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 pb-12 max-w-4xl">
-        {/* Sync Now Button */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Manual Sync</h2>
-          <p className="text-gray-700 mb-4">
-            Manually trigger a calendar sync to import the latest bookings from Airbnb, Hipcamp, and VRBO.
-          </p>
-          <form action="/api/calendar/sync" method="POST">
-            <button
-              type="submit"
-              className="px-6 py-3 bg-[#3A2A1E] text-white rounded-lg font-semibold hover:bg-[#7D4830] transition-colors"
-            >
-              Sync All Calendars Now
-            </button>
-          </form>
-          <p className="text-sm text-gray-500 mt-3">
-            This will fetch iCal feeds from all platforms and update blocked dates.
-          </p>
-        </div>
-
-        {/* Sync Status */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Sync Status</h2>
-
-          {!status.success ? (
-            <div className="bg-[#F4F1EB] border border-[#CBB8A3] rounded-lg p-4">
-              <p className="text-[#3A2A1E] mb-2">
-                ⚠️ External bookings table not created yet
-              </p>
-              <p className="text-sm text-[#6B7A5A]">
-                Run database setup: <code className="bg-[#CBB8A3]/30 px-2 py-1 rounded">node -e "require('./src/lib/db/setup').setupDatabase()"</code>
-              </p>
-            </div>
-          ) : status.bookings && status.bookings.length === 0 ? (
-            <div className="bg-[#F4F1EB] border border-[#6F8291]/30 rounded-lg p-4">
-              <p className="text-[#3A2A1E] mb-2">No external bookings synced yet</p>
-              <p className="text-sm text-[#6F8291]">
-                Add iCal URLs in Sanity Studio, then click "Sync All Calendars Now" above.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {status.bookings?.map((booking: any) => (
-                <div key={`${booking.unit_id}-${booking.source}`} className="border border-[#CBB8A3] rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-semibold">{booking.unit_id}</div>
-                      <div className="text-sm text-gray-600">
-                        {booking.source.toUpperCase()}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{booking.count} bookings</div>
-                      <div className="text-sm text-gray-600">
-                        Last sync: {new Date(booking.last_sync).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Setup Instructions */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Setup Instructions</h2>
-
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">1. Get iCal URLs</h3>
-              <div className="space-y-3 ml-4">
-                <div>
-                  <strong className="text-sm">Airbnb:</strong>
-                  <p className="text-sm text-gray-600">
-                    Go to listing → Settings → Availability → Calendar sync → Export Calendar
-                  </p>
-                </div>
-                <div>
-                  <strong className="text-sm">Hipcamp:</strong>
-                  <p className="text-sm text-gray-600">
-                    Dashboard → Calendar → Export iCal feed
-                  </p>
-                </div>
-                <div>
-                  <strong className="text-sm">VRBO:</strong>
-                  <p className="text-sm text-gray-600">
-                    Calendar → Settings → Export iCal
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">2. Add URLs to Sanity</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                Open Sanity Studio and add iCal URLs to each rental unit:
-              </p>
-              <Link
-                href="/studio"
-                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+        {blocks.length > 0 && (
+          <ul className="mt-6 divide-y divide-brand-sand max-w-3xl">
+            {blocks.map((b) => (
+              <li
+                key={b.id}
+                className="py-3 flex flex-wrap justify-between gap-2"
               >
-                Open Sanity Studio
-              </Link>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">3. Set Up Automatic Sync</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                For automatic syncing, add to <code className="bg-stone-100 px-2 py-1 rounded">vercel.json</code>:
-              </p>
-              <pre className="bg-[#2B2B2B] text-[#F4F1EB] p-4 rounded-lg text-xs overflow-x-auto">
-{`{
-  "crons": [{
-    "path": "/api/calendar/sync",
-    "schedule": "0 */6 * * *"
-  }]
-}`}
-              </pre>
-              <p className="text-sm text-gray-600 mt-2">
-                This syncs every 6 hours automatically.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Benefits */}
-        <div className="mt-8 bg-[#6B7A5A]/10 border border-[#6B7A5A]/30 rounded-lg p-6">
-          <h3 className="font-semibold mb-2">✅ Calendar Sync Benefits</h3>
-          <ul className="text-sm text-[#3A2A1E] space-y-1">
-            <li>• Prevents double bookings across platforms</li>
-            <li>• Automatic updates from Airbnb, Hipcamp, VRBO</li>
-            <li>• Real-time availability on your site</li>
-            <li>• No manual calendar management</li>
+                <span>
+                  <strong>
+                    {units.find((u) => u._id === b.unit_id)?.name ?? b.unit_id}
+                  </strong>{" "}
+                  · {b.start_date} → {b.end_date}
+                  {b.note ? (
+                    <span className="text-brand-stone"> · {b.note}</span>
+                  ) : null}
+                </span>
+                <DeleteBlockButton id={b.id} />
+              </li>
+            ))}
           </ul>
+        )}
+      </section>
+
+      <section className="border-t border-brand-sand pt-8 mt-10">
+        <div className="flex flex-wrap items-baseline justify-between gap-4">
+          <h2 className="section-title text-2xl">Next 120 days</h2>
+          {anyConnected && <SyncNowButton />}
         </div>
-      </div>
-    </div>
+        <div className="mt-4 grid gap-8 lg:grid-cols-2">
+          {units.map((unit, i) => {
+            const connected = CALENDAR_SOURCES.filter((p) => unit.icalUrls[p]);
+            return (
+              <div key={unit._id}>
+                <h3 className="text-xl">{unit.name}</h3>
+                <p className="text-sm mt-1">
+                  {connected.length === 0 ? (
+                    <span className="text-brand-stone">
+                      No calendar links — all platforms managed by hand.
+                    </span>
+                  ) : (
+                    connected.map((p) => (
+                      <span key={p} className="block">
+                        {PLATFORM[p]}:{" "}
+                        <ImportStatus
+                          s={status.find(
+                            (s) => s.unit_id === unit._id && s.source === p,
+                          )}
+                        />
+                      </span>
+                    ))
+                  )}
+                </p>
+                {ranges[i].length === 0 ? (
+                  <p className="text-sm text-brand-stone mt-2">
+                    Nothing booked or blocked.
+                  </p>
+                ) : (
+                  <ul className="mt-2 text-sm divide-y divide-brand-sand">
+                    {ranges[i].map((r) => (
+                      <li
+                        key={`${r.unitId}-${r.source}-${r.ref}`}
+                        className="py-1.5 flex justify-between gap-3"
+                      >
+                        <span>
+                          {r.start} → {r.end}
+                          {r.unitId !== unit._id && (
+                            <span className="text-brand-stone">
+                              {" "}
+                              · {units.find((u) => u._id === r.unitId)?.name}
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-brand-stone">
+                          {rangeLabel(r)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {exportEnabled && (
+                  <details className="mt-3 text-sm">
+                    <summary className="cursor-pointer text-link">
+                      Calendar links for platforms to import
+                    </summary>
+                    <div className="space-y-2 mt-2">
+                      {(["airbnb", "hipcamp", "vrbo"] as const).map((p) => (
+                        <div key={p}>
+                          <span className="field-label">For {PLATFORM[p]}</span>
+                          <CopyField value={feedUrl(unit.slug, p)} />
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {exportEnabled && !token && (
+          <p className="mt-6 text-sm text-red-800">
+            Set CALENDAR_FEED_TOKEN so the calendar links above can&apos;t be
+            guessed.
+          </p>
+        )}
+      </section>
+
+      <details className="border-t border-brand-sand pt-6 mt-10">
+        <summary className="cursor-pointer section-title text-2xl">
+          Connecting a platform&apos;s calendar
+        </summary>
+        <div className="prose-content text-sm mt-4 max-w-2xl">
+          <p>
+            Optional and read-only. In Airbnb, open the listing → Availability →
+            Connect calendars → <em>Export calendar</em>, then paste that link
+            into the stay&apos;s calendar link under{" "}
+            <Link href="/admin/stays">Stays &amp; pricing</Link>. The website
+            then imports that platform&apos;s bookings so guests can&apos;t
+            request dates already taken there. It can&apos;t change anything on
+            Airbnb.
+          </p>
+          <p>
+            Platforms show two kinds of entries: <strong>reservations</strong>{" "}
+            (real guest bookings) and <strong>blocks</strong> (&ldquo;Not
+            available&rdquo; — your own blocks, availability rules, or dates the
+            platform blocked from another calendar). Both stop guests requesting
+            those dates. When you approve a request that overlaps a block,
+            you&apos;ll be asked to confirm the block is for that request.
+          </p>
+          <p>
+            Removing a calendar link clears its imported dates; you can choose
+            to keep upcoming ones as blocks.
+          </p>
+        </div>
+      </details>
+    </AdminShell>
   );
 }

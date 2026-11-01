@@ -1,188 +1,243 @@
+// Direct-booking persistence.
+//
+// Lifecycle (request-to-book):
+//   pending_payment ─┬─ card authorized ─→ requested ─┬─ owner approves (capture) ─→ confirmed ─→ cancelled (refund)
+//                    └─ auth fails ─────→ failed      ├─ owner declines (void) ───→ declined
+//                                                     └─ no response (void) ─────→ expired
+//
+// pending_payment, requested and confirmed hold the dates; the
+// bookings_no_overlap exclusion constraint (db/migrations/001) makes a
+// double booking impossible at the database level.
+
+import { randomInt } from 'node:crypto';
 import { sql } from './client';
+import type { Quote } from '@/lib/booking/pricing';
+import { dbDate } from '@/lib/booking/dates';
 
-export interface Booking {
-  id?: string;
-  created_at?: string;
+export type BookingStatus =
+  | 'pending_payment'
+  | 'requested'
+  | 'confirmed'
+  | 'declined'
+  | 'expired'
+  | 'cancelled'
+  | 'completed'
+  | 'failed';
 
-  // Guest info
+export type PaymentStatus =
+  | 'pending'
+  | 'authorized'
+  | 'paid'
+  | 'voided'
+  | 'refunded'
+  | 'partially_refunded'
+  | 'failed';
+
+export const ACTIVE_STATUSES: BookingStatus[] = ['pending_payment', 'requested', 'confirmed'];
+
+export interface BookingRow {
+  id: string;
+  created_at: string;
+  updated_at: string | null;
   guest_name: string;
   guest_email: string;
-  guest_phone?: string;
-
-  // Stay details
+  guest_phone: string | null;
   unit_id: string;
+  unit_slug: string | null;
   unit_name: string;
   check_in: string;
   check_out: string;
   num_guests: number;
+  num_pets: number;
   num_nights: number;
-
-  // Pricing
-  base_price: number;        // Per night rate
+  base_price: number;
   cleaning_fee: number;
-  total_amount: number;      // In cents
-
-  // Payment
-  payment_id?: string;       // Square payment ID
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed';
-  payment_method?: string;
-
-  // Status
-  booking_status: 'confirmed' | 'cancelled' | 'completed';
-
-  // Additional
-  special_requests?: string;
-  confirmation_code?: string;
+  tax_amount: number;
+  total_amount: number;
+  quote: Quote | null;
+  payment_id: string | null;
+  payment_status: PaymentStatus;
+  payment_method: string | null;
+  booking_status: BookingStatus;
+  special_requests: string | null;
+  confirmation_code: string;
+  policies_accepted_at: string | null;
+  expires_at: string | null;
+  decided_at: string | null;
+  decision_note: string | null;
+  refund_id: string | null;
+  refunded_amount: number;
 }
 
-// Create confirmed booking table
-export async function createBookingsTable() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS bookings (
-      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+/** Normalize a raw row: DATE columns as 'YYYY-MM-DD', counters as numbers. */
+function row(r: Record<string, unknown> | undefined): BookingRow | undefined {
+  if (!r) return undefined;
+  return {
+    ...(r as unknown as BookingRow),
+    check_in: dbDate(r.check_in),
+    check_out: dbDate(r.check_out),
+  };
+}
+const rows = (rs: Record<string, unknown>[]) => rs.map((r) => row(r)!);
 
-      guest_name TEXT NOT NULL,
-      guest_email TEXT NOT NULL,
-      guest_phone TEXT,
+// Unambiguous characters (no 0/O, 1/I/L).
+const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
-      unit_id TEXT NOT NULL,
-      unit_name TEXT NOT NULL,
-      check_in DATE NOT NULL,
-      check_out DATE NOT NULL,
-      num_guests INTEGER NOT NULL,
-      num_nights INTEGER NOT NULL,
-
-      base_price INTEGER NOT NULL,
-      cleaning_fee INTEGER NOT NULL,
-      total_amount INTEGER NOT NULL,
-
-      payment_id TEXT,
-      payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded', 'failed')),
-      payment_method TEXT,
-
-      booking_status TEXT DEFAULT 'confirmed' CHECK (booking_status IN ('confirmed', 'cancelled', 'completed')),
-
-      special_requests TEXT,
-      confirmation_code TEXT
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_bookings_dates ON bookings(check_in, check_out);
-    CREATE INDEX IF NOT EXISTS idx_bookings_unit ON bookings(unit_id);
-    CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings(guest_email);
-    CREATE INDEX IF NOT EXISTS idx_bookings_confirmation ON bookings(confirmation_code);
-  `;
+export function generateConfirmationCode(): string {
+  let code = '';
+  for (let i = 0; i < 8; i++) code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
+  return `PV-${code}`;
 }
 
-export async function createBooking(booking: Booking) {
-  // Generate confirmation code
-  const confirmationCode = `PV${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+/** Postgres exclusion-constraint violation: the dates were taken. */
+function isOverlapError(error: unknown): boolean {
+  const e = error as { code?: string; constraint?: string; message?: string };
+  return e?.code === '23P01' || /bookings_no_overlap/.test(e?.message ?? '');
+}
 
+export interface HoldInput {
+  unitId: string;
+  unitSlug: string;
+  unitName: string;
+  quote: Quote;
+  guestName: string;
+  guestEmail: string;
+  guestPhone?: string | null;
+  specialRequests?: string | null;
+}
+
+export type HoldResult = { ok: true; booking: BookingRow } | { ok: false; reason: 'dates_taken' };
+
+/** Reserve the dates before touching the card. */
+export async function holdBooking(input: HoldInput): Promise<HoldResult> {
+  const q = input.quote;
+  try {
+    const inserted = await sql`
+      INSERT INTO bookings (
+        guest_name, guest_email, guest_phone,
+        unit_id, unit_slug, unit_name,
+        check_in, check_out, num_guests, num_pets, num_nights,
+        base_price, cleaning_fee, tax_amount, total_amount, quote,
+        payment_status, payment_method, booking_status,
+        special_requests, confirmation_code, policies_accepted_at
+      ) VALUES (
+        ${input.guestName}, ${input.guestEmail}, ${input.guestPhone ?? null},
+        ${input.unitId}, ${input.unitSlug}, ${input.unitName},
+        ${q.checkIn}, ${q.checkOut}, ${q.guests}, ${q.pets}, ${q.numNights},
+        ${q.lodgingCents}, ${q.cleaningCents}, ${q.taxCents}, ${q.totalCents}, ${JSON.stringify(q)},
+        'pending', 'square', 'pending_payment',
+        ${input.specialRequests ?? null}, ${generateConfirmationCode()}, now()
+      )
+      RETURNING *
+    `;
+    return { ok: true, booking: row(inserted[0])! };
+  } catch (error) {
+    if (isOverlapError(error)) return { ok: false, reason: 'dates_taken' };
+    throw error;
+  }
+}
+
+export async function markRequested(id: string, paymentId: string, expiresAt: Date) {
   const result = await sql`
-    INSERT INTO bookings (
-      guest_name, guest_email, guest_phone,
-      unit_id, unit_name,
-      check_in, check_out,
-      num_guests, num_nights,
-      base_price, cleaning_fee, total_amount,
-      payment_id, payment_status, payment_method,
-      booking_status,
-      special_requests,
-      confirmation_code
-    )
-    VALUES (
-      ${booking.guest_name}, ${booking.guest_email}, ${booking.guest_phone},
-      ${booking.unit_id}, ${booking.unit_name},
-      ${booking.check_in}, ${booking.check_out},
-      ${booking.num_guests}, ${booking.num_nights},
-      ${booking.base_price}, ${booking.cleaning_fee}, ${booking.total_amount},
-      ${booking.payment_id}, ${booking.payment_status}, ${booking.payment_method},
-      ${booking.booking_status},
-      ${booking.special_requests},
-      ${confirmationCode}
-    )
+    UPDATE bookings
+    SET booking_status = 'requested', payment_status = 'authorized',
+        payment_id = ${paymentId}, expires_at = ${expiresAt.toISOString()}, updated_at = now()
+    WHERE id = ${id} AND booking_status = 'pending_payment'
     RETURNING *
   `;
+  return row(result[0]);
+}
 
-  return result[0];
+export async function markFailed(id: string, note: string) {
+  await sql`
+    UPDATE bookings
+    SET booking_status = 'failed', payment_status = 'failed',
+        decision_note = ${note}, updated_at = now()
+    WHERE id = ${id} AND booking_status = 'pending_payment'
+  `;
+}
+
+/**
+ * Move a booking from one status to another, only if it is still in the
+ * expected status (guards against double clicks and races with the expiry job).
+ */
+export async function transitionBooking(
+  id: string,
+  from: BookingStatus,
+  to: BookingStatus,
+  paymentStatus: PaymentStatus,
+  note?: string | null,
+) {
+  const rows = await sql`
+    UPDATE bookings
+    SET booking_status = ${to}, payment_status = ${paymentStatus},
+        decided_at = now(), decision_note = COALESCE(${note ?? null}, decision_note),
+        updated_at = now()
+    WHERE id = ${id} AND booking_status = ${from}
+    RETURNING *
+  `;
+  return row(rows[0]);
+}
+
+export async function setPaymentStatus(id: string, paymentStatus: PaymentStatus) {
+  await sql`UPDATE bookings SET payment_status = ${paymentStatus}, updated_at = now() WHERE id = ${id}`;
+}
+
+export async function recordRefund(id: string, refundId: string, amountCents: number) {
+  const rows = await sql`
+    UPDATE bookings
+    SET refund_id = ${refundId},
+        refunded_amount = refunded_amount + ${amountCents},
+        payment_status = CASE
+          WHEN refunded_amount + ${amountCents} >= total_amount THEN 'refunded'
+          ELSE 'partially_refunded' END,
+        updated_at = now()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  return row(rows[0]);
+}
+
+export async function getBookingById(id: string) {
+  const rows = await sql`SELECT * FROM bookings WHERE id = ${id}`;
+  return row(rows[0]);
 }
 
 export async function getBookingByConfirmation(code: string) {
+  const rows = await sql`SELECT * FROM bookings WHERE confirmation_code = ${code}`;
+  return row(rows[0]);
+}
+
+export async function listBookings(scope: 'action' | 'upcoming' | 'past' | 'all') {
+  const result =
+    scope === 'action'
+      ? await sql`SELECT * FROM bookings WHERE booking_status = 'requested' ORDER BY expires_at ASC`
+      : scope === 'upcoming'
+        ? await sql`SELECT * FROM bookings WHERE check_out >= CURRENT_DATE
+            AND booking_status IN ('requested', 'confirmed') ORDER BY check_in ASC`
+        : scope === 'past'
+          ? await sql`SELECT * FROM bookings WHERE check_out < CURRENT_DATE
+              ORDER BY check_in DESC LIMIT 200`
+          : await sql`SELECT * FROM bookings ORDER BY created_at DESC LIMIT 200`;
+  return rows(result);
+}
+
+/** Requests whose approval window has passed. */
+export async function listExpiredRequests() {
   const result = await sql`
     SELECT * FROM bookings
-    WHERE confirmation_code = ${code}
+    WHERE booking_status = 'requested' AND expires_at < now()
   `;
-
-  return result[0];
+  return rows(result);
 }
 
-export async function getBookingsByEmail(email: string) {
-  const result = await sql`
-    SELECT * FROM bookings
-    WHERE guest_email = ${email}
-    ORDER BY check_in DESC
-  `;
-
-  return result;
-}
-
-// Check if unit is available for given dates
-export async function checkAvailability(
-  unitId: string,
-  checkIn: string,
-  checkOut: string
-) {
-  const result = await sql`
-    SELECT * FROM bookings
-    WHERE unit_id = ${unitId}
-      AND booking_status = 'confirmed'
-      AND (
-        (check_in <= ${checkIn} AND check_out > ${checkIn})
-        OR (check_in < ${checkOut} AND check_out >= ${checkOut})
-        OR (check_in >= ${checkIn} AND check_out <= ${checkOut})
-      )
-  `;
-
-  return result.length === 0; // true if available
-}
-
-export async function getBookedDates(unitId: string, startDate: string, endDate: string) {
-  const result = await sql`
-    SELECT check_in, check_out FROM bookings
-    WHERE unit_id = ${unitId}
-      AND booking_status = 'confirmed'
-      AND check_in <= ${endDate}
-      AND check_out >= ${startDate}
-    ORDER BY check_in
-  `;
-
-  return result;
-}
-
-export async function updateBookingPayment(
-  id: string,
-  paymentId: string,
-  paymentStatus: string
-) {
-  const result = await sql`
+/** Holds abandoned mid-authorization (browser closed, function timeout). */
+export async function releaseStaleHolds(olderThanMinutes = 15) {
+  await sql`
     UPDATE bookings
-    SET
-      payment_id = ${paymentId},
-      payment_status = ${paymentStatus}
-    WHERE id = ${id}
-    RETURNING *
+    SET booking_status = 'failed', payment_status = 'failed',
+        decision_note = 'Hold released: payment authorization never completed', updated_at = now()
+    WHERE booking_status = 'pending_payment'
+      AND created_at < now() - make_interval(mins => ${olderThanMinutes})
   `;
-
-  return result[0];
-}
-
-export async function cancelBooking(id: string) {
-  const result = await sql`
-    UPDATE bookings
-    SET booking_status = 'cancelled'
-    WHERE id = ${id}
-    RETURNING *
-  `;
-
-  return result[0];
 }

@@ -1,124 +1,58 @@
-import Link from 'next/link';
-
-export const metadata = {
-  title: 'Hiking Trails | Pine Valley',
-  description: 'Explore beautiful hiking trails near Pine Valley and Dillard Mill in the Missouri Ozarks.',
-};
-
-export default function TrailsPage() {
+import Link from "next/link";
+import { PlaceStory } from "@/components/editorial/PlaceStory";
+export const metadata = { title: "Walks and trails | Pine Valley" };
+export default function Trails() {
   return (
-    <div className="min-h-screen bg-[#F4F1EB]">
-      {/* Header */}
-      <div className="bg-[#3A2A1E] text-[#F4F1EB] py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Hiking Trails</h1>
-          <p className="text-xl text-[#CBB8A3]">
-            Discover scenic trails through the Missouri Ozarks
-          </p>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-12 max-w-6xl">
-        {/* Trail Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* On-Site Trails */}
-          <div className="bg-white rounded-lg shadow-md p-6 border-2 border-[#CBB8A3]">
-            <h2 className="text-2xl font-bold text-[#3A2A1E] mb-4">On-Site Trails</h2>
-
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-[#9C5A3C] mb-2">Mill Creek Trail</h3>
-              <div className="text-sm text-[#6F8291] mb-2">
-                <span className="font-semibold">Distance:</span> 0.5 miles ·
-                <span className="font-semibold ml-2">Difficulty:</span> Easy
-              </div>
-              <p className="text-[#2B2B2B]">
-                Peaceful walk from Pine Valley to the historic Dillard Mill along the creek. Perfect for families.
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-[#9C5A3C] mb-2">Ridge Loop</h3>
-              <div className="text-sm text-[#6F8291] mb-2">
-                <span className="font-semibold">Distance:</span> 1.2 miles ·
-                <span className="font-semibold ml-2">Difficulty:</span> Moderate
-              </div>
-              <p className="text-[#2B2B2B]">
-                Scenic loop trail with overlooks of the valley and mill. Great for wildlife watching.
-              </p>
-            </div>
-          </div>
-
-          {/* Nearby Trails */}
-          <div className="bg-white rounded-lg shadow-md p-6 border-2 border-[#CBB8A3]">
-            <h2 className="text-2xl font-bold text-[#3A2A1E] mb-4">Nearby Trails</h2>
-
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-[#9C5A3C] mb-2">Mark Twain National Forest</h3>
-              <div className="text-sm text-[#6F8291] mb-2">
-                <span className="font-semibold">Distance:</span> 2 miles from Pine Valley
-              </div>
-              <p className="text-[#2B2B2B]">
-                Extensive trail system with options ranging from easy nature walks to challenging backcountry routes.
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-[#9C5A3C] mb-2">Ozark Trail</h3>
-              <div className="text-sm text-[#6F8291] mb-2">
-                <span className="font-semibold">Distance:</span> 5 miles from Pine Valley
-              </div>
-              <p className="text-[#2B2B2B]">
-                Access point to Missouri's premier long-distance hiking trail through rugged Ozark terrain.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Trail Tips */}
-        <div className="bg-[#6B7A5A]/10 border-2 border-[#6B7A5A]/30 rounded-lg p-8 mb-12">
-          <h2 className="text-2xl font-bold text-[#3A2A1E] mb-4">Trail Tips</h2>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[#2B2B2B]">
-            <li className="flex items-start gap-2">
-              <span className="text-[#6B7A5A] text-xl">✓</span>
-              <span>Wear sturdy hiking boots or shoes</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#6B7A5A] text-xl">✓</span>
-              <span>Bring water and snacks</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#6B7A5A] text-xl">✓</span>
-              <span>Check weather before heading out</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#6B7A5A] text-xl">✓</span>
-              <span>Watch for wildlife - deer, turkey, birds</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#6B7A5A] text-xl">✓</span>
-              <span>Apply insect repellent in warm months</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#6B7A5A] text-xl">✓</span>
-              <span>Stay on marked trails</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* CTA */}
-        <div className="bg-gradient-to-br from-[#F4F1EB] to-[#CBB8A3] rounded-lg p-8 text-center border-2 border-[#CBB8A3]">
-          <h3 className="text-2xl font-bold text-[#3A2A1E] mb-4">Ready to Explore?</h3>
-          <p className="text-[#2B2B2B] mb-6">
-            Book your stay at Pine Valley and start your hiking adventure.
-          </p>
-          <Link
-            href="/lodging"
-            className="inline-block bg-gradient-to-r from-[#9C5A3C] to-[#7D4830] text-[#F4F1EB] px-8 py-4 rounded-lg font-bold text-lg hover:from-[#7D4830] hover:to-[#6B3825] transition-all shadow-lg"
-          >
-            View Lodging Options
-          </Link>
-        </div>
-      </div>
-    </div>
+    <PlaceStory
+      eyebrow="On foot"
+      title="Take a walk."
+      intro="Start with the paths around Pine Valley. For a longer day out, explore the trails around Council Bluff Lake and the Bell Mountain Wilderness."
+      image="c5542daf2b34"
+    >
+      <section>
+        <h2 className="text-3xl mb-5">From your door</h2>
+        <p>
+          There are about 1½ to 2 miles of walking trails on the property, plus
+          the roughly half-mile route to our private creek access. Your hosts
+          can point you in the right direction.
+        </p>
+        <p>
+          Dillard Mill is another walk from Pine Valley, with grounds and a
+          historic mill to explore.
+        </p>
+        <Link href="/map" className="text-link">
+          Property map ↗
+        </Link>
+      </section>
+      <section>
+        <h2 className="text-3xl mb-5">A longer trail day</h2>
+        <h3 className="text-xl mt-6">Council Bluff Lake</h3>
+        <p>
+          A roughly 12-mile trail circles the lake. You can plan a shorter
+          out-and-back instead of committing to the full loop.
+        </p>
+        <a
+          href="https://www.recreation.gov/camping/campgrounds/232325"
+          className="text-link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Council Bluff visitor information ↗
+        </a>
+        <h3 className="text-xl mt-7">Bell Mountain Wilderness</h3>
+        <p>
+          For a more demanding hike, use the Forest Service trail map to choose
+          a route that suits your group. Download your map before you leave.
+        </p>
+        <a
+          href="https://www.fs.usda.gov/sites/nfs/files/r09/marktwain/publication/Mark%20Twain%20National%20Forest%20Trail%20Text%20-%20Bell%20Mountain%20Wilderness%20Area%202022.pdf"
+          className="text-link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Forest Service trail map (PDF) ↗
+        </a>
+      </section>
+    </PlaceStory>
   );
 }

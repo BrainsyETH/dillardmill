@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMapMarkers, saveMapMarkers } from '@/lib/db/map-markers';
+import { rejectCrossSite } from '@/lib/admin/guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   try {
     const body = await request.json();
     if (!Array.isArray(body.markers)) {

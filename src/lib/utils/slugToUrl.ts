@@ -1,14 +1,14 @@
 /**
- * Maps Sanity unit slugs to Squarespace URL paths
+ * Maps stay slugs to their original Squarespace URL paths
  * This preserves SEO by matching the original URL structure
  */
-export function getUnitUrl(sanitySlug: string): string {
+export function getUnitUrl(slug: string): string {
   const slugMap: Record<string, string> = {
-    'book-the-farm': '/book-the-farm',
-    'original-airstream': '/airstream',
-    'the-sebastian': '/sebastian',
-    'cozy-cottage': '/cozycottage',
+    "book-the-farm": "/book-the-farm",
+    "original-airstream": "/airstream",
+    "the-sebastian": "/sebastian",
+    "cozy-cottage": "/cozycottage",
   };
 
-  return slugMap[sanitySlug] || `/lodging/${sanitySlug}`;
+  return slugMap[slug] || `/lodging/${slug}`;
 }

@@ -1,84 +1,41 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
-
-interface NavigationProps {
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+const items = [
+  { label: "Stays", href: "/lodging" },
+  { label: "Book the Farm", href: "/book-the-farm" },
+  { label: "Our place", href: "/our-place" },
+  { label: "Nearby", href: "/the-area" },
+  { label: "Contact", href: "/contact" },
+];
+export default function Navigation({
+  mobile = false,
+  onNavigate,
+}: {
   mobile?: boolean;
   onNavigate?: () => void;
-}
-
-const navItems = [
-  { label: 'Home', href: '/' },
-  { label: 'Lodging', href: '/lodging' },
-  { label: 'Photos', href: '/photos' },
-  { label: 'The Area', href: '/the-area' },
-  { label: 'Property Map', href: '/map' },
-  { label: 'Contact', href: '/contact' },
-];
-
-export default function Navigation({ mobile = false, onNavigate }: NavigationProps) {
-  const pathname = usePathname();
-
-  const handleClick = () => {
-    if (onNavigate) {
-      onNavigate();
-    }
-  };
-
-  if (mobile) {
-    return (
-      <nav className="flex flex-col space-y-1">
-        {navItems.map((item, index) => (
-          <motion.div
-            key={item.href}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <Link
-              href={item.href}
-              onClick={handleClick}
-              className={`block px-4 py-3 rounded-lg text-base font-medium transition-all ${
-                pathname === item.href
-                  ? 'bg-brand-forest/10 text-brand-forest'
-                  : 'text-brand-charcoal hover:bg-brand-sand/50 hover:text-brand-forest'
-              }`}
-            >
-              {item.label}
-            </Link>
-          </motion.div>
-        ))}
-      </nav>
-    );
-  }
-
+}) {
+  const path = usePathname();
   return (
-    <nav className="flex items-center space-x-1">
-      {navItems.map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive
-                ? 'text-brand-forest'
-                : 'text-brand-charcoal hover:text-brand-forest'
-            }`}
-          >
-            {item.label}
-            {isActive && (
-              <motion.div
-                layoutId="activeNav"
-                className="absolute inset-0 bg-brand-forest/10 rounded-lg -z-10"
-                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              />
-            )}
-          </Link>
-        );
-      })}
+    <nav
+      aria-label="Main navigation"
+      className={
+        mobile
+          ? "flex flex-col divide-y divide-brand-sand"
+          : "flex items-center gap-7"
+      }
+    >
+      {items.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={onNavigate}
+          aria-current={path === item.href ? "page" : undefined}
+          className={`${mobile ? "py-4 text-lg" : "py-3 text-sm"} ${path === item.href ? "underline underline-offset-8" : "hover:underline hover:underline-offset-8"}`}
+        >
+          {item.label}
+        </Link>
+      ))}
     </nav>
   );
 }

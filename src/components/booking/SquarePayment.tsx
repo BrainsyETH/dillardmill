@@ -1,142 +1,134 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
+// Minimal typings for the Square Web Payments SDK we use.
+interface SquareCard {
+  attach(selector: string): Promise<void>;
+  tokenize(): Promise<{ status: string; token?: string; errors?: { message: string }[] }>;
+  destroy(): Promise<void>;
+}
+interface SquarePayments {
+  card(): Promise<SquareCard>;
+  verifyBuyer?(
+    token: string,
+    details: Record<string, unknown>,
+  ): Promise<{ token?: string } | null>;
+}
 declare global {
   interface Window {
-    Square?: any;
+    Square?: { payments(appId: string, locationId: string): SquarePayments };
   }
 }
 
-interface SquarePaymentProps {
-  amount: number; // In cents
-  onSuccess: (paymentId: string) => void;
-  onError: (error: string) => void;
-  disabled?: boolean;
+const IS_PROD = process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT === 'production';
+const SCRIPT_SRC = IS_PROD
+  ? 'https://web.squarecdn.com/v1/square.js'
+  : 'https://sandbox.web.squarecdn.com/v1/square.js';
+
+function loadScript(): Promise<void> {
+  if (window.Square) return Promise.resolve();
+  const existing = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`);
+  return new Promise((resolve, reject) => {
+    const script = existing ?? document.createElement('script');
+    script.addEventListener('load', () => resolve());
+    script.addEventListener('error', () => reject(new Error('Could not load the payment form.')));
+    if (!existing) {
+      script.src = SCRIPT_SRC;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  });
 }
 
-export function SquarePayment({ amount, onSuccess, onError, disabled }: SquarePaymentProps) {
-  const [loading, setLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const cardRef = useRef<any>(null);
-  const paymentRef = useRef<any>(null);
+export interface CardHandle {
+  /** Tokenize the card and run buyer verification (3-D Secure) when available. */
+  tokenize(details: {
+    amountCents: number;
+    givenName: string;
+    familyName: string;
+    email: string;
+    phone: string;
+  }): Promise<{ sourceId: string; verificationToken?: string }>;
+}
 
-  useEffect(() => {
-    const loadSquare = async () => {
-      // Load Square Web SDK
-      if (!window.Square) {
-        const script = document.createElement('script');
-        script.src = 'https://sandbox.web.squarecdn.com/v1/square.js'; // Use production URL in production
-        script.async = true;
-        script.onload = initializeSquare;
-        document.body.appendChild(script);
-      } else {
-        initializeSquare();
-      }
-    };
+export const SquarePayment = forwardRef<CardHandle, { onReadyChange?: (ready: boolean) => void }>(
+  function SquarePayment({ onReadyChange }, ref) {
+    const cardRef = useRef<SquareCard | null>(null);
+    const paymentsRef = useRef<SquarePayments | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [ready, setReady] = useState(false);
 
-    const initializeSquare = async () => {
-      try {
-        const appId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
-        if (!appId) {
-          throw new Error('Square Application ID not configured');
+    useEffect(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const appId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
+          const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID;
+          if (!appId || !locationId) throw new Error('Online payments are not configured yet.');
+          await loadScript();
+          if (cancelled || !window.Square) return;
+          const payments = window.Square.payments(appId, locationId);
+          const card = await payments.card();
+          if (cancelled) {
+            await card.destroy();
+            return;
+          }
+          await card.attach('#square-card');
+          paymentsRef.current = payments;
+          cardRef.current = card;
+          setReady(true);
+        } catch (e) {
+          if (!cancelled) setError(e instanceof Error ? e.message : 'Could not load the payment form.');
         }
+      })();
+      return () => {
+        cancelled = true;
+        cardRef.current?.destroy().catch(() => {});
+        cardRef.current = null;
+      };
+    }, []);
 
-        const payments = window.Square.payments(appId, process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID);
-        paymentRef.current = payments;
+    useEffect(() => onReadyChange?.(ready), [ready, onReadyChange]);
 
-        const card = await payments.card();
-        await card.attach('#card-container');
-        cardRef.current = card;
-
-        setInitialized(true);
-      } catch (error: any) {
-        console.error('Square initialization error:', error);
-        onError('Payment system initialization failed. Please try again.');
-      }
-    };
-
-    loadSquare();
-
-    return () => {
-      if (cardRef.current) {
-        cardRef.current.destroy();
-      }
-    };
-  }, [onError]);
-
-  const handlePayment = async () => {
-    if (!cardRef.current || !paymentRef.current) {
-      onError('Payment not initialized');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Tokenize card details
-      const tokenResult = await cardRef.current.tokenize();
-
-      if (tokenResult.status === 'OK') {
-        // Send token to backend for processing
-        const response = await fetch('/api/booking/process-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sourceId: tokenResult.token,
-            amount,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Payment failed');
+    useImperativeHandle(ref, () => ({
+      async tokenize(details) {
+        if (!cardRef.current) throw new Error('The payment form is still loading.');
+        const result = await cardRef.current.tokenize();
+        if (result.status !== 'OK' || !result.token) {
+          throw new Error(result.errors?.map((e) => e.message).join(' ') || 'Please check your card details.');
         }
-
-        onSuccess(data.paymentId);
-      } else {
-        let errorMessage = 'Payment failed';
-        if (tokenResult.errors) {
-          errorMessage = tokenResult.errors.map((e: any) => e.message).join(', ');
+        let verificationToken: string | undefined;
+        try {
+          const verification = await paymentsRef.current?.verifyBuyer?.(result.token, {
+            amount: (details.amountCents / 100).toFixed(2),
+            currencyCode: 'USD',
+            intent: 'CHARGE',
+            billingContact: {
+              givenName: details.givenName,
+              familyName: details.familyName,
+              email: details.email,
+              phone: details.phone,
+            },
+          });
+          verificationToken = verification?.token;
+        } catch (e) {
+          // Verification is best-effort; Square still screens the authorization.
+          console.warn('Buyer verification skipped:', e);
         }
-        onError(errorMessage);
-      }
-    } catch (error: any) {
-      onError(error.message || 'Payment processing failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+        return { sourceId: result.token, verificationToken };
+      },
+    }));
 
-  return (
-    <div>
-      <div id="card-container" className="mb-4 min-h-[120px]" />
-
-      {!initialized && (
-        <div className="text-center py-4 text-gray-500">
-          Loading payment form...
-        </div>
-      )}
-
-      <button
-        onClick={handlePayment}
-        disabled={!initialized || loading || disabled}
-        className="w-full bg-stone-800 text-white px-6 py-4 rounded-lg font-semibold hover:bg-stone-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg"
-      >
-        {loading ? 'Processing...' : `Pay $${(amount / 100).toFixed(2)}`}
-      </button>
-
-      <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
-        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-          <path
-            fillRule="evenodd"
-            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <span>Secure payment powered by Square</span>
+    return (
+      <div>
+        <div id="square-card" className="min-h-[90px]" />
+        {!ready && !error && <p className="text-sm text-brand-charcoal/60">Loading secure card form…</p>}
+        {error && <p className="text-sm text-red-700">{error}</p>}
+        {!IS_PROD && ready && (
+          <p className="text-xs text-amber-700 mt-1">Test mode — use Square sandbox card 4111 1111 1111 1111.</p>
+        )}
       </div>
-    </div>
-  );
-}
+    );
+  },
+);

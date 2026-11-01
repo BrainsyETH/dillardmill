@@ -1,127 +1,96 @@
-'use client';
+"use client";
+import { useState } from "react";
+import Image from "next/image";
+import type { PropertyPhoto } from "@/lib/content/property";
+import { Lightbox } from "./Lightbox";
 
-import { useState } from 'react';
-import { Lightbox } from './Lightbox';
-
-interface GalleryImage {
-  image: any;
-  caption?: string;
-  alt?: string;
-  featured?: boolean;
-  unitName: string;
-  unitSlug: string;
-}
-
-interface GalleryGridProps {
-  images: GalleryImage[];
-  galleryData: any[];
-}
-
-export function GalleryGrid({ images, galleryData }: GalleryGridProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [filter, setFilter] = useState<string>('all');
-
-  // Get unique unit names for filter buttons
-  const units = Array.from(new Set(galleryData.map((unit) => ({
-    name: unit.unitName,
-    slug: unit.unitSlug,
-  })))).filter((unit) => unit.name);
-
-  // Filter images based on selected unit
-  const filteredImages = filter === 'all'
-    ? images
-    : images.filter((img) => img.unitSlug === filter);
-
-  const openLightbox = (index: number) => {
-    setSelectedIndex(index);
-  };
-
-  const closeLightbox = () => {
-    setSelectedIndex(null);
-  };
-
-  const goToNext = () => {
-    if (selectedIndex !== null && selectedIndex < filteredImages.length - 1) {
-      setSelectedIndex(selectedIndex + 1);
-    }
-  };
-
-  const goToPrev = () => {
-    if (selectedIndex !== null && selectedIndex > 0) {
-      setSelectedIndex(selectedIndex - 1);
-    }
-  };
-
+export function GalleryGrid({
+  images,
+  compact = false,
+}: {
+  images: PropertyPhoto[];
+  compact?: boolean;
+}) {
+  const [index, setIndex] = useState<number | null>(null);
+  const [filter, setFilter] = useState("All photographs");
+  const groups = [
+    "All photographs",
+    ...new Set(
+      images.map((i) => i.group).filter((g): g is string => Boolean(g)),
+    ),
+  ];
+  const visible = compact
+    ? images.slice(0, 3)
+    : images.filter((i) => filter === "All photographs" || i.group === filter);
+  if (!images.length) return null;
   return (
     <>
-      {/* Filter Buttons */}
-      <div className="flex flex-wrap gap-2 justify-center mb-8">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'all'
-              ? 'bg-stone-800 text-white'
-              : 'bg-stone-100 text-stone-800 hover:bg-stone-200'
-          }`}
+      {!compact && groups.length > 2 && (
+        <div
+          className="flex flex-wrap gap-x-6 gap-y-2 mb-8 border-b border-brand-sand"
+          aria-label="Filter photographs"
         >
-          All Photos
-        </button>
-        {units.map((unit) => (
-          <button
-            key={unit.slug}
-            onClick={() => setFilter(unit.slug)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === unit.slug
-                ? 'bg-stone-800 text-white'
-                : 'bg-stone-100 text-stone-800 hover:bg-stone-200'
-            }`}
-          >
-            {unit.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Image Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredImages.map((img, index) => (
-          <button
-            key={index}
-            onClick={() => openLightbox(index)}
-            className="group relative aspect-square bg-stone-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-          >
-            {/* Placeholder for image - actual images will show once uploaded to Sanity */}
-            <div className="absolute inset-0 flex items-center justify-center text-stone-400">
-              <span className="text-sm">Image from {img.unitName}</span>
-            </div>
-
-            {/* Overlay on hover */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-
-            {/* Caption */}
-            {img.caption && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-white text-sm font-medium">{img.caption}</p>
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {filteredImages.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          No images found for this filter.
+          {groups.map((g) => (
+            <button
+              key={g}
+              aria-pressed={g === filter}
+              onClick={() => setFilter(g)}
+              className={`py-3 border-b-2 ${g === filter ? "border-brand-forest" : "border-transparent text-brand-stone"}`}
+            >
+              {g}
+            </button>
+          ))}
         </div>
       )}
-
-      {/* Lightbox */}
-      {selectedIndex !== null && (
+      <div
+        className={
+          compact
+            ? "stay-gallery"
+            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-8"
+        }
+      >
+        {visible.map((p, i) => (
+          <figure
+            key={`${p.src}-${i}`}
+            className={compact && i === 0 ? "stay-gallery-main" : undefined}
+          >
+            <button
+              onClick={() => setIndex(images.indexOf(p))}
+              aria-label={`Open photograph: ${p.alt}`}
+              className={`relative block w-full overflow-hidden bg-brand-sand ${compact ? "h-full min-h-44" : "aspect-[4/3]"}`}
+            >
+              <Image
+                src={p.src}
+                alt={p.alt}
+                fill
+                sizes={
+                  compact
+                    ? "(max-width: 767px) 100vw, 65vw"
+                    : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                }
+                priority={compact && i === 0}
+                className="object-cover"
+              />
+              {compact && i === 0 && (
+                <span className="absolute bottom-4 left-4 bg-white text-brand-charcoal py-2 px-4 text-sm">
+                  View all {images.length} photos
+                </span>
+              )}
+            </button>
+            {!compact && p.caption && (
+              <figcaption className="text-sm pt-2 text-brand-stone">
+                {p.caption}
+              </figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+      {index !== null && (
         <Lightbox
-          image={filteredImages[selectedIndex]}
-          currentIndex={selectedIndex}
-          total={filteredImages.length}
-          onClose={closeLightbox}
-          onNext={goToNext}
-          onPrev={goToPrev}
+          images={images}
+          index={index}
+          onChange={setIndex}
+          onClose={() => setIndex(null)}
         />
       )}
     </>

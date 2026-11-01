@@ -1,75 +1,30 @@
-import { MetadataRoute } from 'next';
-
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://pinevalleylodging.com';
-  const currentDate = new Date();
-
-  return [
-    {
-      url: baseUrl,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/airstream`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/cottage`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/yurt`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/barn`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/booking`,
-      lastModified: currentDate,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/our-place`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/the-area`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/the-area/floating-outfitters`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/trails`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/contact`,
-      lastModified: currentDate,
-      changeFrequency: 'yearly',
-      priority: 0.5,
-    },
+import type { MetadataRoute } from "next";
+import { journalEntries } from "@/lib/content/journal";
+import { getAllUnits } from "@/lib/stays/queries";
+import { getUnitUrl } from "@/lib/utils/slugToUrl";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = (
+    process.env.NEXT_PUBLIC_SITE_URL || "https://dillardmill.com"
+  ).replace(/\/$/, "");
+  const [posts, units] = await Promise.all([journalEntries(), getAllUnits()]);
+  const routes = [
+    "",
+    "/lodging",
+    "/book-the-farm",
+    "/our-place",
+    "/the-area",
+    "/the-area/floating-outfitters",
+    "/trails",
+    "/dillardmill",
+    "/photos",
+    "/map",
+    "/reviews",
+    "/contact",
+    "/thoughts",
+    "/tiny-cabins",
+    ...units.map((u) => getUnitUrl(u.slug.current)),
   ];
+  return [...new Set(routes)]
+    .map((path) => ({ url: `${base}${path}` }))
+    .concat(posts.map((p) => ({ url: `${base}${p.path}` })));
 }

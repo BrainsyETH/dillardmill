@@ -83,7 +83,7 @@ Once you have:
 
 Let me know and I'll create scripts to:
 - Parse the XML automatically
-- Generate Sanity import files
+- Produce JSON you can compare against `src/lib/content/`
 - Bulk upload images
 - Migrate everything in minutes
 

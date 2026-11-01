@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
-import { Crimson_Pro, Source_Sans_3 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
-import { generateSEOMetadata, generateLocalBusinessStructuredData } from "@/lib/seo";
+import {
+  generateSEOMetadata,
+  generateLocalBusinessStructuredData,
+} from "@/lib/seo";
 import Script from "next/script";
 
-// Elegant serif for headings - evokes heritage & craftsmanship
-const crimsonPro = Crimson_Pro({
-  subsets: ["latin"],
-  variable: "--font-serif",
+const crimsonPro = localFont({
+  src: "../../public/fonts/crimsonpro.woff2",
+  variable: "--font-heading",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: "300 700",
 });
-
-// Clean, readable sans-serif for body text
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
-  variable: "--font-sans",
+const sourceSans = localFont({
+  src: "../../public/fonts/sourcesans3.woff2",
+  variable: "--font-body",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "300 700",
 });
 
 export const metadata: Metadata = generateSEOMetadata();
