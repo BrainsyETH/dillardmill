@@ -61,14 +61,14 @@ function stayTable(b: BookingRow) {
     .join("")}</table>`;
 }
 
-function layout(title: string, body: string) {
+export function layout(title: string, body: string) {
   return `<div style="font-family:Georgia,serif;color:#3A2A1E;max-width:560px;margin:auto">
     <h1 style="font-size:22px">${escapeHtml(title)}</h1>${body}
     <p style="margin-top:24px;color:#6F8291;font-size:13px">Pine Valley at Dillard Mill · 126 Dillard Mill Road, Davisville, MO 65456 · (314) 843-4321</p>
   </div>`;
 }
 
-async function send(
+export async function send(
   to: string,
   subject: string,
   html: string,

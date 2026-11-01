@@ -5,6 +5,7 @@ import { sql } from "./client";
 import { dbDate as iso } from "@/lib/booking/dates";
 
 export type UnavailableSource =
+  | "event"
   | "direct"
   | "block"
   | "airbnb"
@@ -45,6 +46,11 @@ export async function getUnavailableRanges(
     SELECT check_in, check_out, source, COALESCE(external_id, id::text), summary, unit_id, kind
       FROM external_bookings
      WHERE unit_id = ANY(${relatedUnitIds}::text[]) AND check_in < ${to} AND check_out > ${from}
+    UNION ALL
+    SELECT start_date, end_date, 'event', id::text, NULL, ${unitId}, NULL
+      FROM event_reservations
+     WHERE (status = 'confirmed' OR (status = 'held' AND expires_at > now()))
+       AND start_date < ${to} AND end_date > ${from}
     ORDER BY 1
   `;
   return rows.map((r) => ({

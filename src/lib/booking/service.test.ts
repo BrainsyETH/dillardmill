@@ -157,7 +157,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await db.exec(
-    "TRUNCATE bookings, external_bookings, calendar_blocks, calendar_sync_status",
+    "TRUNCATE bookings, external_bookings, calendar_blocks, calendar_sync_status CASCADE",
   );
   // The database identifies the whole-property listing by units.is_whole_property.
   await db.exec(`

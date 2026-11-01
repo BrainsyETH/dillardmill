@@ -59,6 +59,7 @@ function ImportStatus({ s }: { s?: SyncStatusRow }) {
 }
 
 function rangeLabel(r: { source: string; kind?: string }) {
+  if (r.source === "event") return "Whole-property event";
   if (r.source === "direct") return "Website booking";
   if (r.source === "block") return "Blocked here";
   return `${PLATFORM[r.source] ?? r.source} ${r.kind === "block" ? "block" : "reservation"}`;

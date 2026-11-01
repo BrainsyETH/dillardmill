@@ -10,9 +10,11 @@ const items = [
 ];
 export default function Navigation({
   mobile = false,
+  eventsEnabled = false,
   onNavigate,
 }: {
   mobile?: boolean;
+  eventsEnabled?: boolean;
   onNavigate?: () => void;
 }) {
   const path = usePathname();
@@ -25,7 +27,14 @@ export default function Navigation({
           : "flex items-center gap-7"
       }
     >
-      {items.map((item) => (
+      {(eventsEnabled
+        ? [
+            ...items.slice(0, 2),
+            { label: "Weddings & events", href: "/weddings" },
+            ...items.slice(2),
+          ]
+        : items
+      ).map((item) => (
         <Link
           key={item.href}
           href={item.href}
