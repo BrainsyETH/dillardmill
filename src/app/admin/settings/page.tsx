@@ -1,6 +1,11 @@
 import { AdminShell, Field, Section } from "@/components/admin/AdminShell";
 import { getSettings, listTaxes } from "@/lib/stays/repository";
-import { addTaxAction, deleteTaxAction, saveSettingsAction } from "./actions";
+import {
+  addTaxAction,
+  deleteTaxAction,
+  saveSettingsAction,
+  updateTaxAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings | Admin", robots: { index: false } };
@@ -30,25 +35,47 @@ export default async function SettingsPage({
           collect no tax.
         </p>
         {taxes.length > 0 && (
-          <ul className="mt-4 divide-y divide-brand-sand max-w-xl">
+          <div className="mt-4 divide-y divide-brand-sand max-w-3xl">
             {taxes.map((t) => (
-              <li key={t.id} className="py-3 flex justify-between gap-3">
-                <span>
-                  {t.name} — {t.ratePercent}%
+              <form
+                key={t.id}
+                action={updateTaxAction.bind(null, t.id)}
+                className="py-4 grid gap-4 sm:grid-cols-3 items-end"
+              >
+                <Field
+                  label="Name shown to guests"
+                  name="name"
+                  defaultValue={t.name}
+                  required
+                  maxLength={80}
+                />
+                <Field
+                  label="Rate (%)"
+                  name="ratePercent"
+                  inputMode="decimal"
+                  defaultValue={String(t.ratePercent)}
+                  required
+                />
+                <span className="flex gap-4 items-center">
+                  <button className="btn btn-outline">Save</button>
+                  <button
+                    formAction={deleteTaxAction.bind(null, t.id)}
+                    formNoValidate
+                    className="text-link text-sm"
+                  >
+                    Remove
+                  </button>
                 </span>
-                <form action={deleteTaxAction.bind(null, t.id)}>
-                  <button className="text-link text-sm">Remove</button>
-                </form>
-              </li>
+              </form>
             ))}
-          </ul>
+          </div>
         )}
         <form
           action={addTaxAction}
           className="mt-5 grid gap-4 sm:grid-cols-3 items-end max-w-2xl"
         >
           <Field
-            label="Name shown to guests"
+            label="New tax"
             name="name"
             required
             maxLength={80}

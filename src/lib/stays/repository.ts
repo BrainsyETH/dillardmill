@@ -146,28 +146,148 @@ export async function createUnit(input: UnitInput): Promise<string> {
   return String(rows[0].id);
 }
 
-export async function updateUnit(id: string, input: UnitInput) {
-  await sql`
-    UPDATE units SET
-      slug = ${input.slug}, name = ${input.name}, short_description = ${input.shortDescription},
-      sort_order = ${input.sortOrder}, listed = ${input.listed},
-      direct_booking_enabled = ${input.directBookingEnabled},
-      is_whole_property = ${input.isWholeProperty}, base_price_cents = ${input.basePriceCents},
-      cleaning_fee_cents = ${input.cleaningFeeCents}, max_guests = ${input.maxGuests},
-      base_guests = ${input.baseGuests}, extra_guest_fee_cents = ${input.extraGuestFeeCents},
-      pets_allowed = ${input.petsAllowed}, max_pets = ${input.maxPets},
-      pet_fee_cents = ${input.petFeeCents}, min_stay = ${input.minStay},
-      airbnb_ical_url = ${input.airbnbIcalUrl}, hipcamp_ical_url = ${input.hipcampIcalUrl},
-      vrbo_ical_url = ${input.vrboIcalUrl}, airbnb_url = ${input.airbnbUrl},
-      hipcamp_url = ${input.hipcampUrl}, vrbo_url = ${input.vrboUrl}, updated_at = now()
-    WHERE id = ${id}
+const PLATFORM_LABEL = {
+  airbnb: "Airbnb",
+  hipcamp: "Hipcamp",
+  vrbo: "VRBO",
+} as const;
+type Platform = keyof typeof PLATFORM_LABEL;
+const icalField = {
+  airbnb: "airbnbIcalUrl",
+  hipcamp: "hipcampIcalUrl",
+  vrbo: "vrboIcalUrl",
+} as const satisfies Record<Platform, keyof UnitInput>;
+
+export interface UpdateUnitOptions {
+  /**
+   * When a calendar link is removed: keep its upcoming imported dates as
+   * owner blocks (true) or reopen them (false).
+   */
+  keepDisconnectedAsBlocks?: boolean;
+}
+
+export interface UpdateUnitResult {
+  /** Platforms whose link was removed or replaced. */
+  disconnected: Platform[];
+  /** Platforms whose link is new or changed and should be imported now. */
+  reconnected: Platform[];
+}
+
+/**
+ * Active bookings of other stays that overlap this stay's active bookings.
+ * Making this stay the whole property would make those pairs conflict.
+ */
+export async function wholePropertyConflicts(id: string) {
+  const rows = await sql`
+    SELECT a.check_in AS a_in, a.check_out AS a_out, b.unit_name AS other, b.check_in AS b_in, b.check_out AS b_out
+      FROM bookings a
+      JOIN bookings b
+        ON b.unit_id <> a.unit_id
+       AND daterange(a.check_in, a.check_out, '[)') && daterange(b.check_in, b.check_out, '[)')
+     WHERE a.unit_id = ${id}
+       AND a.booking_status IN ('pending_payment', 'requested', 'confirmed')
+       AND b.booking_status IN ('pending_payment', 'requested', 'confirmed')
+     ORDER BY a.check_in
+     LIMIT 10
   `;
+  return rows.map((r) => ({
+    other: String(r.other),
+    start: dbDate(r.b_in),
+    end: dbDate(r.b_out),
+  }));
+}
+
+/**
+ * Save a stay. Runs as one transaction so derived data never goes stale:
+ * - Changing the whole-property flag recomputes the inventory protection of
+ *   this stay's existing bookings (the database rejects the save if that
+ *   would make active bookings overlap).
+ * - Removing or replacing a platform calendar link clears that platform's
+ *   imported dates and sync status (optionally keeping upcoming dates as
+ *   owner blocks), so they can't linger with nothing left to refresh them.
+ */
+export async function updateUnit(
+  id: string,
+  input: UnitInput,
+  options: UpdateUnitOptions = {},
+): Promise<UpdateUnitResult> {
+  const current = await getUnitById(id);
+  if (!current) throw new Error("Stay not found");
+
+  const disconnected: Platform[] = [];
+  const reconnected: Platform[] = [];
+  for (const p of Object.keys(icalField) as Platform[]) {
+    const before = current[icalField[p]];
+    const after = input[icalField[p]];
+    if (before && before !== after) disconnected.push(p);
+    if (after && after !== before) reconnected.push(p);
+  }
+
+  const queries = [
+    sql`
+      UPDATE units SET
+        slug = ${input.slug}, name = ${input.name}, short_description = ${input.shortDescription},
+        sort_order = ${input.sortOrder}, listed = ${input.listed},
+        direct_booking_enabled = ${input.directBookingEnabled},
+        is_whole_property = ${input.isWholeProperty}, base_price_cents = ${input.basePriceCents},
+        cleaning_fee_cents = ${input.cleaningFeeCents}, max_guests = ${input.maxGuests},
+        base_guests = ${input.baseGuests}, extra_guest_fee_cents = ${input.extraGuestFeeCents},
+        pets_allowed = ${input.petsAllowed}, max_pets = ${input.maxPets},
+        pet_fee_cents = ${input.petFeeCents}, min_stay = ${input.minStay},
+        airbnb_ical_url = ${input.airbnbIcalUrl}, hipcamp_ical_url = ${input.hipcampIcalUrl},
+        vrbo_ical_url = ${input.vrboIcalUrl}, airbnb_url = ${input.airbnbUrl},
+        hipcamp_url = ${input.hipcampUrl}, vrbo_url = ${input.vrboUrl}, updated_at = now()
+      WHERE id = ${id}
+    `,
+  ];
+
+  if (current.isWholeProperty !== input.isWholeProperty) {
+    // Re-fires the inventory trigger for every booking of this stay.
+    queries.push(
+      sql`UPDATE bookings SET unit_id = unit_id WHERE unit_id = ${id}`,
+    );
+  }
+
+  for (const p of disconnected) {
+    const removed = !input[icalField[p]];
+    if (removed && options.keepDisconnectedAsBlocks) {
+      const note = `Kept from ${PLATFORM_LABEL[p]} when its calendar link was removed`;
+      queries.push(sql`
+        INSERT INTO calendar_blocks (unit_id, start_date, end_date, note)
+        SELECT unit_id, check_in, check_out, ${note}
+          FROM external_bookings
+         WHERE unit_id = ${id} AND source = ${p} AND check_out > CURRENT_DATE
+      `);
+    }
+    queries.push(
+      sql`DELETE FROM external_bookings WHERE unit_id = ${id} AND source = ${p}`,
+    );
+    queries.push(
+      sql`DELETE FROM calendar_sync_status WHERE unit_id = ${id} AND source = ${p}`,
+    );
+  }
+
+  await sql.transaction(queries);
+  return { disconnected, reconnected };
 }
 
 export async function addSeason(unitId: string, s: Omit<SeasonRecord, "id">) {
   await sql`
     INSERT INTO seasonal_rates (unit_id, name, start_date, end_date, price_cents)
     VALUES (${unitId}, ${s.name}, ${s.startDate}, ${s.endDate}, ${s.priceCents})
+  `;
+}
+
+export async function updateSeason(
+  unitId: string,
+  seasonId: string,
+  s: Omit<SeasonRecord, "id">,
+) {
+  await sql`
+    UPDATE seasonal_rates
+       SET name = ${s.name}, start_date = ${s.startDate}, end_date = ${s.endDate},
+           price_cents = ${s.priceCents}
+     WHERE id = ${seasonId} AND unit_id = ${unitId}
   `;
 }
 
@@ -189,6 +309,10 @@ export async function addTax(name: string, ratePercent: number) {
     INSERT INTO tax_rates (name, rate_percent, sort_order)
     VALUES (${name}, ${ratePercent}, (SELECT COALESCE(MAX(sort_order), 0) + 1 FROM tax_rates))
   `;
+}
+
+export async function updateTax(id: string, name: string, ratePercent: number) {
+  await sql`UPDATE tax_rates SET name = ${name}, rate_percent = ${ratePercent} WHERE id = ${id}`;
 }
 
 export async function deleteTax(id: string) {

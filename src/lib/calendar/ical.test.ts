@@ -107,21 +107,4 @@ describe("imported event kinds", () => {
     expect(classifyImportedEvent("Blocked")).toBe("block");
     expect(classifyImportedEvent(null)).toBe("reservation");
   });
-
-  it("recognises a request's own echo, but not a wider or real conflict", async () => {
-    const { isEchoOf } = await import("./ical");
-    const stay = { checkIn: "2026-11-10", checkOut: "2026-11-12" };
-    expect(
-      isEchoOf({ start: "2026-11-10", end: "2026-11-12", kind: "block" }, stay),
-    ).toBe(true);
-    expect(
-      isEchoOf({ start: "2026-11-09", end: "2026-11-12", kind: "block" }, stay),
-    ).toBe(false);
-    expect(
-      isEchoOf(
-        { start: "2026-11-10", end: "2026-11-12", kind: "reservation" },
-        stay,
-      ),
-    ).toBe(false);
-  });
 });

@@ -9,8 +9,12 @@ import {
   createUnit,
   deleteSeason,
   getUnitById,
+  updateSeason,
   updateUnit,
+  wholePropertyConflicts,
 } from "@/lib/stays/repository";
+import { toBookable } from "@/lib/booking/units";
+import { syncUnitSource } from "@/lib/calendar/sync";
 
 async function friendlyDbError(error: unknown): Promise<string> {
   const e = error as { code?: string; message?: string };
@@ -19,6 +23,9 @@ async function friendlyDbError(error: unknown): Promise<string> {
     return /whole_property/.test(message)
       ? "Only one stay can be the whole property."
       : "Another stay already uses that web address.";
+  }
+  if (e?.code === "23P01" || /inventory_no_overlap|exclusion/i.test(message)) {
+    return "This change would make existing bookings overlap. Nothing was saved.";
   }
   if (e?.code === "23514" || /check constraint/i.test(message)) {
     return "Some values are out of range. Check prices, guest counts and dates.";
@@ -65,10 +72,38 @@ export async function saveStayAction(id: string, form: FormData) {
   form.set("slug", existing.slug);
   const parsed = parseUnitForm(form);
   if (!parsed.ok) back(stayPath(id), { error: parsed.error });
+
+  // Becoming the whole property: name the bookings that would collide.
+  if (parsed.value.isWholeProperty && !existing.isWholeProperty) {
+    const clashes = await wholePropertyConflicts(id);
+    if (clashes.length) {
+      back(stayPath(id), {
+        error: `Can't make ${existing.name} the whole property: it has bookings that overlap ${clashes
+          .map((c) => `${c.other} (${c.start} → ${c.end})`)
+          .join(", ")}. Resolve those first. Nothing was saved.`,
+      });
+    }
+  }
+
+  let result: Awaited<ReturnType<typeof updateUnit>>;
   try {
-    await updateUnit(id, parsed.value);
+    result = await updateUnit(id, parsed.value, {
+      keepDisconnectedAsBlocks: form.get("keepDisconnectedAsBlocks") === "on",
+    });
   } catch (error) {
     back(stayPath(id), { error: await friendlyDbError(error) });
+  }
+
+  // Import new or replaced calendar links straight away, so their dates are
+  // blocked now rather than at the next scheduled run.
+  const saved = await getUnitById(id);
+  if (saved && result.reconnected.length) {
+    const unit = toBookable(saved);
+    await Promise.all(
+      result.reconnected.map((p) =>
+        syncUnitSource(unit, p, unit.icalUrls[p]!).catch(() => null),
+      ),
+    );
   }
   refreshSite();
   back(stayPath(id), { saved: "1" });
@@ -80,6 +115,23 @@ export async function addSeasonAction(unitId: string, form: FormData) {
   if (!parsed.ok) back(stayPath(unitId), { error: parsed.error });
   try {
     await addSeason(unitId, parsed.value);
+  } catch (error) {
+    back(stayPath(unitId), { error: await friendlyDbError(error) });
+  }
+  refreshSite();
+  back(stayPath(unitId), { saved: "1" });
+}
+
+export async function updateSeasonAction(
+  unitId: string,
+  seasonId: string,
+  form: FormData,
+) {
+  await requireAdmin();
+  const parsed = parseSeasonForm(form);
+  if (!parsed.ok) back(stayPath(unitId), { error: parsed.error });
+  try {
+    await updateSeason(unitId, seasonId, parsed.value);
   } catch (error) {
     back(stayPath(unitId), { error: await friendlyDbError(error) });
   }

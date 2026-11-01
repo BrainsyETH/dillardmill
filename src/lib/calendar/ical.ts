@@ -129,19 +129,3 @@ export function classifyImportedEvent(
     ? "block"
     : "reservation";
 }
-
-/**
- * A block that sits entirely inside a pending website request's own dates is
- * almost certainly that request coming back from a platform that imported
- * our calendar. It must not stop the owner approving the request.
- */
-export function isEchoOf(
-  block: { start: string; end: string; kind?: ImportedKind },
-  stay: { checkIn: string; checkOut: string },
-): boolean {
-  return (
-    block.kind === "block" &&
-    block.start >= stay.checkIn &&
-    block.end <= stay.checkOut
-  );
-}

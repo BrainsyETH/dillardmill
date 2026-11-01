@@ -515,11 +515,47 @@ describe("manual-first calendar handling", () => {
       "END:VCALENDAR",
     ].join("\r\n");
 
-  it("approves after Airbnb re-exports the request itself as 'Not available'", async () => {
+  it("never approves over an imported block without the owner's explicit confirmation", async () => {
+    // Export is off: a block here is a genuine Airbnb block, not an echo.
     const { id } = await pending();
     state.airbnbFeed = airbnbBlock(d(30), d(32));
-    expect(await service.approveBooking(id)).toMatchObject({ ok: true });
+    const r = await service.approveBooking(id);
+    expect(r).toMatchObject({ ok: false, code: "blocks_need_review" });
+    expect(square.capturePayment).not.toHaveBeenCalled();
+    expect(!r.ok && r.blocks).toEqual([
+      expect.objectContaining({
+        stay: "Cozy Cottage",
+        platform: "Airbnb",
+        start: d(30),
+        end: d(32),
+      }),
+    ]);
+  });
+
+  it("approves once the owner confirms exactly the blocks shown, and records it", async () => {
+    const { id } = await pending();
+    state.airbnbFeed = airbnbBlock(d(30), d(32));
+    const review = await service.approveBooking(id);
+    const keys = !review.ok ? review.blocks!.map((b) => b.key) : [];
+    const r = await service.approveBooking(id, { confirmedBlockKeys: keys });
+    expect(r).toMatchObject({ ok: true });
     expect(square.capturePayment).toHaveBeenCalledTimes(1);
+    const { rows } = await db.query<{ decision_note: string }>(
+      "SELECT decision_note FROM bookings WHERE id = $1",
+      [id],
+    );
+    expect(rows[0].decision_note).toMatch(/Owner confirmed these blocks/);
+  });
+
+  it("asks again if a new block appears after the owner's review", async () => {
+    const { id } = await pending();
+    state.airbnbFeed = airbnbBlock(d(30), d(32));
+    const review = await service.approveBooking(id);
+    const keys = !review.ok ? review.blocks!.map((b) => b.key) : [];
+    state.airbnbFeed = airbnbBlock(d(29), d(32)); // different block now
+    const r = await service.approveBooking(id, { confirmedBlockKeys: keys });
+    expect(r).toMatchObject({ ok: false, code: "blocks_need_review" });
+    expect(square.capturePayment).not.toHaveBeenCalled();
   });
 
   it("still refuses a real Airbnb reservation on those nights", async () => {
@@ -532,13 +568,11 @@ describe("manual-first calendar handling", () => {
     expect(square.capturePayment).not.toHaveBeenCalled();
   });
 
-  it("still refuses a block that reaches beyond the request's dates", async () => {
+  it("names the stay and platform when a calendar can't be refreshed", async () => {
     const { id } = await pending();
-    state.airbnbFeed = airbnbBlock(d(29), d(32));
-    expect(await service.approveBooking(id)).toMatchObject({
-      ok: false,
-      code: "dates_taken",
-    });
+    state.airbnbStatus = 503;
+    const r = await service.approveBooking(id);
+    expect(!r.ok && r.error).toMatch(/Cozy Cottage — Airbnb/);
   });
 
   it("lets the owner approve after checking by hand when a calendar link is down", async () => {
@@ -556,7 +590,9 @@ describe("manual-first calendar handling", () => {
       "SELECT decision_note FROM bookings WHERE id = $1",
       [id],
     );
-    expect(rows[0].decision_note).toMatch(/checked by hand/);
+    expect(rows[0].decision_note).toMatch(
+      /checking by hand \(couldn.t refresh: Cozy Cottage — Airbnb\)/,
+    );
   });
 
   it("publishes no outbound calendar unless export is switched on", async () => {

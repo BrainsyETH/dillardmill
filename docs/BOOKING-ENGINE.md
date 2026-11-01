@@ -41,6 +41,15 @@ hidden with online requests off; add their photos and description to
 Online requests can only be switched on once a stay has a nightly price
 (enforced by the database too).
 
+**Whole property.** Changing a stay's whole-property flag re-checks its
+existing bookings in the same save. If that would make active bookings
+overlap, the save is refused and the clashing stays and dates are named.
+
+**Removing a calendar link** clears that platform's imported dates and sync
+status in the same save, so nothing lingers with no way to refresh it. Tick
+*keep its upcoming dates as blocks* to turn them into owner blocks instead.
+Adding or replacing a link imports it straight away.
+
 ## How a booking works (request to book)
 
 A guest picks dates, sees a price computed by the server, enters details,
@@ -92,9 +101,20 @@ can't request dates already taken there. It cannot change anything on the
 platform and cannot cause sync loops. Leave a link blank to keep that
 platform fully manual.
 
-When a link can't be refreshed at approval time, the owner sees why and can
-choose **Approve anyway — I checked the calendars**; the decision is recorded
-on the booking.
+**At approval** the website re-imports the relevant calendars (all stays, for
+the Farm) and re-checks the dates:
+
+- A reservation on another platform, another website booking, or a block
+  entered here always stops approval, naming the stay, platform and dates.
+- An imported **block** ("Not available") is never decided automatically: it
+  could be a genuine block or availability rule on the platform, or a block
+  you placed for this request. Each one is listed and you approve only by
+  confirming those exact blocks are for this request. If a different block
+  appears before you confirm, you're asked again. The confirmation is
+  recorded on the booking.
+- If a calendar link can't be refreshed, the message names which stay and
+  platform. You can tick *I checked those calendars by hand* and approve; that
+  is recorded too.
 
 ### Turning on two-way sync later
 
@@ -121,8 +141,9 @@ Rules the code already enforces so this is safe:
   our own bookings, and forwarding them lets dates circulate between
   platforms indefinitely.
 - A stay's own platform reservations are left out of that platform's feed.
-- At approval, a block that falls entirely within the request's own dates is
-  treated as the request echoing back, not as a conflict.
+- At approval, an imported block that is really our own request coming back
+  still requires the owner's explicit confirmation (above); dates alone never
+  decide it.
 
 Platforms re-read imported calendars on their own schedule (Airbnb: roughly
 every 1.5–3 hours). If that lag or keeping prices in sync becomes a burden, the
@@ -134,7 +155,10 @@ decision notes in `MIGRATION-AUDIT.md`.
 1. **Vercel Pro**, with the environment variables in `.env.example`.
 2. **Database:** `DATABASE_URL=… npm run db:migrate`. Migrations are
    idempotent and recorded in `schema_migrations`. Migration 003 seeds the
-   four published stays with no price and online requests off.
+   four published stays with no price and online requests off, and re-points
+   any existing bookings, owner blocks and imported rows from old Sanity IDs
+   to the new stays by web address. If any record can't be matched it stops
+   with a message and changes nothing.
 3. **Admin sign-in:** set `ADMIN_SESSION_SECRET` and `ADMIN_EMAILS`. For
    Google sign-in create an OAuth client (Google Cloud console → APIs &
    Services → Credentials → OAuth client ID → Web application, in the

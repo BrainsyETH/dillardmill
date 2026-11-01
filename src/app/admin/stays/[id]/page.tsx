@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   AdminShell,
   Check,
@@ -7,11 +8,11 @@ import {
 } from "@/components/admin/AdminShell";
 import { getUnitById } from "@/lib/stays/repository";
 import { centsToInput } from "@/lib/stays/admin-input";
-import { formatCents } from "@/lib/booking/pricing";
 import {
   addSeasonAction,
   deleteSeasonAction,
   saveStayAction,
+  updateSeasonAction,
 } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,26 @@ export const metadata = {
   title: "Edit stay | Admin",
   robots: { index: false },
 };
+
+/** Occasional settings, folded away so price and availability stay prominent. */
+function Fold({
+  title,
+  open,
+  children,
+}: {
+  title: string;
+  open?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details className="border-t border-brand-sand pt-5 mt-8" open={open}>
+      <summary className="cursor-pointer section-title text-2xl">
+        {title}
+      </summary>
+      <div className="grid gap-5 sm:grid-cols-2 mt-4">{children}</div>
+    </details>
+  );
+}
 
 export default async function EditStay({
   params,
@@ -33,6 +54,9 @@ export default async function EditStay({
 
   const save = saveStayAction.bind(null, unit.id);
   const addSeason = addSeasonAction.bind(null, unit.id);
+  const anyCalendar = Boolean(
+    unit.airbnbIcalUrl || unit.hipcampIcalUrl || unit.vrboIcalUrl,
+  );
 
   return (
     <AdminShell
@@ -40,10 +64,9 @@ export default async function EditStay({
       back={{ href: "/admin/stays", label: "Stays & pricing" }}
       intro={
         <>
-          Web address: <code>{unit.slug}</code>. Amounts are in US dollars
-          before tax; taxes are set in{" "}
+          Amounts are in US dollars before tax; taxes are set in{" "}
           <a className="text-link" href="/admin/settings">
-            Settings
+            Booking settings
           </a>
           .
         </>
@@ -59,46 +82,8 @@ export default async function EditStay({
     >
       <form action={save}>
         <input type="hidden" name="slug" value={unit.slug} />
-        <Section title="Basics">
-          <Field
-            label="Name"
-            name="name"
-            defaultValue={unit.name}
-            required
-            maxLength={120}
-          />
-          <Field
-            label="Sort order"
-            name="sortOrder"
-            type="number"
-            defaultValue={unit.sortOrder}
-            hint="Lower numbers appear first"
-          />
-          <label className="block sm:col-span-2">
-            <span className="field-label">Short description (optional)</span>
-            <textarea
-              className="field"
-              name="shortDescription"
-              rows={3}
-              maxLength={600}
-              defaultValue={unit.shortDescription ?? ""}
-              placeholder="Leave blank to use the description from the website content"
-            />
-          </label>
-          <Check
-            label="Show on website"
-            name="listed"
-            defaultChecked={unit.listed}
-          />
-          <Check
-            label="Whole property"
-            name="isWholeProperty"
-            defaultChecked={unit.isWholeProperty}
-            hint="Booking this stay blocks every other stay, and any booking blocks this one (the Farm)."
-          />
-        </Section>
 
-        <Section title="Price">
+        <Section title="Price & availability">
           <Field
             label="Nightly price"
             name="basePriceCents"
@@ -123,6 +108,18 @@ export default async function EditStay({
             max={60}
             defaultValue={unit.minStay}
             required
+          />
+          <div />
+          <Check
+            label="Show on website"
+            name="listed"
+            defaultChecked={unit.listed}
+          />
+          <Check
+            label="Accept booking requests online"
+            name="directBookingEnabled"
+            defaultChecked={unit.directBookingEnabled}
+            hint="Guests request dates and authorize a card; you approve each one. Needs a nightly price. When off, the stay page shows an inquiry form."
           />
         </Section>
 
@@ -178,25 +175,57 @@ export default async function EditStay({
           />
         </Section>
 
-        <Section title="Online booking">
+        <button className="btn btn-primary mt-8">Save {unit.name}</button>
+
+        <Fold title="Name, description & order">
+          <Field
+            label="Name"
+            name="name"
+            defaultValue={unit.name}
+            required
+            maxLength={120}
+          />
+          <Field
+            label="Sort order"
+            name="sortOrder"
+            type="number"
+            defaultValue={unit.sortOrder}
+            hint="Lower numbers appear first"
+          />
+          <label className="block sm:col-span-2">
+            <span className="field-label">Short description (optional)</span>
+            <textarea
+              className="field"
+              name="shortDescription"
+              rows={3}
+              maxLength={600}
+              defaultValue={unit.shortDescription ?? ""}
+              placeholder="Leave blank to use the description from the website content"
+            />
+          </label>
+          <p className="sm:col-span-2 text-sm text-brand-stone">
+            Web address: <code>{unit.slug}</code> (fixed — photos and the page
+            are keyed to it).
+          </p>
+        </Fold>
+
+        <Fold title="Whole property">
           <div className="sm:col-span-2">
             <Check
-              label="Accept booking requests on the website"
-              name="directBookingEnabled"
-              defaultChecked={unit.directBookingEnabled}
-              hint="Guests request dates and authorize a card; you approve each one in Bookings. Needs a nightly price. When off, the stay page shows an inquiry form."
+              label="This stay is the whole property"
+              name="isWholeProperty"
+              defaultChecked={unit.isWholeProperty}
+              hint="Booking it blocks every other stay, and any other booking blocks it (the Farm). Existing bookings are re-checked when you change this; the save is refused if they would overlap."
             />
           </div>
-        </Section>
+        </Fold>
 
-        <Section title="Other platforms">
+        <Fold title="Other platforms" open={anyCalendar}>
           <p className="sm:col-span-2 text-sm text-brand-stone">
-            <strong>Calendar links (optional).</strong> Paste a platform&apos;s{" "}
-            <em>export</em> calendar link and the website reads its bookings
-            automatically, so guests can&apos;t request dates already taken
-            there. Leave blank to manage that platform by hand: when you approve
-            a website booking, block the dates on the platform yourself, and
-            block platform bookings here under Calendars.
+            <strong>Calendar links are optional.</strong> Paste a
+            platform&apos;s <em>export</em> calendar link and the website
+            imports its bookings, so guests can&apos;t request dates already
+            taken there. Leave blank to manage that platform by hand.
           </p>
           <Field
             label="Airbnb calendar link"
@@ -217,7 +246,14 @@ export default async function EditStay({
             type="url"
             defaultValue={unit.vrboIcalUrl}
           />
-          <div />
+          <div className="sm:col-span-2">
+            <Check
+              label="If I remove a calendar link, keep its upcoming dates as blocks"
+              name="keepDisconnectedAsBlocks"
+              defaultChecked
+              hint="Otherwise those dates reopen for website requests immediately."
+            />
+          </div>
           <Field
             label="Airbnb listing page"
             name="airbnbUrl"
@@ -236,42 +272,74 @@ export default async function EditStay({
             type="url"
             defaultValue={unit.vrboUrl}
           />
-        </Section>
-
-        <button className="btn btn-primary mt-8">Save {unit.name}</button>
+        </Fold>
       </form>
 
       <section className="border-t border-brand-sand pt-6 mt-12">
         <h2 className="section-title text-2xl">Seasonal prices</h2>
         <p className="text-sm text-brand-stone mt-2 max-w-2xl">
           A season replaces the nightly price for every night from its first to
-          its last date (inclusive). If seasons overlap, the one that starts
+          its last date (inclusive). Where seasons overlap, the one that starts
           later wins — so a holiday weekend can sit inside a longer season.
         </p>
         {unit.seasons.length > 0 && (
-          <ul className="mt-4 divide-y divide-brand-sand">
+          <div className="mt-4 divide-y divide-brand-sand">
             {unit.seasons.map((s) => (
-              <li
-                key={s.id}
-                className="py-3 flex flex-wrap items-center justify-between gap-3"
-              >
-                <span>
-                  <strong>{s.name}</strong> · {s.startDate} → {s.endDate} ·{" "}
-                  {formatCents(s.priceCents)}/night
-                </span>
-                <form action={deleteSeasonAction.bind(null, unit.id, s.id)}>
-                  <button className="text-link text-sm">Remove</button>
+              <div key={s.id} className="py-4">
+                <form
+                  action={updateSeasonAction.bind(null, unit.id, s.id)}
+                  className="grid gap-4 sm:grid-cols-5 items-end"
+                >
+                  <Field
+                    label="Season"
+                    name="name"
+                    defaultValue={s.name}
+                    required
+                    maxLength={80}
+                  />
+                  <Field
+                    label="First night"
+                    name="startDate"
+                    type="date"
+                    defaultValue={s.startDate}
+                    required
+                  />
+                  <Field
+                    label="Last night"
+                    name="endDate"
+                    type="date"
+                    defaultValue={s.endDate}
+                    required
+                  />
+                  <Field
+                    label="Nightly price"
+                    name="price"
+                    prefix="$"
+                    inputMode="decimal"
+                    defaultValue={centsToInput(s.priceCents)}
+                    required
+                  />
+                  <span className="flex gap-4 items-center">
+                    <button className="btn btn-outline">Save</button>
+                    <button
+                      formAction={deleteSeasonAction.bind(null, unit.id, s.id)}
+                      formNoValidate
+                      className="text-link text-sm"
+                    >
+                      Remove
+                    </button>
+                  </span>
                 </form>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
         <form
           action={addSeason}
-          className="mt-5 grid gap-4 sm:grid-cols-5 items-end"
+          className="mt-6 grid gap-4 sm:grid-cols-5 items-end"
         >
           <Field
-            label="Season"
+            label="New season"
             name="name"
             required
             maxLength={80}

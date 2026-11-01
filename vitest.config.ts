@@ -8,5 +8,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'node',
+    // PGlite (real Postgres in WASM) takes a few seconds to start per database.
+    testTimeout: 30_000,
   },
 });

@@ -14,6 +14,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("approve"),
     calendarsCheckedManually: z.boolean().optional(),
+    confirmedBlockKeys: z.array(z.string().max(300)).max(100).optional(),
   }),
   z.object({
     action: z.literal("decline"),
@@ -43,13 +44,14 @@ export async function POST(
       body.action === "approve"
         ? await approveBooking(id, {
             calendarsCheckedManually: body.calendarsCheckedManually,
+            confirmedBlockKeys: body.confirmedBlockKeys,
           })
         : body.action === "decline"
           ? await declineBooking(id, body.note)
           : await cancelBooking(id, body.refundCents, body.note);
     if (!result.ok)
       return NextResponse.json(
-        { error: result.error, code: result.code },
+        { error: result.error, code: result.code, blocks: result.blocks },
         { status: result.status },
       );
     return NextResponse.json({

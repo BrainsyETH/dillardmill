@@ -119,3 +119,147 @@ describe("property data in Postgres", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("saving a stay keeps derived data consistent", () => {
+  const insertBooking = (
+    unitId: string,
+    slug: string,
+    checkIn: string,
+    checkOut: string,
+    code: string,
+  ) =>
+    (state.sql as (
+      s: TemplateStringsArray,
+      ...v: unknown[]
+    ) => Promise<unknown>)`
+      INSERT INTO bookings (guest_name, guest_email, unit_id, unit_slug, unit_name, check_in, check_out,
+        num_guests, num_nights, base_price, cleaning_fee, total_amount, booking_status, confirmation_code)
+      VALUES ('Guest', 'g@example.com', ${unitId}, ${slug}, ${slug}, ${checkIn}, ${checkOut},
+        2, 2, 1, 1, 1, 'confirmed', ${code})`;
+  const q = (s: TemplateStringsArray, ...v: unknown[]) =>
+    (
+      state.sql as (
+        s: TemplateStringsArray,
+        ...v: unknown[]
+      ) => Promise<Record<string, unknown>[]>
+    )(s, ...v);
+
+  it("clears a disconnected calendar's imported dates and sync status", async () => {
+    const airstream = (await repo.getUnitBySlug("original-airstream"))!;
+    await repo.updateUnit(airstream.id, {
+      ...airstream,
+      airbnbIcalUrl: "https://www.airbnb.com/calendar/ical/9.ics",
+    });
+    await q`INSERT INTO external_bookings (unit_id, check_in, check_out, source, kind)
+            VALUES (${airstream.id}, '2099-01-10', '2099-01-12', 'airbnb', 'reservation')`;
+    await q`INSERT INTO calendar_sync_status (unit_id, source, last_success_at) VALUES (${airstream.id}, 'airbnb', now())`;
+
+    const saved = (await repo.getUnitById(airstream.id))!;
+    const r = await repo.updateUnit(airstream.id, {
+      ...saved,
+      airbnbIcalUrl: null,
+    });
+    expect(r.disconnected).toEqual(["airbnb"]);
+    expect(
+      await q`SELECT * FROM external_bookings WHERE unit_id = ${airstream.id}`,
+    ).toHaveLength(0);
+    expect(
+      await q`SELECT * FROM calendar_sync_status WHERE unit_id = ${airstream.id}`,
+    ).toHaveLength(0);
+    expect(
+      await q`SELECT * FROM calendar_blocks WHERE unit_id = ${airstream.id}`,
+    ).toHaveLength(0);
+  });
+
+  it("can keep a disconnected calendar's upcoming dates as owner blocks", async () => {
+    const airstream = (await repo.getUnitBySlug("original-airstream"))!;
+    await repo.updateUnit(airstream.id, {
+      ...airstream,
+      airbnbIcalUrl: "https://www.airbnb.com/calendar/ical/9.ics",
+    });
+    await q`INSERT INTO external_bookings (unit_id, check_in, check_out, source, kind) VALUES
+            (${airstream.id}, '2099-02-10', '2099-02-12', 'airbnb', 'reservation'),
+            (${airstream.id}, '2000-02-10', '2000-02-12', 'airbnb', 'reservation')`;
+    const saved = (await repo.getUnitById(airstream.id))!;
+    await repo.updateUnit(
+      airstream.id,
+      { ...saved, airbnbIcalUrl: null },
+      { keepDisconnectedAsBlocks: true },
+    );
+    const blocks =
+      await q`SELECT start_date::text AS s, note FROM calendar_blocks WHERE unit_id = ${airstream.id}`;
+    expect(blocks).toEqual([
+      {
+        s: "2099-02-10",
+        note: "Kept from Airbnb when its calendar link was removed",
+      },
+    ]);
+    expect(
+      await q`SELECT * FROM external_bookings WHERE unit_id = ${airstream.id}`,
+    ).toHaveLength(0);
+  });
+
+  it("refuses to make a stay the whole property while its bookings overlap other stays'", async () => {
+    await q`DELETE FROM bookings`;
+    const farm = (await repo.getUnitBySlug("book-the-farm"))!;
+    await repo.updateUnit(farm.id, { ...farm, isWholeProperty: false });
+    const seb = (await repo.getUnitBySlug("the-sebastian"))!;
+    await insertBooking(
+      seb.id,
+      seb.slug,
+      "2099-03-10",
+      "2099-03-12",
+      "PV-SEB00001",
+    );
+    await insertBooking(
+      "cozy-cottage",
+      "cozy-cottage",
+      "2099-03-11",
+      "2099-03-13",
+      "PV-COT00001",
+    );
+
+    expect(await repo.wholePropertyConflicts(seb.id)).toEqual([
+      { other: "cozy-cottage", start: "2099-03-11", end: "2099-03-13" },
+    ]);
+    await expect(
+      repo.updateUnit(seb.id, { ...seb, isWholeProperty: true }),
+    ).rejects.toThrow();
+    expect((await repo.getUnitById(seb.id))!.isWholeProperty).toBe(false);
+  });
+
+  it("protects existing bookings immediately when a stay becomes the whole property", async () => {
+    await q`DELETE FROM bookings`;
+    const seb = (await repo.getUnitBySlug("the-sebastian"))!;
+    await insertBooking(
+      seb.id,
+      seb.slug,
+      "2099-04-10",
+      "2099-04-12",
+      "PV-SEB00002",
+    );
+    await repo.updateUnit(seb.id, { ...seb, isWholeProperty: true });
+    // Another stay can no longer take those nights.
+    await expect(
+      insertBooking(
+        "cozy-cottage",
+        "cozy-cottage",
+        "2099-04-11",
+        "2099-04-13",
+        "PV-COT00002",
+      ),
+    ).rejects.toThrow();
+    // And switching back releases them.
+    const now = (await repo.getUnitById(seb.id))!;
+    await repo.updateUnit(seb.id, { ...now, isWholeProperty: false });
+    await expect(
+      insertBooking(
+        "cozy-cottage",
+        "cozy-cottage",
+        "2099-04-11",
+        "2099-04-13",
+        "PV-COT00003",
+      ),
+    ).resolves.toBeDefined();
+  });
+});

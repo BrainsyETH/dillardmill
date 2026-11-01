@@ -93,6 +93,53 @@ VALUES
    'https://www.airbnb.com/rooms/44360355', NULL)
 ON CONFLICT (slug) DO NOTHING;
 
+-- Earlier records referenced Sanity document IDs. Re-point them at the new
+-- stay records. Bookings carry the stay's web address (unit_slug), which gives
+-- an old-ID -> new-ID map that also covers owner blocks and imported rows.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT b.unit_id FROM bookings b JOIN units u ON u.slug = b.unit_slug
+    GROUP BY b.unit_id HAVING count(DISTINCT u.id) > 1
+  ) THEN
+    RAISE EXCEPTION 'Migration 003 stopped: some old stay IDs map to more than one web address in bookings.unit_slug. Fix those bookings, then rerun. Nothing was changed.';
+  END IF;
+END $$;
+
+WITH map AS (
+  SELECT DISTINCT b.unit_id AS old_id, u.id AS new_id
+    FROM bookings b JOIN units u ON u.slug = b.unit_slug
+   WHERE b.unit_id <> u.id
+)
+UPDATE calendar_blocks c SET unit_id = map.new_id FROM map WHERE c.unit_id = map.old_id;
+
+WITH map AS (
+  SELECT DISTINCT b.unit_id AS old_id, u.id AS new_id
+    FROM bookings b JOIN units u ON u.slug = b.unit_slug
+   WHERE b.unit_id <> u.id
+)
+UPDATE external_bookings e SET unit_id = map.new_id FROM map WHERE e.unit_id = map.old_id;
+
+UPDATE bookings b SET unit_id = u.id
+  FROM units u
+ WHERE b.unit_slug = u.slug AND b.unit_id <> u.id;
+
+-- Sync status is rebuilt by the next import; drop rows for unknown stays.
+DELETE FROM calendar_sync_status WHERE unit_id NOT IN (SELECT id FROM units);
+
+-- Anything still pointing at an unknown stay would silently drop out of
+-- availability checks. Stop instead.
+DO $$
+DECLARE nb INT; nk INT; ne INT;
+BEGIN
+  SELECT count(*) INTO nb FROM bookings WHERE unit_id NOT IN (SELECT id FROM units);
+  SELECT count(*) INTO nk FROM calendar_blocks WHERE unit_id NOT IN (SELECT id FROM units);
+  SELECT count(*) INTO ne FROM external_bookings WHERE unit_id NOT IN (SELECT id FROM units);
+  IF nb + nk + ne > 0 THEN
+    RAISE EXCEPTION 'Migration 003 stopped: % booking(s), % owner block(s) and % imported calendar row(s) reference stays that are not in the units table (old Sanity IDs with no web address to match). Point them at a stay first, e.g. UPDATE bookings SET unit_id = ''cozy-cottage'', unit_slug = ''cozy-cottage'' WHERE unit_id = ''<old id>''; then rerun. Nothing was changed.', nb, nk, ne;
+  END IF;
+END $$;
+
 -- Whole-property inventory is identified by the units flag, not by a slug.
 CREATE OR REPLACE FUNCTION set_booking_inventory() RETURNS trigger AS $$
 DECLARE unit_slot BIGINT;

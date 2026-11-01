@@ -19,7 +19,6 @@ import {
   type BookingRow,
 } from "@/lib/db/bookings";
 import { getUnavailableRanges, isRangeFree } from "@/lib/db/availability";
-import { isEchoOf } from "@/lib/calendar/ical";
 import { syncUnit } from "@/lib/calendar/sync";
 import {
   authorizeCard,
@@ -62,9 +61,42 @@ export interface GuestPolicies {
   requestResponseHours: number;
 }
 
+/** An imported "Not available" block the owner must rule on before approving. */
+export interface BlockForReview {
+  /** Stable across re-imports: stay, platform and dates. */
+  key: string;
+  stay: string;
+  platform: string;
+  start: string;
+  end: string;
+  summary: string | null;
+}
+
 export type ServiceResult<T> =
   | ({ ok: true } & T)
-  | { ok: false; status: number; code: string; error: string; quote?: Quote };
+  | {
+      ok: false;
+      status: number;
+      code: string;
+      error: string;
+      quote?: Quote;
+      blocks?: BlockForReview[];
+    };
+
+const PLATFORM: Record<string, string> = {
+  airbnb: "Airbnb",
+  hipcamp: "Hipcamp",
+  vrbo: "VRBO",
+  direct: "Website booking",
+  block: "Blocked in admin",
+};
+
+export const blockKey = (r: {
+  unitId: string;
+  source: string;
+  start: string;
+  end: string;
+}) => `${r.unitId}|${r.source}|${r.start}|${r.end}`;
 
 export async function getQuote(
   unitSlug: string,
@@ -251,6 +283,12 @@ export async function approveBooking(
   options: {
     /** Owner checked the other platforms by hand because a calendar link failed. */
     calendarsCheckedManually?: boolean;
+    /**
+     * Keys of imported "Not available" blocks the owner reviewed and confirmed
+     * belong to this request (e.g. they blocked Airbnb for it, or Airbnb
+     * re-exported our calendar). Must match the current blocks exactly.
+     */
+    confirmedBlockKeys?: string[];
   } = {},
 ): Promise<AdminResult> {
   const booking = await getBookingById(id);
@@ -279,48 +317,82 @@ export async function approveBooking(
         "The stay could not be checked. Restore it under Stays & pricing before approving.",
     };
   const inventory = await getInventoryUnits(unit);
+  const stayName = new Map(inventory.map((u) => [u._id, u.name]));
   const synced = (await Promise.all(inventory.map(syncUnit))).flat();
   const failed = synced.filter((result) => !result.success);
+  const failedList = failed
+    .map((f) => `${f.unit} — ${PLATFORM[f.source] ?? f.source}`)
+    .join("; ");
   if (failed.length && !options.calendarsCheckedManually) {
     return {
       ok: false,
       status: 503,
       code: "calendar_unavailable",
-      error: `The ${[...new Set(failed.map((f) => f.source))].join(", ")} calendar could not be refreshed, so these dates couldn't be re-checked. No charge was made. Check that platform by hand, then choose "Approve anyway", or try again later.`,
+      error: `Couldn't refresh: ${failedList}. These dates couldn't be re-checked there, and no charge was made. Check those calendars by hand, then choose "Approve anyway", or try again later.`,
     };
   }
-  const conflicts = (
-    await getUnavailableRanges(
-      unit._id,
-      booking.check_in,
-      booking.check_out,
-      inventory.map((u) => u._id),
-      booking.id,
-    )
-  ).filter(
-    // A platform that imported our calendar re-exports this very request as
-    // a block. That echo is not a conflict.
-    (r) =>
-      !isEchoOf(r, { checkIn: booking.check_in, checkOut: booking.check_out }),
+
+  const overlapping = await getUnavailableRanges(
+    unit._id,
+    booking.check_in,
+    booking.check_out,
+    inventory.map((u) => u._id),
+    booking.id,
   );
-  if (conflicts.length) {
+  const describe = (r: (typeof overlapping)[number]) =>
+    `${stayName.get(r.unitId) ?? "Another stay"} — ${PLATFORM[r.source] ?? r.source}${r.kind === "reservation" ? " reservation" : ""}, ${r.start} → ${r.end}`;
+
+  // Reservations, website bookings and admin blocks are always conflicts.
+  const hard = overlapping.filter((r) => r.kind !== "block");
+  if (hard.length) {
     return {
       ok: false,
       status: 409,
       code: "dates_taken",
-      error:
-        "These dates now conflict with another stay or owner block. The card has not been charged. Review the calendars before declining this request.",
+      error: `These dates now conflict with: ${hard.map(describe).join("; ")}. The card has not been charged. Decline this request, or resolve the conflict first.`,
     };
   }
+
+  // Imported "Not available" blocks are ambiguous: a real owner block or
+  // availability rule on the platform, or our own request coming back. Never
+  // decide that from dates alone; the owner rules on each one explicitly.
+  const blocks = overlapping.filter((r) => r.kind === "block");
+  const confirmedKeys = new Set(options.confirmedBlockKeys ?? []);
+  const unconfirmed = blocks.filter((b) => !confirmedKeys.has(blockKey(b)));
+  if (unconfirmed.length) {
+    return {
+      ok: false,
+      status: 409,
+      code: "blocks_need_review",
+      error:
+        "Another platform shows these dates as unavailable. Approve only if each block below is for this request (for example, you blocked it yourself after the request arrived). Otherwise decline. No charge has been made.",
+      blocks: blocks.map((b) => ({
+        key: blockKey(b),
+        stay: stayName.get(b.unitId) ?? "Another stay",
+        platform: PLATFORM[b.source] ?? b.source,
+        start: b.start,
+        end: b.end,
+        summary: b.label ?? null,
+      })),
+    };
+  }
+
+  const notes = [
+    failed.length
+      ? `Approved after checking by hand (couldn't refresh: ${failedList}).`
+      : null,
+    blocks.length
+      ? `Owner confirmed these blocks were for this request: ${blocks.map(describe).join("; ")}.`
+      : null,
+  ].filter(Boolean);
+
   // Claim first so the expiry job cannot void the hold mid-capture.
   const claimed = await transitionBooking(
     id,
     "requested",
     "confirmed",
     "authorized",
-    failed.length
-      ? `Approved with ${[...new Set(failed.map((f) => f.source))].join(", ")} checked by hand (calendar link unavailable).`
-      : null,
+    notes.length ? notes.join(" ") : null,
   );
   if (!claimed) return wrongState(booking);
   try {
